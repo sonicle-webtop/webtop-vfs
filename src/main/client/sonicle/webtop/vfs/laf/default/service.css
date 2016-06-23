@@ -1,0 +1,13 @@
+.wtvfs-icon-service-xs { background-image: url('service_16.png') !important; }
+.wtvfs-icon-service-s { background-image: url('service_24.png') !important; }
+.wtvfs-icon-service-m { background-image: url('service_32.png') !important; }
+.wtvfs-icon-service-l { background-image: url('service_48.png') !important; }
+
+.wtvfs-icon-server-xs { background-image: url('server_16.png') !important; }
+.wtvfs-icon-addServer-xs { background-image: url('task-add_16.png') !important; }
+.wtvfs-icon-store-xs { background-image: url('store_16.png') !important; }
+.wtvfs-icon-myStore-xs { background-image: url('store_16.png') !important; }
+.wtvfs-icon-incomingStore-xs { background-image: url('store-incoming.png') !important; }
+.wtvfs-icon-store-ftp-xs { background-image: url('store-ftp_16.png') !important; }
+.wtvfs-icon-store-dropbox-xs { background-image: url('dropbox_16.png') !important; }
+.wtvfs-icon-store-gooDrive-xs { background-image: url('googledrive_16.png') !important; }

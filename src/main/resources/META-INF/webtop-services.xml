@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<services>
+	<service>
+		<package>com.sonicle.webtop.vfs</package>
+		<jsPackage>Sonicle.webtop.vfs</jsPackage>
+		<shortName>wtvfs</shortName>
+		<version>1.0.0</version>
+		<buildDate>03/11/2014</buildDate>
+		
+		<company>Sonicle S.r.l.</company>
+		<companyEmail>sonicle@sonicle.com</companyEmail>
+		<companyWebSite>http://www.sonicle.com</companyWebSite>
+		<supportEmail>sonicle@sonicle.com</supportEmail>
+		
+		<controllerClassName>VfsController</controllerClassName>
+		<managerClassName>VfsManager</managerClassName>
+		<serviceClassName>Service</serviceClassName>
+		<!--<publicServiceClassName>PublicService</publicServiceClassName>-->
+		<!--
+		<clientOptionsModelJsClassName>model.ClientOptions</clientOptionsModelJsClassName>
+		<userOptions>
+			<serviceClassName>UserOptionsService</serviceClassName>
+			<viewJsClassName>view.UserOptions</viewJsClassName>
+			<modelJsClassName>model.UserOptions</modelJsClassName>
+		</userOptions>
+		-->
+		
+		<resources>
+			<resource name="DRIVE" type="share" />
+		</resources>
+	</service>
+</services>
