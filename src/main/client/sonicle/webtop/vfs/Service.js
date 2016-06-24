@@ -221,12 +221,12 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				selModel: WTF.multiRowSelection(false),
 				columns: [{
 					xtype: 'soiconcolumn',
-					dataIndex: 'ext',
+					dataIndex: 'type',
+					header: '',
 					iconField: function(v,rec) {
-						return (rec.get('type') === 'folder') ? 'wt-ftype-folder-xs' : WTF.fileTypeCssIconCls(v, 'xs');
+						return (v === 'folder') ? 'wt-ftype-folder-xs' : WTF.fileTypeCssIconCls(rec.get('ext'), 'xs');
 					},
-					iconSize: WTU.imgSizeToPx('xs'),
-					width: 30
+					iconSize: WTU.imgSizeToPx('xs')
 				}, {
 					xtype: 'solinkcolumn',
 					dataIndex: 'name',
@@ -240,8 +240,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				}, {
 					xtype: 'sobytescolumn',
 					dataIndex: 'size',
-					header: me.res('gpfiles.size.lbl'),
-					width: 30
+					header: me.res('gpfiles.size.lbl')
 				}, {
 					dataIndex: 'lastModified',
 					header: me.res('gpfiles.lastModified.lbl'),
