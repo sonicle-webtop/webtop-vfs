@@ -40,6 +40,7 @@ import com.sonicle.webtop.vfs.bol.OSharingLink;
 import static com.sonicle.webtop.vfs.jooq.tables.SharingLinks.SHARING_LINKS;
 import com.sonicle.webtop.vfs.jooq.tables.records.SharingLinksRecord;
 import java.sql.Connection;
+import java.util.List;
 import org.jooq.DSLContext;
 
 /**
@@ -61,6 +62,22 @@ public class SharingLinkDAO extends BaseDAO {
 					SHARING_LINKS.SHARING_LINK_ID.equal(id)
 			)
 			.fetchOneInto(OSharingLink.class);
+	}
+	
+	public List<OSharingLink> selectByTypeProfileStorePath(Connection con, String linkType, UserProfile.Id profileId, int storeId, String filePathStartsWith) throws DAOException {
+		DSLContext dsl = getDSL(con);
+		return dsl
+			.select()
+			.from(SHARING_LINKS)
+			.where(
+					SHARING_LINKS.DOMAIN_ID.equal(profileId.getDomain())
+					.and(SHARING_LINKS.USER_ID.equal(profileId.getUser())
+					.and(SHARING_LINKS.LINK_TYPE.equal(linkType)
+					.and(SHARING_LINKS.STORE_ID.equal(storeId)
+					.and(SHARING_LINKS.FILE_PATH.startsWith(filePathStartsWith)))))
+					
+			)
+			.fetchInto(OSharingLink.class);
 	}
 	
 	public int insert(Connection con, OSharingLink item) throws DAOException {

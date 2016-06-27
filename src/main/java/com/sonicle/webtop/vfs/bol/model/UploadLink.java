@@ -42,7 +42,7 @@ import org.jooq.tools.StringUtils;
  *
  * @author malbinola
  */
-public class DownloadLink extends SharingLink {
+public class UploadLink extends SharingLink {
 	private String linkId;
 	private String domainId;
 	private String userId;
@@ -54,9 +54,9 @@ public class DownloadLink extends SharingLink {
 	private String authMode;
 	private String password;
 	
-	public DownloadLink() {}
+	public UploadLink() {}
 	
-	public DownloadLink(OSharingLink o) {
+	public UploadLink(OSharingLink o) {
 		if(o == null) return;
 		linkId = o.getSharingLinkId();
 		domainId = o.getDomainId();

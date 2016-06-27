@@ -55,10 +55,13 @@ public class JsGridFile {
 	public String ext;
 	public Long size;
 	public String lastModified;
+	public String dLink;
+	public String uLink;
 	
 	public JsGridFile() {}
 	
-	public JsGridFile(FileObject fo) {
+	public JsGridFile(FileObject fo, String fileId, String dLink, String uLink) {
+		this.fileId = fileId;
 		this.type = getFileType(fo);
 		this.mtype = (type.equals("folder")) ? "" : ServletHelper.guessMediaType(fo.getName().getBaseName(), true);
 		
@@ -66,6 +69,8 @@ public class JsGridFile {
 		this.ext = fo.getName().getExtension();
 		this.size = getFileSize(fo);
 		this.lastModified = getFileLastModified(fo);
+		this.dLink = dLink;
+		this.uLink = uLink;
 	}
 	
 	private String getFileLastModified(FileObject fo) {

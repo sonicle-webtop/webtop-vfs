@@ -66,6 +66,7 @@ import com.sonicle.webtop.vfs.bol.model.StoreShareFolder;
 import com.sonicle.webtop.vfs.bol.model.StoreShareRoot;
 import com.sonicle.webtop.vfs.bol.model.MyStoreFolder;
 import com.sonicle.webtop.vfs.bol.model.MyStoreRoot;
+import com.sonicle.webtop.vfs.bol.model.UploadLink;
 import com.sonicle.webtop.vfs.dfs.StoreFileSystem;
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -342,14 +343,26 @@ public class Service extends BaseService {
 			
 			String crud = ServletUtils.getStringParameter(request, "crud", true);
 			if(crud.equals(Crud.READ)) {
-				String fileId = ServletUtils.getStringParameter(request, "fileId", null);
-				StoreNodeId nodeId = (StoreNodeId)new StoreNodeId().parse(fileId);
-				int storeId = Integer.valueOf(nodeId.getStoreId());
+				String parentFileId = ServletUtils.getStringParameter(request, "fileId", null);
+				StoreNodeId parentNodeId = (StoreNodeId)new StoreNodeId().parse(parentFileId);
+				int storeId = Integer.valueOf(parentNodeId.getStoreId());
 				
-				for(FileObject fo : manager.listStoreFileObjects(storeId, nodeId.getPath())) {
-					final JsGridFile js = new JsGridFile(fo);
-					js.fileId = fileId + "/" + fo.getName().getBaseName();
-					items.add(js);
+				LinkedHashMap<String, DownloadLink> dls = manager.listDownloadLinks(storeId, parentNodeId.getPath());
+				LinkedHashMap<String, UploadLink> uls = manager.listUploadLinks(storeId, parentNodeId.getPath());
+				
+				for(FileObject fo : manager.listStoreFileObjects(storeId, parentNodeId.getPath())) {
+					final String filePath = parentNodeId.getPath() + "/" + fo.getName().getBaseName();
+					final String fileId = parentFileId + "/" + fo.getName().getBaseName();
+					final String fileHash = manager.generateStoreFileHash(storeId, filePath);
+					
+					String dLink = null, uLink = null;
+					if(dls.containsKey(fileHash)) {
+						dLink = dls.get(fileHash).getLinkId();
+					}
+					if(uls.containsKey(fileHash)) {
+						uLink = uls.get(fileHash).getLinkId();
+					}
+					items.add(new JsGridFile(fo, fileId, dLink, uLink));
 				}
 				new JsonResult("files", items).printTo(out);
 			}
@@ -381,7 +394,7 @@ public class Service extends BaseService {
 				DateTimeFormatter ymdHmsFmt = DateTimeUtils.createYmdHmsFormatter(up.getTimeZone());
 				DownloadLink dl = new DownloadLink();
 				dl.setStoreId(storeId);
-				dl.setPath(nodeId.getPath());
+				dl.setFilePath(nodeId.getPath());
 				if(!StringUtils.isBlank(expirationDate)) dl.setExpiresOn(ymdHmsFmt.parseDateTime(expirationDate));
 				dl.setAuthMode(authMode);
 				dl.setPassword(password);

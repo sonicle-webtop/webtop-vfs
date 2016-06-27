@@ -61,6 +61,7 @@ import com.sonicle.webtop.vfs.bol.model.DownloadLink;
 import com.sonicle.webtop.vfs.bol.model.Store;
 import com.sonicle.webtop.vfs.bol.model.StoreShareFolder;
 import com.sonicle.webtop.vfs.bol.model.StoreShareRoot;
+import com.sonicle.webtop.vfs.bol.model.UploadLink;
 import com.sonicle.webtop.vfs.dal.SharingLinkDAO;
 import com.sonicle.webtop.vfs.dal.StoreDAO;
 import com.sonicle.webtop.vfs.dfs.StoreFileSystem;
@@ -201,26 +202,66 @@ public class VfsManager extends BaseManager {
 		return fos;
 	}
 	
-	private OSharingLink doDownloadLinkInsert(Connection con, DownloadLink link) throws WTException {
-		SharingLinkDAO dao = SharingLinkDAO.getInstance();
-		
-		link.validate();
-		
-		OSharingLink item = new OSharingLink(link);
-		item.setLinkType(OSharingLink.LINK_TYPE_DOWNLOAD);
-		item.setDomainId(getTargetProfileId().getDomainId());
-		item.setUserId(getTargetProfileId().getUserId());
-		CompositeId cid = new CompositeId(item.getLinkType(), item.getDomainId(), item.getUserId(), item.getStoreId(), item.getPath());
-		item.setSharingLinkId(DigestUtils.md5Hex(cid.toString()));
-		item.setCreatedOn(DateTimeUtils.now());
-        dao.insert(con, item);
-        return item;
+	public String generateStoreFileHash(int storeId, String path) {
+		return DigestUtils.md5Hex(new CompositeId(storeId, path).toString());
 	}
 	
-	private void doDownloadLinkDelete(Connection con, String linkId) throws WTException {
+	public String generateDownloadLinkId(int storeId, String path) {
+		return generateLinkId(getTargetProfileId(), OSharingLink.LINK_TYPE_DOWNLOAD, storeId, path);
+	}
+	
+	public String generateUploadLinkId(int storeId, String path) {
+		return generateLinkId(getTargetProfileId(), OSharingLink.LINK_TYPE_UPLOAD, storeId, path);
+	}
+	
+	public LinkedHashMap<String, DownloadLink> listDownloadLinks(int storeId, String path) throws WTException {
 		SharingLinkDAO dao = SharingLinkDAO.getInstance();
-		dao.deleteByIdType(con, linkId, OSharingLink.LINK_TYPE_DOWNLOAD);
-		//TODO: cancellare collegati
+		LinkedHashMap<String, DownloadLink> items = new LinkedHashMap<>();
+		Connection con = null;
+		
+		try {
+			ensureUser(); // Rights check!
+			con = WT.getConnection(SERVICE_ID, false);
+			
+			logger.debug("path starts with {}", path);
+			
+			List<OSharingLink> links = dao.selectByTypeProfileStorePath(con, OSharingLink.LINK_TYPE_DOWNLOAD, getTargetProfileId(), storeId, path);
+			for(OSharingLink link : links) {
+				final DownloadLink dl = new DownloadLink(link);
+				items.put(dl.getFileHash(), dl);
+			}
+			return items;
+			
+		} catch(SQLException | DAOException ex) {
+			DbUtils.rollbackQuietly(con);
+			throw new WTException(ex, "DB error");
+		} finally {
+			DbUtils.closeQuietly(con);
+		}
+	}
+	
+	public LinkedHashMap<String, UploadLink> listUploadLinks(int storeId, String path) throws WTException {
+		SharingLinkDAO dao = SharingLinkDAO.getInstance();
+		LinkedHashMap<String, UploadLink> items = new LinkedHashMap<>();
+		Connection con = null;
+		
+		try {
+			ensureUser(); // Rights check!
+			con = WT.getConnection(SERVICE_ID, false);
+			
+			List<OSharingLink> uls = dao.selectByTypeProfileStorePath(con, OSharingLink.LINK_TYPE_UPLOAD, getTargetProfileId(), storeId, path);
+			for(OSharingLink link : uls) {
+				final UploadLink ul = new UploadLink(link);
+				items.put(ul.getFileHash(), ul);
+			}
+			return items;
+			
+		} catch(SQLException | DAOException ex) {
+			DbUtils.rollbackQuietly(con);
+			throw new WTException(ex, "DB error");
+		} finally {
+			DbUtils.closeQuietly(con);
+		}
 	}
 	
 	public DownloadLink addDownloadLink(DownloadLink item) throws WTException {
@@ -232,6 +273,28 @@ public class VfsManager extends BaseManager {
 			item = new DownloadLink(doDownloadLinkInsert(con, item));
 			DbUtils.commitQuietly(con);
 			writeLog("DOWNLOADLINK_INSERT", item.getLinkId());
+			return item;
+			
+		} catch(SQLException | DAOException ex) {
+			DbUtils.rollbackQuietly(con);
+			throw new WTException(ex, "DB error");
+		} catch(Exception ex) {
+			DbUtils.rollbackQuietly(con);
+			throw ex;
+		} finally {
+			DbUtils.closeQuietly(con);
+		}
+	}
+	
+	public UploadLink addUploadLink(UploadLink item) throws WTException {
+		Connection con = null;
+		
+		try {
+			ensureUser(); // Rights check!
+			con = WT.getConnection(SERVICE_ID, false);
+			item = new UploadLink(doUploadLinkInsert(con, item));
+			DbUtils.commitQuietly(con);
+			writeLog("UPLOADLINK_INSERT", item.getLinkId());
 			return item;
 			
 		} catch(SQLException | DAOException ex) {
@@ -266,10 +329,74 @@ public class VfsManager extends BaseManager {
 		}
 	}
 	
+	public void deleteUploadLink(String linkId) throws WTException {
+		Connection con = null;
+		
+		try {
+			//checkRightsOnStoreFolder(linkId, "DELETE"); // Rights check!
+			con = WT.getConnection(SERVICE_ID, false);
+			doUploadLinkDelete(con, linkId);
+			DbUtils.commitQuietly(con);
+			writeLog("UPLOADLINK_DELETE", linkId);
+			
+		} catch(SQLException | DAOException ex) {
+			DbUtils.rollbackQuietly(con);
+			throw new WTException(ex, "DB error");
+		} catch(Exception ex) {
+			DbUtils.rollbackQuietly(con);
+			throw ex;
+		} finally {
+			DbUtils.closeQuietly(con);
+		}
+	}
 	
+	private String generateLinkId(UserProfile.Id profileId, String linkType, int storeId, String path) {
+		return DigestUtils.md5Hex(new CompositeId(profileId.getDomainId(), profileId.getUserId(), linkType, storeId, path).toString());
+	}
 	
+	private OSharingLink doDownloadLinkInsert(Connection con, DownloadLink dl) throws WTException {
+		SharingLinkDAO dao = SharingLinkDAO.getInstance();
+		UserProfile.Id pid = getTargetProfileId();
+		
+		dl.validate();
+		OSharingLink o = new OSharingLink(dl);
+		o.setSharingLinkId(generateLinkId(pid, o.getLinkType(), o.getStoreId(), o.getFilePath()));
+		o.setDomainId(pid.getDomainId());
+		o.setUserId(pid.getUserId());
+		o.setLinkType(OSharingLink.LINK_TYPE_DOWNLOAD);
+		o.setFileHash(generateStoreFileHash(o.getStoreId(), o.getFilePath()));
+		o.setCreatedOn(DateTimeUtils.now());
+        dao.insert(con, o);
+        return o;
+	}
 	
+	private void doDownloadLinkDelete(Connection con, String linkId) throws WTException {
+		SharingLinkDAO dao = SharingLinkDAO.getInstance();
+		dao.deleteByIdType(con, linkId, OSharingLink.LINK_TYPE_DOWNLOAD);
+		//TODO: cancellare collegati
+	}
 	
+	private OSharingLink doUploadLinkInsert(Connection con, UploadLink ul) throws WTException {
+		SharingLinkDAO dao = SharingLinkDAO.getInstance();
+		UserProfile.Id pid = getTargetProfileId();
+		
+		ul.validate();
+		OSharingLink o = new OSharingLink(ul);
+		o.setSharingLinkId(generateLinkId(pid, o.getLinkType(), o.getStoreId(), o.getFilePath()));
+		o.setDomainId(pid.getDomainId());
+		o.setUserId(pid.getUserId());
+		o.setLinkType(OSharingLink.LINK_TYPE_UPLOAD);
+		o.setFileHash(generateStoreFileHash(o.getStoreId(), o.getFilePath()));
+		o.setCreatedOn(DateTimeUtils.now());
+        dao.insert(con, o);
+        return o;
+	}
+	
+	private void doUploadLinkDelete(Connection con, String linkId) throws WTException {
+		SharingLinkDAO dao = SharingLinkDAO.getInstance();
+		dao.deleteByIdType(con, linkId, OSharingLink.LINK_TYPE_UPLOAD);
+		//TODO: cancellare collegati
+	}
 	
 	
 	

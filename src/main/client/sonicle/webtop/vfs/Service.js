@@ -222,16 +222,17 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				columns: [{
 					xtype: 'soiconcolumn',
 					dataIndex: 'type',
-					header: '',
+					header: WTF.headerWithGlyphIcon('fa fa-file-o'),
 					iconField: function(v,rec) {
 						return (v === 'folder') ? 'wt-ftype-folder-xs' : WTF.fileTypeCssIconCls(rec.get('ext'), 'xs');
 					},
-					iconSize: WTU.imgSizeToPx('xs')
+					iconSize: WTU.imgSizeToPx('xs'),
+					width: 40
 				}, {
 					xtype: 'solinkcolumn',
 					dataIndex: 'name',
 					header: me.res('gpfiles.name.lbl'),
-					flex: 2,
+					flex: 1,
 					listeners: {
 						linkclick: function(s,idx,rec) {
 							if(rec.get('type') === 'folder') me.reloadFiles(rec.get('fileId'));
@@ -240,13 +241,32 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				}, {
 					xtype: 'sobytescolumn',
 					dataIndex: 'size',
-					header: me.res('gpfiles.size.lbl')
+					header: me.res('gpfiles.size.lbl'),
+					width: 100
 				}, {
 					dataIndex: 'lastModified',
 					header: me.res('gpfiles.lastModified.lbl'),
 					xtype: 'datecolumn',
 					format: WT.getShortDateFmt() + ' ' + WT.getShortTimeFmt(),
-					flex: 1
+					width: 140
+				}, {
+					xtype: 'soiconcolumn',
+					dataIndex: 'dLink',
+					header: WTF.headerWithGlyphIcon('fa fa-cloud-download'),
+					iconField: function(v) {
+						return Ext.isEmpty(v) ? '' : 'wtvfs-icon-downloadLink-xs';
+					},
+					iconSize: WTU.imgSizeToPx('xs'),
+					width: 40
+				}, {
+					xtype: 'soiconcolumn',
+					dataIndex: 'uLink',
+					header: WTF.headerWithGlyphIcon('fa fa-cloud-upload'),
+					iconField: function(v) {
+						return Ext.isEmpty(v) ? '' : 'wtvfs-icon-uploadLink-xs';
+					},
+					iconSize: WTU.imgSizeToPx('xs'),
+					width: 40
 				}],
 				listeners: {
 					selectionchange: function() {
@@ -354,14 +374,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				if(node) me.addTask(node.get('_pid'), node.get('_catId'));
 			}
 		});
-		me.addAction('deleteTask', {
-			text: WT.res('act-delete.lbl'),
-			iconCls: 'wt-icon-delete-xs',
-			handler: function() {
-				var sel = me.getSelectedTasks();
-				if(sel.length > 0) me.deleteSelTasks(sel);
-			}
-		});
+		
 		me.addAction('copyTask', {
 			handler: function() {
 				me.moveTasksSel(true, me.getSelectedTasks());
@@ -405,6 +418,60 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 			}
 		});
 		*/
+		me.addAction('renameFile', {
+			text: 'Rinomina',
+			handler: function() {
+				var sel = me.getSelectedFiles();
+				if(sel.length > 0) me.renameSelFile(sel);
+			}
+		});
+		me.addAction('deleteFile', {
+			text: WT.res('act-delete.lbl'),
+			iconCls: 'wt-icon-delete-xs',
+			handler: function() {
+				var sel = me.getSelectedFiles();
+				if(sel.length > 0) me.deleteSelFiles(sel);
+			}
+		});
+	},
+	
+	deleteSelFiles: function(sel) {
+		var me = this,
+			sto = me.gpFiles().getStore(),
+			ids = me.selectionIds(sel),
+			msg;
+		
+		if(sel.length === 1) {
+			msg = me.res('file.confirm.delete', Ext.String.ellipsis(sel[0].get('subject'), 40));
+		} else {
+			msg = me.res('gpfiles.confirm.delete.selection');
+		}
+		
+		WT.confirm(msg, function(bid) {
+			if(bid === 'yes') {
+				me.deleteFiles(ids, {
+					callback: function(success) {
+						if(success) sto.remove(sel);
+						//if(success) me.reloadFiles();
+					}
+				});
+			}
+		});
+	},
+
+	
+	deleteFiles: function(ids, opts) {
+		opts = opts || {};
+		var me = this;
+		WT.ajaxReq(me.ID, 'ManageFiles', {
+			params: {
+				crud: 'delete',
+				ids: WTU.arrayAsParam(ids)
+			},
+			callback: function(success, json) {
+				Ext.callback(opts.callback, opts.scope || me, [success, json]);
+			}
+		});
 	},
 	
 	initCxm: function() {
@@ -457,26 +524,18 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				}
 			}
 		}));
-		
-		me.addRef('cxmGrid', Ext.create({
+		*/
+		me.addRef('cxmGridFile', Ext.create({
 			xtype: 'menu',
 			items: [
-				me.getAction('showTask'),
-				{
-					text: me.res('copyormove.lbl'),
-					menu: {
-						items: [
-							me.getAction('copyTask'),
-							me.getAction('moveTask')
-						]
-					}
-				},
-				me.getAction('printTask'),
+				me.getAction('deleteFile'),
+				me.getAction('renameFile'),
 				'-',
-				me.getAction('deleteTask')
+				me.getAction('addDownloadLink'),
+				'-',
+				me.getAction('addUploadLink')
 			]
 		}));
-		*/
 	},
 	
 	onActivate: function() {
@@ -507,6 +566,17 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		} else {
 			me.needsReload = true;
 		}
+	},
+	
+	getSelectedFile: function(forceSingle) {
+		if(forceSingle === undefined) forceSingle = true;
+		var sel = this.getSelectedFiles();
+		if(forceSingle && sel.length !== 1) return null;
+		return (sel.length > 0) ? sel[0] : null;
+	},
+	
+	getSelectedFiles: function() {
+		return this.gpFiles().getSelection();
 	},
 	
 	setupStoreFtp: function() {
