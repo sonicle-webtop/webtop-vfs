@@ -31,7 +31,7 @@
  * feasible for technical reasons, the Appropriate Legal Notices must display
  * the words "Powered by Sonicle WebTop".
  */
-Ext.define('Sonicle.webtop.vfs.view.DownloadLinkWiz', {
+Ext.define('Sonicle.webtop.vfs.view.UploadLinkWiz', {
 	extend: 'WT.sdk.WizardView',
 	requires: [
 		'Sonicle.form.field.Link',
@@ -39,8 +39,8 @@ Ext.define('Sonicle.webtop.vfs.view.DownloadLinkWiz', {
 	],
 	
 	dockableConfig: {
-		title: '{downloadLinkWiz.tit}',
-		iconCls: 'wtvfs-icon-downloadLink-xs',
+		title: '{uploadLinkWiz.tit}',
+		iconCls: 'wtvfs-icon-uploadLink-xs',
 		width: 400,
 		height: 220
 	},
@@ -103,7 +103,7 @@ Ext.define('Sonicle.webtop.vfs.view.DownloadLinkWiz', {
 			},
 			items: [{
 				xtype: 'label',
-				html: me.mys.res('downloadLinkWiz.s1.tit'),
+				html: me.mys.res('uploadLinkWiz.s1.tit'),
 				cls: 'x-window-header-title-default'
 			}, {
 				xtype: 'sospacer'
@@ -119,7 +119,7 @@ Ext.define('Sonicle.webtop.vfs.view.DownloadLinkWiz', {
 						xtype: 'radio',
 						name: me.sufId('expire'),
 						inputValue: false,
-						boxLabel: me.mys.res('downloadLinkWiz.fld-expire.false')
+						boxLabel: me.mys.res('uploadLinkWiz.fld-expire.false')
 					}, {
 						xtype: 'fieldcontainer',
 						layout: 'hbox',
@@ -127,7 +127,7 @@ Ext.define('Sonicle.webtop.vfs.view.DownloadLinkWiz', {
 							xtype: 'radio',
 							name: me.sufId('expire'),
 							inputValue: true,
-							boxLabel: me.mys.res('downloadLinkWiz.fld-expire.true')
+							boxLabel: me.mys.res('uploadLinkWiz.fld-expire.true')
 						}, {
 							xtype: 'sospacer',
 							vertical: false
@@ -154,7 +154,7 @@ Ext.define('Sonicle.webtop.vfs.view.DownloadLinkWiz', {
 			},
 			items: [{
 				xtype: 'label',
-				html: me.mys.res('downloadLinkWiz.s2.tit'),
+				html: me.mys.res('uploadLinkWiz.s2.tit'),
 				cls: 'x-window-header-title-default'
 			}, {
 				xtype: 'sospacer'
@@ -173,7 +173,7 @@ Ext.define('Sonicle.webtop.vfs.view.DownloadLinkWiz', {
 						xtype: 'radio',
 						name: me.sufId('authMode'),
 						inputValue: 'N',
-						boxLabel: me.mys.res('downloadLinkWiz.fld-authMode.none')
+						boxLabel: me.mys.res('uploadLinkWiz.fld-authMode.none')
 					}, {
 						xtype: 'fieldcontainer',
 						layout: 'hbox',
@@ -181,7 +181,7 @@ Ext.define('Sonicle.webtop.vfs.view.DownloadLinkWiz', {
 							xtype: 'radio',
 							name: me.sufId('authMode'),
 							inputValue: 'P',
-							boxLabel: me.mys.res('downloadLinkWiz.fld-authMode.password')
+							boxLabel: me.mys.res('uploadLinkWiz.fld-authMode.password')
 						}, {
 							xtype: 'sospacer',
 							vertical: false
@@ -193,7 +193,7 @@ Ext.define('Sonicle.webtop.vfs.view.DownloadLinkWiz', {
 								disabled: '{!foAuthModeIsP}'
 							},
 							width: 200,
-							emptyText: me.mys.res('downloadLinkWiz.fld-password.lbl')
+							emptyText: me.mys.res('uploadLinkWiz.fld-password.lbl')
 						}]
 					}]
 				}]
@@ -203,13 +203,13 @@ Ext.define('Sonicle.webtop.vfs.view.DownloadLinkWiz', {
 			xtype: 'wtwizardpage',
 			items: [{
 				xtype: 'label',
-				html: me.mys.res('downloadLinkWiz.s3.tit'),
+				html: me.mys.res('uploadLinkWiz.s3.tit'),
 				cls: 'x-window-header-title-default'
 			}, {
 				xtype: 'sospacer'
 			}, {
 				xtype: 'label',
-				html: me.mys.res('downloadLinkWiz.s3.txt')
+				html: me.mys.res('uploadLinkWiz.s3.txt')
 			}, {
 				xtype: 'wtform',
 				items: [{
@@ -237,7 +237,7 @@ Ext.define('Sonicle.webtop.vfs.view.DownloadLinkWiz', {
 			ret = ppcmp.down('wtform').isValid();
 			if(!ret) return false;
 			
-			WT.ajaxReq(me.mys.ID, 'WizardDownloadLink', {
+			WT.ajaxReq(me.mys.ID, 'WizardUploadLink', {
 				params: {
 					crud: 's2',
 					profileId: vm.get('profileId'),

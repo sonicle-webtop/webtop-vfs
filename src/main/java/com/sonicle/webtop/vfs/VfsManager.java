@@ -59,6 +59,7 @@ import com.sonicle.webtop.vfs.bol.OSharingLink;
 import com.sonicle.webtop.vfs.bol.OStore;
 import com.sonicle.webtop.vfs.bol.model.DownloadLink;
 import com.sonicle.webtop.vfs.bol.model.Store;
+import com.sonicle.webtop.vfs.bol.model.StoreFileType;
 import com.sonicle.webtop.vfs.bol.model.StoreShareFolder;
 import com.sonicle.webtop.vfs.bol.model.StoreShareRoot;
 import com.sonicle.webtop.vfs.bol.model.UploadLink;
@@ -84,6 +85,8 @@ import java.util.List;
 import java.util.TreeSet;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.vfs2.FileDepthSelector;
 import org.apache.commons.vfs2.FileObject;
 import org.apache.commons.vfs2.FileSystemException;
@@ -177,29 +180,58 @@ public class VfsManager extends BaseManager {
 		return tfo;
 	}
 	
-	public FileObject[] listStoreFolders(int storeId) throws FileSystemException, WTException {
-		return listStoreFolders(storeId, null);
+	public FileObject[] listStoreFiles(int storeId) throws FileSystemException, WTException {
+		return listStoreFiles(StoreFileType.FOLDER, storeId, null);
 	}
 	
-	public FileObject[] listStoreFolders(int storeId, String path) throws FileSystemException, WTException {
-		FileObject tfo = getTargetFileObject(storeId, path);
-		FileObject[] fos = tfo.findFiles(new FileSelector(true, false));
-		Arrays.sort(fos, new NameComparator());
-		return fos;
+	public FileObject[] listStoreFiles(StoreFileType fileType, int storeId, String path) throws FileSystemException, WTException {
+		FileObject tfo = null;
+		
+		try {
+			tfo = getTargetFileObject(storeId, path);
+			FileSelector selector = null;
+			if(fileType.equals(StoreFileType.FILE)) {
+				selector = new FileSelector(false, true);
+			} else if(fileType.equals(StoreFileType.FOLDER)) {
+				selector = new FileSelector(true, false);
+			} else {
+				selector = new FileSelector(true, true);
+			}
+			FileObject[] fos = tfo.findFiles(selector);
+			Arrays.sort(fos, new TypeNameComparator());
+			return fos;
+			
+		} finally {
+			IOUtils.closeQuietly(tfo);
+		}	
 	}
 	
-	public FileObject[] listStoreFiles(int storeId, String path) throws FileSystemException, WTException {
-		FileObject tfo = getTargetFileObject(storeId, path);
-		FileObject[] fos = tfo.findFiles(new FileSelector(false, true));
-		Arrays.sort(fos, new TypeNameComparator());
-		return fos;
+	public void renameStoreFile(int storeId, String path, String newName) throws FileSystemException, WTException {
+		FileObject tfo = null, ntfo = null;
+		
+		try {
+			tfo = getTargetFileObject(storeId, path);
+			String newPath = FilenameUtils.getFullPath(path) + newName;
+			ntfo = getTargetFileObject(storeId, newPath);
+			logger.debug("Renaming '{}' to '{}'", path, newPath);
+			
+			
+		} finally {
+			IOUtils.closeQuietly(tfo);
+			IOUtils.closeQuietly(ntfo);
+		}
 	}
 	
-	public FileObject[] listStoreFileObjects(int storeId, String path) throws FileSystemException, WTException {
-		FileObject tfo = getTargetFileObject(storeId, path);
-		FileObject[] fos = tfo.findFiles(new FileSelector(true, true));
-		Arrays.sort(fos, new TypeNameComparator());
-		return fos;
+	public boolean deleteStoreFile(int storeId, String path) throws FileSystemException, WTException {
+		FileObject tfo = null;
+		try {
+			tfo = getTargetFileObject(storeId, path);
+			return false;
+			//return tfo.delete();
+			
+		} finally {
+			IOUtils.closeQuietly(tfo);
+		}
 	}
 	
 	public String generateStoreFileHash(int storeId, String path) {
@@ -264,16 +296,18 @@ public class VfsManager extends BaseManager {
 		}
 	}
 	
-	public DownloadLink addDownloadLink(DownloadLink item) throws WTException {
+	public DownloadLink getDownloadLink(String linkId) throws WTException {
+		SharingLinkDAO dao = SharingLinkDAO.getInstance();
 		Connection con = null;
 		
 		try {
-			ensureUser(); // Rights check!
 			con = WT.getConnection(SERVICE_ID, false);
-			item = new DownloadLink(doDownloadLinkInsert(con, item));
-			DbUtils.commitQuietly(con);
-			writeLog("DOWNLOADLINK_INSERT", item.getLinkId());
-			return item;
+			OSharingLink olink = dao.selectByIdType(con, linkId, OSharingLink.LINK_TYPE_DOWNLOAD);
+			if(olink == null) throw new WTException("Unable to retrieve download link [{0}]", linkId);
+			
+			checkRightsOnStoreElements(olink.getStoreId(), "READ"); // Rights check!
+			
+			return new DownloadLink(olink);
 			
 		} catch(SQLException | DAOException ex) {
 			DbUtils.rollbackQuietly(con);
@@ -286,16 +320,17 @@ public class VfsManager extends BaseManager {
 		}
 	}
 	
-	public UploadLink addUploadLink(UploadLink item) throws WTException {
+	public DownloadLink addDownloadLink(DownloadLink link) throws WTException {
 		Connection con = null;
 		
 		try {
-			ensureUser(); // Rights check!
+			checkRightsOnStoreElements(link.getStoreId(), "CREATE"); // Rights check!
+			
 			con = WT.getConnection(SERVICE_ID, false);
-			item = new UploadLink(doUploadLinkInsert(con, item));
+			link = new DownloadLink(doDownloadLinkInsert(con, link));
 			DbUtils.commitQuietly(con);
-			writeLog("UPLOADLINK_INSERT", item.getLinkId());
-			return item;
+			writeLog("DOWNLOADLINK_INSERT", link.getLinkId());
+			return link;
 			
 		} catch(SQLException | DAOException ex) {
 			DbUtils.rollbackQuietly(con);
@@ -309,11 +344,16 @@ public class VfsManager extends BaseManager {
 	}
 	
 	public void deleteDownloadLink(String linkId) throws WTException {
+		SharingLinkDAO dao = SharingLinkDAO.getInstance();
 		Connection con = null;
 		
 		try {
-			//checkRightsOnStoreFolder(linkId, "DELETE"); // Rights check!
 			con = WT.getConnection(SERVICE_ID, false);
+			OSharingLink olink = dao.selectByIdType(con, linkId, OSharingLink.LINK_TYPE_DOWNLOAD);
+			if(olink == null) throw new WTException("Unable to retrieve download link [{0}]", linkId);
+			
+			checkRightsOnStoreElements(olink.getStoreId(), "CREATE"); // Rights check!
+			
 			doDownloadLinkDelete(con, linkId);
 			DbUtils.commitQuietly(con);
 			writeLog("DOWNLOADLINK_DELETE", linkId);
@@ -329,12 +369,64 @@ public class VfsManager extends BaseManager {
 		}
 	}
 	
-	public void deleteUploadLink(String linkId) throws WTException {
+	public DownloadLink getUploadLink(String linkId) throws WTException {
+		SharingLinkDAO dao = SharingLinkDAO.getInstance();
 		Connection con = null;
 		
 		try {
-			//checkRightsOnStoreFolder(linkId, "DELETE"); // Rights check!
 			con = WT.getConnection(SERVICE_ID, false);
+			OSharingLink olink = dao.selectByIdType(con, linkId, OSharingLink.LINK_TYPE_UPLOAD);
+			if(olink == null) throw new WTException("Unable to retrieve upload link [{0}]", linkId);
+			
+			checkRightsOnStoreElements(olink.getStoreId(), "READ"); // Rights check!
+			
+			return new DownloadLink(olink);
+			
+		} catch(SQLException | DAOException ex) {
+			DbUtils.rollbackQuietly(con);
+			throw new WTException(ex, "DB error");
+		} catch(Exception ex) {
+			DbUtils.rollbackQuietly(con);
+			throw ex;
+		} finally {
+			DbUtils.closeQuietly(con);
+		}
+	}
+	
+	public UploadLink addUploadLink(UploadLink link) throws WTException {
+		Connection con = null;
+		
+		try {
+			checkRightsOnStoreElements(link.getStoreId(), "CREATE"); // Rights check!
+			
+			con = WT.getConnection(SERVICE_ID, false);
+			link = new UploadLink(doUploadLinkInsert(con, link));
+			DbUtils.commitQuietly(con);
+			writeLog("UPLOADLINK_INSERT", link.getLinkId());
+			return link;
+			
+		} catch(SQLException | DAOException ex) {
+			DbUtils.rollbackQuietly(con);
+			throw new WTException(ex, "DB error");
+		} catch(Exception ex) {
+			DbUtils.rollbackQuietly(con);
+			throw ex;
+		} finally {
+			DbUtils.closeQuietly(con);
+		}
+	}
+	
+	public void deleteUploadLink(String linkId) throws WTException {
+		SharingLinkDAO dao = SharingLinkDAO.getInstance();
+		Connection con = null;
+		
+		try {
+			con = WT.getConnection(SERVICE_ID, false);
+			OSharingLink olink = dao.selectByIdType(con, linkId, OSharingLink.LINK_TYPE_UPLOAD);
+			if(olink == null) throw new WTException("Unable to retrieve upload link [{0}]", linkId);
+			
+			checkRightsOnStoreElements(olink.getStoreId(), "CREATE"); // Rights check!
+			
 			doUploadLinkDelete(con, linkId);
 			DbUtils.commitQuietly(con);
 			writeLog("UPLOADLINK_DELETE", linkId);
@@ -516,6 +608,7 @@ public class VfsManager extends BaseManager {
 		try {
 			ensureUser(); // Rights check!
 			con = WT.getConnection(SERVICE_ID, false);
+			item.setBuiltIn(false);
 			item = new Store(doStoreInsert(con, item));
 			DbUtils.commitQuietly(con);
 			writeLog("STORE_INSERT", item.getStoreId().toString());
@@ -670,6 +763,31 @@ public class VfsManager extends BaseManager {
 		if(core.isShareFolderPermitted(shareId, action)) return;
 		
 		throw new AuthException("Action not allowed on folder share [{0}, {1}, {2}, {3}]", shareId, action, RESOURCE_STORE, targetPid.toString());
+	}
+	
+	private void checkRightsOnStoreElements(int storeId, String action) throws WTException {
+		UserProfile.Id targetPid = getTargetProfileId();
+		
+		if(RunContext.isWebTopAdmin()) return;
+		// Skip rights check if running user is resource's owner
+		UserProfile.Id ownerPid = storeToOwner(storeId);
+		if(ownerPid.equals(getTargetProfileId())) return;
+		
+		// Checks rights on the wildcard instance (if present)
+		CoreManager core = WT.getCoreManager(targetPid);
+		String wildcardShareId = ownerToWildcardFolderShareId(ownerPid);
+		if(wildcardShareId != null) {
+			if(core.isShareElementsPermitted(wildcardShareId, action)) return;
+			//if(core.isShareElementsPermitted(SERVICE_ID, RESOURCE_CATEGORY, action, wildcardShareId)) return;
+		}
+		
+		// Checks rights on calendar instance
+		String shareId = storeToFolderShareId(storeId);
+		if(shareId == null) throw new WTException("storeToLeafShareId({0}) -> null", storeId);
+		if(core.isShareElementsPermitted(shareId, action)) return;
+		//if(core.isShareElementsPermitted(SERVICE_ID, RESOURCE_CATEGORY, action, shareId)) return;
+		
+		throw new AuthException("Action not allowed on folderEls share [{0}, {1}, {2}, {3}]", shareId, action, RESOURCE_STORE, targetPid.toString());
 	}
 	
 	private OStore doStoreInsert(Connection con, Store store) throws WTException {

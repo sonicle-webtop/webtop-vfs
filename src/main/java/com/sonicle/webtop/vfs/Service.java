@@ -52,6 +52,7 @@ import com.sonicle.vfs2.util.GoogleDriveAppInfo;
 import com.sonicle.webtop.core.app.RunContext;
 import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.app.WebTopSession;
+import com.sonicle.webtop.core.bol.js.JsWizardData;
 import com.sonicle.webtop.core.bol.model.SharePermsRoot;
 import com.sonicle.webtop.core.sdk.BaseService;
 import com.sonicle.webtop.core.sdk.UserProfile;
@@ -66,8 +67,8 @@ import com.sonicle.webtop.vfs.bol.model.StoreShareFolder;
 import com.sonicle.webtop.vfs.bol.model.StoreShareRoot;
 import com.sonicle.webtop.vfs.bol.model.MyStoreFolder;
 import com.sonicle.webtop.vfs.bol.model.MyStoreRoot;
+import com.sonicle.webtop.vfs.bol.model.StoreFileType;
 import com.sonicle.webtop.vfs.bol.model.UploadLink;
-import com.sonicle.webtop.vfs.dfs.StoreFileSystem;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -77,8 +78,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.vfs2.FileObject;
-import org.apache.commons.vfs2.FileType;
-import org.joda.time.DateTimeZone;
 import org.joda.time.format.DateTimeFormatter;
 import org.slf4j.Logger;
 
@@ -281,7 +280,7 @@ public class Service extends BaseService {
 
 					} else if(nodeId.getSize() == 2) { // Store's folders...
 						int storeId = Integer.valueOf(nodeId.getStoreId());
-						for(FileObject file : manager.listStoreFolders(storeId)) {
+						for(FileObject file : manager.listStoreFiles(storeId)) {
 							children.add(createFileNode(nodeId.getShareId(), storeId, file));
 						}
 						
@@ -289,7 +288,7 @@ public class Service extends BaseService {
 					} else if(nodeId.getSize() == 3) { // Folder's folders...
 						int storeId = Integer.valueOf(nodeId.getStoreId());
 						String path = nodeId.getPath();
-						for(FileObject file : manager.listStoreFolders(storeId, path)) {
+						for(FileObject file : manager.listStoreFiles(StoreFileType.FOLDER, storeId, path)) {
 							children.add(createFileNode(nodeId.getShareId(), storeId, file));
 						}
 						
@@ -350,7 +349,7 @@ public class Service extends BaseService {
 				LinkedHashMap<String, DownloadLink> dls = manager.listDownloadLinks(storeId, parentNodeId.getPath());
 				LinkedHashMap<String, UploadLink> uls = manager.listUploadLinks(storeId, parentNodeId.getPath());
 				
-				for(FileObject fo : manager.listStoreFileObjects(storeId, parentNodeId.getPath())) {
+				for(FileObject fo : manager.listStoreFiles(StoreFileType.FILE_OR_FOLDER, storeId, parentNodeId.getPath())) {
 					final String filePath = parentNodeId.getPath() + "/" + fo.getName().getBaseName();
 					final String fileId = parentFileId + "/" + fo.getName().getBaseName();
 					final String fileHash = manager.generateStoreFileHash(storeId, filePath);
@@ -370,14 +369,38 @@ public class Service extends BaseService {
 		} catch(Exception ex) {
 			logger.error("Error in action ManageGridFiles", ex);
 			new JsonResult(false, "Error").printTo(out);
-			
 		}
 	}
 	
+	public void processManageFiles(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		
+		try {
+			String crud = ServletUtils.getStringParameter(request, "crud", true);
+			if(crud.equals("rename")) {
+				String fileId = ServletUtils.getStringParameter(request, "id", true);
+				String name = ServletUtils.getStringParameter(request, "name", true);
+				
+				StoreNodeId nodeId = (StoreNodeId)new StoreNodeId().parse(fileId);
+				int storeId = Integer.valueOf(nodeId.getStoreId());
+				
+				manager.renameStoreFile(storeId, nodeId.getPath(), name);
+				new JsonResult().printTo(out);
+				
+			} else if(crud.equals(Crud.DELETE)) {
+				ServletUtils.IntegerArray ids = ServletUtils.getObjectParameter(request, "ids", ServletUtils.IntegerArray.class, true);
+				
+				//manager.deleteStoreFile(storeId, crud)
+				new JsonResult().printTo(out);
+				
+			}
+			
+		} catch(Exception ex) {
+			logger.error("Error in action ManageFiles", ex);
+			new JsonResult(false, "Error").printTo(out);	
+		}
+	}
 	
-	
-	
-	public void processSetupDownloadLink(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+	public void processWizardDownloadLink(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		UserProfile up = getEnv().getProfile();
 		
 		try {
@@ -400,11 +423,75 @@ public class Service extends BaseService {
 				dl.setPassword(password);
 				dl = manager.addDownloadLink(dl);
 				
-				new JsonResult(dl.getLinkId()).printTo(out);
+				new JsonResult(new JsWizardData(dl)).printTo(out);
 			}
 			
 		} catch (Exception ex) {
-			logger.error("Error in SetupDownloadLink", ex);
+			logger.error("Error in WizardDownloadLink", ex);
+			new JsonResult(false, ex.getMessage()).printTo(out);
+		}
+	}
+	
+	public void processManageDownloadLink(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		try {
+			String crud = ServletUtils.getStringParameter(request, "crud", true);
+			if(crud.equals(Crud.DELETE)) {
+				String linkId = ServletUtils.getStringParameter(request, "id", true);
+				
+				manager.deleteDownloadLink(linkId);
+				new JsonResult().printTo(out);
+			}
+			
+		} catch (Exception ex) {
+			logger.error("Error in ManageDownloadLink", ex);
+			new JsonResult(false, ex.getMessage()).printTo(out);
+		}
+	}
+	
+	public void processWizardUploadLink(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		UserProfile up = getEnv().getProfile();
+		
+		try {
+			String crud = ServletUtils.getStringParameter(request, "crud", true);
+			if(crud.equals("s2")) {
+				String fileId = ServletUtils.getStringParameter(request, "fileId", true);
+				String expirationDate = ServletUtils.getStringParameter(request, "expirationDate", null);
+				String authMode = ServletUtils.getStringParameter(request, "authMode", true);
+				String password = ServletUtils.getStringParameter(request, "password", null);
+				
+				StoreNodeId nodeId = (StoreNodeId)new StoreNodeId().parse(fileId);
+				int storeId = Integer.valueOf(nodeId.getStoreId());
+				
+				DateTimeFormatter ymdHmsFmt = DateTimeUtils.createYmdHmsFormatter(up.getTimeZone());
+				UploadLink ul = new UploadLink();
+				ul.setStoreId(storeId);
+				ul.setFilePath(nodeId.getPath());
+				if(!StringUtils.isBlank(expirationDate)) ul.setExpiresOn(ymdHmsFmt.parseDateTime(expirationDate));
+				ul.setAuthMode(authMode);
+				ul.setPassword(password);
+				ul = manager.addUploadLink(ul);
+				
+				new JsonResult(new JsWizardData(ul)).printTo(out);
+			}
+			
+		} catch (Exception ex) {
+			logger.error("Error in WizardUploadLink", ex);
+			new JsonResult(false, ex.getMessage()).printTo(out);
+		}
+	}
+	
+	public void processManageUploadLink(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		try {
+			String crud = ServletUtils.getStringParameter(request, "crud", true);
+			if(crud.equals(Crud.DELETE)) {
+				String linkId = ServletUtils.getStringParameter(request, "id", true);
+				
+				manager.deleteUploadLink(linkId);
+				new JsonResult().printTo(out);
+			}
+			
+		} catch (Exception ex) {
+			logger.error("Error in ManageUploadLink", ex);
 			new JsonResult(false, ex.getMessage()).printTo(out);
 		}
 	}

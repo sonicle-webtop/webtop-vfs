@@ -85,7 +85,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 					xtype: 'button',
 					text: 'Download',
 					handler: function() {
-						me.setupDownloadLink();
+						me.wizardDownloadLink();
 					}
 				},
 				//me.getAction('deleteTask2'),
@@ -218,7 +218,10 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 					}
 				},
 				*/
-				selModel: WTF.multiRowSelection(false),
+				selModel: {
+					type: 'checkboxmodel',
+					mode : 'MULTI'
+				},
 				columns: [{
 					xtype: 'soiconcolumn',
 					dataIndex: 'type',
@@ -270,22 +273,17 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				}],
 				listeners: {
 					selectionchange: function() {
-						/*
-						me.updateDisabled('showTask');
-						me.updateDisabled('printTask');
-						me.updateDisabled('copyTask');
-						me.updateDisabled('moveTask');
-						me.updateDisabled('deleteTask');
-						*/
+						me.updateCxmGridFile();
 					},
 					rowdblclick: function(s, rec) {
-						var er = me.toRightsObj(rec.get('_erights'));
+						//var er = me.toRightsObj(rec.get('_erights'));
 						//me.showTask(er.UPDATE, rec.get('taskId'));
 					},
 					rowcontextmenu: function(s, rec, itm, i, e) {
-						WT.showContextMenu(e, me.getRef('cxmGrid'), {
-							task: rec,
-							tasks: s.getSelection()
+						s.getSelectionModel().select(rec);
+						WT.showContextMenu(e, me.getRef('cxmGridFile'), {
+							file: rec,
+							files: s.getSelection()
 						});
 					}
 				}
@@ -418,19 +416,96 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 			}
 		});
 		*/
-		me.addAction('renameFile', {
-			text: 'Rinomina',
+		
+		
+		me.addAction('openFile', {
 			handler: function() {
-				var sel = me.getSelectedFiles();
-				if(sel.length > 0) me.renameSelFile(sel);
+				var sel = me.getSelectedFile();
+				if(sel) me.openSelFile(sel);
+			}
+		});
+		me.addAction('downloadFile', {
+			handler: function() {
+				var sel = me.getSelectedFile();
+				if(sel) me.downloadSelFile(sel);
+			}
+		});
+		me.addAction('renameFile', {
+			handler: function() {
+				var sel = me.getSelectedFile();
+				if(sel) me.renameSelFile(sel);
 			}
 		});
 		me.addAction('deleteFile', {
-			text: WT.res('act-delete.lbl'),
-			iconCls: 'wt-icon-delete-xs',
 			handler: function() {
 				var sel = me.getSelectedFiles();
 				if(sel.length > 0) me.deleteSelFiles(sel);
+			}
+		});
+		me.addAction('addDownloadLink', {
+			handler: function() {
+				var sel = me.getSelectedFile();
+				if(sel) me.addSelLink('d', sel);
+			}
+		});
+		me.addAction('deleteDownloadLink', {
+			handler: function() {
+				var sel = me.getSelectedFile();
+				if(sel) me.deleteSelLink('d', sel);
+			}
+		});
+		me.addAction('addUploadLink', {
+			handler: function() {
+				var sel = me.getSelectedFile();
+				if(sel) me.addSelLink('u', sel);
+			}
+		});
+		me.addAction('deleteUploadLink', {
+			handler: function() {
+				var sel = me.getSelectedFile();
+				if(sel) me.deleteSelLink('u', sel);
+			}
+		});
+	},
+	
+	
+	updateCxmGridFile: function() {
+		var me = this;
+		me.updateDisabled('openFile');
+		me.updateDisabled('downloadFile');
+		me.updateDisabled('renameFile');
+		me.updateDisabled('addDownloadLink');
+		me.updateDisabled('deleteDownloadLink');
+		//me.updateDisabled('sendDownloadLink');
+		me.updateDisabled('addUploadLink');
+		me.updateDisabled('deleteUploadLink');
+		//me.updateDisabled('sendUploadLink');
+	},
+	
+	openSelFile: function(sel) {
+		
+	},
+	
+	downloadSelFile: function(sel) {
+		
+	},
+	
+	renameSelFile: function(sel) {
+		var me = this;
+		
+		WT.prompt(me.res('gpfiles.name.lbl'), {
+			title: me.res('act-renameFile.lbl'),
+			value: sel.get('name'),
+			fn: function(bid, name) {
+				if(bid === 'ok') {
+					if(name !== sel.get('name')) {
+						me.renameFile(sel.get('fileId'), name, {
+							callback: function(success) {
+								if(success) sel.set('name', name);
+							}
+						});
+					}
+				}
 			}
 		});
 	},
@@ -442,23 +517,75 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 			msg;
 		
 		if(sel.length === 1) {
-			msg = me.res('file.confirm.delete', Ext.String.ellipsis(sel[0].get('subject'), 40));
+			msg = me.res('gpfiles.confirm.delete', Ext.String.ellipsis(sel[0].get('name'), 40));
 		} else {
 			msg = me.res('gpfiles.confirm.delete.selection');
 		}
-		
 		WT.confirm(msg, function(bid) {
 			if(bid === 'yes') {
 				me.deleteFiles(ids, {
 					callback: function(success) {
 						if(success) sto.remove(sel);
-						//if(success) me.reloadFiles();
 					}
 				});
 			}
 		});
 	},
-
+	
+	addSelLink: function(type, sel) {
+		var me = this;
+		me.setupLink(type, sel.get('fileId'), {
+			callback: function(success) {
+				if(success) me.reloadFiles();
+			}
+		});
+	},
+	
+	deleteSelLink: function(type, sel) {
+		var me = this,
+				field = type+'Link',
+				fileId = sel.get(field);
+		WT.confirm(me.res('link.confirm.delete'), function(bid) {
+			if(bid === 'yes') {
+				me.deleteLink(type, fileId, {
+					callback: function(success) {
+						if(success) {
+							sel.set(field, null);
+							me.updateCxmGridFile();
+							//me.reloadFiles();
+						}
+					}
+				});
+			}
+		});
+	},
+	
+	sendSelLink: function(type, sel) {
+		
+	},
+	
+	openfile: function(id) {
+		
+	},
+	
+	downloadFile: function(id) {
+		
+	},
+	
+	renameFile: function(fileId, name, opts) {
+		opts = opts || {};
+		var me = this;
+		WT.ajaxReq(me.ID, 'ManageFiles', {
+			params: {
+				crud: 'rename',
+				id: fileId,
+				name: name
+			},
+			callback: function(success, json) {
+				Ext.callback(opts.callback, opts.scope || me, [success, json]);
+			}
+		});
+	},
 	
 	deleteFiles: function(ids, opts) {
 		opts = opts || {};
@@ -467,6 +594,41 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 			params: {
 				crud: 'delete',
 				ids: WTU.arrayAsParam(ids)
+			},
+			callback: function(success, json) {
+				Ext.callback(opts.callback, opts.scope || me, [success, json]);
+			}
+		});
+	},
+	
+	setupLink: function(type, fileId, opts) {
+		var me = this, vwc;
+		
+		if(type === 'd') {
+			vwc = me.wizardDownloadLink(fileId);
+		} else if(type === 'u') {
+			vwc = me.wizardUploadLink(fileId);
+		}
+		vwc.getView().on('viewclose', function(s) {
+			var result = s.getVM().get('result');
+			Ext.callback(opts.callback, opts.scope || me, [result !== null, result]);
+		});
+		vwc.show();
+	},
+	
+	deleteLink: function(type, linkId, opts) {
+		opts = opts || {};
+		var me = this, act;
+		
+		if(type === 'd') {
+			act = 'ManageDownloadLink';
+		} else if(type === 'u') {
+			act = 'ManageUploadLink';
+		}
+		WT.ajaxReq(me.ID, act, {
+			params: {
+				crud: 'delete',
+				id: linkId
 			},
 			callback: function(success, json) {
 				Ext.callback(opts.callback, opts.scope || me, [success, json]);
@@ -528,12 +690,17 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		me.addRef('cxmGridFile', Ext.create({
 			xtype: 'menu',
 			items: [
-				me.getAction('deleteFile'),
+				me.getAction('openFile'),
+				me.getAction('downloadFile'),
+				'-',
 				me.getAction('renameFile'),
+				me.getAction('deleteFile'),
 				'-',
 				me.getAction('addDownloadLink'),
+				me.getAction('deleteDownloadLink'),
 				'-',
-				me.getAction('addUploadLink')
+				me.getAction('addUploadLink'),
+				me.getAction('deleteUploadLink')
 			]
 		}));
 	},
@@ -621,18 +788,90 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		vwc.show();
 	},
 	
-	setupDownloadLink: function() {
+	wizardDownloadLink: function(fileId) {
 		var me = this,
-				vwc = WT.createView(me.ID, 'view.DownloadLinkWiz', {
-					viewCfg: {
-						//categoryId: categoryId
-					}
-				});
-		
-		vwc.getView().on('dosuccess', function() {
-			//me.reloadContacts();
-		});
-		vwc.show();
-	}
+			vwc = WT.createView(me.ID, 'view.DownloadLinkWiz', {
+				viewCfg: {
+					fileId: fileId
+				}
+			});
+		return vwc;
+	},
 	
+	wizardUploadLink: function(fileId) {
+		var me = this,
+			vwc = WT.createView(me.ID, 'view.UploadLinkWiz', {
+				viewCfg: {
+					fileId: fileId
+				}
+			});
+		return vwc;
+	},
+	
+	/**
+	 * @private
+	 */
+	updateDisabled: function(action) {
+		var me = this,
+				dis = me.isDisabled(action);
+		me.setActionDisabled(action, dis);
+	},
+	
+	/**
+	 * @private
+	 */
+	isDisabled: function(action) {
+		var me = this, sel;
+		switch(action) {
+			case 'openFile':
+				sel = me.getSelectedFiles();
+				if(sel.length === 1) {
+					return false;
+				} else {
+					return true;
+				}
+			case 'downloadFile':
+				sel = me.getSelectedFiles();
+				if(sel.length === 1) {
+					return false;
+				} else {
+					return true;
+				}
+			case 'renameFile':
+				sel = me.getSelectedFiles();
+				if(sel.length === 1) {
+					return false;
+				} else {
+					return true;
+				}
+			case 'addDownloadLink':
+				sel = me.getSelectedFiles();
+				if(sel.length === 1) {
+					return !Ext.isEmpty(sel[0].get('dLink'));
+				} else {
+					return true;
+				}
+			case 'deleteDownloadLink':
+				sel = me.getSelectedFiles();
+				if(sel.length === 1) {
+					return Ext.isEmpty(sel[0].get('dLink'));
+				} else {
+					return true;
+				}
+			case 'addUploadLink':
+				sel = me.getSelectedFiles();
+				if(sel.length === 1) {
+					return (sel[0].get('type') !== 'folder') ? true : !Ext.isEmpty(sel[0].get('uLink'));
+				} else {
+					return true;
+				}
+			case 'deleteUploadLink':
+				sel = me.getSelectedFiles();
+				if(sel.length === 1) {
+					return Ext.isEmpty(sel[0].get('uLink'));
+				} else {
+					return true;
+				}	
+		}
+	}
 });

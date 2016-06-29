@@ -31,27 +31,23 @@
  * feasible for technical reasons, the Appropriate Legal Notices must display
  * the words "Powered by Sonicle WebTop".
  */
-package com.sonicle.webtop.vfs.bol;
-
-import com.sonicle.webtop.vfs.bol.model.Store;
-import com.sonicle.webtop.vfs.jooq.tables.pojos.Stores;
+package com.sonicle.webtop.vfs.bol.model;
 
 /**
  *
  * @author malbinola
  */
-public class OStore extends Stores {
+public enum StoreFileType {
+	FILE("file"), FOLDER("folder"), FILE_OR_FOLDER("fileOrFolder");
+		
+	private final String name;
+
+	private StoreFileType(String name) {
+		this.name = name;
+	}
 	
-	public OStore() {}
-	
-	public OStore(Store o) {
-		if(o == null) return;
-		setStoreId(o.getStoreId());
-		setDomainId(o.getDomainId());
-		setUserId(o.getUserId());
-		setBuiltIn(o.getBuiltIn());
-		setName(o.getName());
-		setUri(o.getUri());
-		setParameters(o.getParameters());
+	@Override
+	public String toString() {
+		return name;
 	}
 }

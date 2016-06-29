@@ -53,13 +53,25 @@ public class SharingLinkDAO extends BaseDAO {
 		return INSTANCE;
 	}
 	
-	public OSharingLink selectById(Connection con, String id) throws DAOException {
+	public OSharingLink selectById(Connection con, String linkId) throws DAOException {
 		DSLContext dsl = getDSL(con);
 		return dsl
 			.select()
 			.from(SHARING_LINKS)
 			.where(
-					SHARING_LINKS.SHARING_LINK_ID.equal(id)
+					SHARING_LINKS.SHARING_LINK_ID.equal(linkId)
+			)
+			.fetchOneInto(OSharingLink.class);
+	}
+	
+	public OSharingLink selectByIdType(Connection con, String linkId, String linkType) throws DAOException {
+		DSLContext dsl = getDSL(con);
+		return dsl
+			.select()
+			.from(SHARING_LINKS)
+			.where(
+					SHARING_LINKS.SHARING_LINK_ID.equal(linkId)
+					.and(SHARING_LINKS.LINK_TYPE.equal(linkType))
 			)
 			.fetchOneInto(OSharingLink.class);
 	}

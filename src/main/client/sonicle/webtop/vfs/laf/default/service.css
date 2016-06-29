@@ -3,6 +3,14 @@
 .wtvfs-icon-service-m { background-image: url('service_32.png') !important; }
 .wtvfs-icon-service-l { background-image: url('service_48.png') !important; }
 
+.wtvfs-icon-downloadFile-xs { background-image: url('file-download_16.png') !important; }
+.wtvfs-icon-renameFile-xs { background-image: url('file-rename_16.png') !important; }
+.wtvfs-icon-deleteFile-xs { background-image: url('file-delete_16.png') !important; }
+.wtvfs-icon-addDownloadLink-xs { background-image: url('link-download_16.png') !important; }
+.wtvfs-icon-deleteDownloadLink-xs { background-image: url('link-delete_16.png') !important; }
+.wtvfs-icon-addUploadLink-xs { background-image: url('link-upload_16.png') !important; }
+/*.wtvfs-icon-deleteUploadLink-xs { background-image: url('link-delete_16.png') !important; }*/
+
 .wtvfs-icon-server-xs { background-image: url('server_16.png') !important; }
 .wtvfs-icon-addServer-xs { background-image: url('task-add_16.png') !important; }
 .wtvfs-icon-store-xs { background-image: url('store_16.png') !important; }

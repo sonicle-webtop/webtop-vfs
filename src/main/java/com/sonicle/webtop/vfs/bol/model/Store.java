@@ -44,6 +44,7 @@ public class Store {
 	private Integer storeId;
 	private String domainId;
 	private String userId;
+	private Boolean builtIn;
 	private String name;
 	private String uri;
 	private String parameters;
@@ -55,6 +56,7 @@ public class Store {
 		storeId = o.getStoreId();
 		domainId = o.getDomainId();
 		userId = o.getUserId();
+		builtIn = o.getBuiltIn();
 		name = o.getName();
 		uri = o.getUri();
 		parameters = o.getParameters();
@@ -82,6 +84,14 @@ public class Store {
 
 	public void setUserId(String userId) {
 		this.userId = userId;
+	}
+	
+	public Boolean getBuiltIn() {
+		return builtIn;
+	}
+
+	public void setBuiltIn(Boolean builtIn) {
+		this.builtIn = builtIn;
 	}
 
 	public String getName() {
