@@ -7,7 +7,7 @@
 .wtvfs-icon-renameFile-xs { background-image: url('file-rename_16.png') !important; }
 .wtvfs-icon-deleteFile-xs { background-image: url('file-delete_16.png') !important; }
 .wtvfs-icon-addDownloadLink-xs { background-image: url('link-download_16.png') !important; }
-.wtvfs-icon-deleteDownloadLink-xs { background-image: url('link-delete_16.png') !important; }
+/*.wtvfs-icon-deleteDownloadLink-xs { background-image: url('link-delete_16.png') !important; }*/
 .wtvfs-icon-addUploadLink-xs { background-image: url('link-upload_16.png') !important; }
 /*.wtvfs-icon-deleteUploadLink-xs { background-image: url('link-delete_16.png') !important; }*/
 

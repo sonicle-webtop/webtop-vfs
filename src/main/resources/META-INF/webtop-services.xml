@@ -16,17 +16,16 @@
 		<managerClassName>VfsManager</managerClassName>
 		<serviceClassName>Service</serviceClassName>
 		<!--<publicServiceClassName>PublicService</publicServiceClassName>-->
-		<!--
+		
 		<clientOptionsModelJsClassName>model.ClientOptions</clientOptionsModelJsClassName>
 		<userOptions>
 			<serviceClassName>UserOptionsService</serviceClassName>
 			<viewJsClassName>view.UserOptions</viewJsClassName>
 			<modelJsClassName>model.UserOptions</modelJsClassName>
 		</userOptions>
-		-->
 		
-		<resources>
-			<resource name="DRIVE" type="share" />
-		</resources>
+		<permissions>
+			<sharePermission group="DRIVE" />
+		</permissions>
 	</service>
 </services>

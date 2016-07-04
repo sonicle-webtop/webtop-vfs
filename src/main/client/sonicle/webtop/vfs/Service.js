@@ -37,6 +37,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		'Sonicle.grid.column.Icon',
 		'Sonicle.grid.column.Bytes',
 		'Sonicle.grid.column.Link',
+		'Sonicle.upload.Button',
 		'WT.ux.data.EmptyModel',
 		'WT.ux.data.SimpleModel',
 		'Sonicle.webtop.vfs.model.StoreNode',
@@ -80,13 +81,11 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 					handler: function() {
 						me.setupStoreGoogleDrive();
 					}
-				},
-				{
-					xtype: 'button',
-					text: 'Download',
-					handler: function() {
-						me.wizardDownloadLink();
-					}
+				}, {
+					xtype: 'souploadbutton',
+					uploaderConfig: WTF.uploader(me.ID, 'UploadStoreFile', {
+						maxFileSize: me.getOption('privateUploadMaxFileSize')
+					})
 				},
 				//me.getAction('deleteTask2'),
 				'->'
@@ -245,7 +244,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 					xtype: 'sobytescolumn',
 					dataIndex: 'size',
 					header: me.res('gpfiles.size.lbl'),
-					width: 100
+					width: 110
 				}, {
 					dataIndex: 'lastModified',
 					header: me.res('gpfiles.lastModified.lbl'),
@@ -487,7 +486,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 	},
 	
 	downloadSelFile: function(sel) {
-		
+		this.downloadFile(sel.get('fileId'));
 	},
 	
 	renameSelFile: function(sel) {
@@ -501,7 +500,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 					if(name !== sel.get('name')) {
 						me.renameFile(sel.get('fileId'), name, {
 							callback: function(success) {
-								if(success) sel.set('name', name);
+								if(success) me.reloadFiles();
 							}
 						});
 					}
@@ -517,7 +516,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 			msg;
 		
 		if(sel.length === 1) {
-			msg = me.res('gpfiles.confirm.delete', Ext.String.ellipsis(sel[0].get('name'), 40));
+			msg = me.res('gpfiles.confirm.'+sel[0].get('type')+'.delete', Ext.String.ellipsis(sel[0].get('name'), 40));
 		} else {
 			msg = me.res('gpfiles.confirm.delete.selection');
 		}
@@ -564,12 +563,14 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		
 	},
 	
-	openfile: function(id) {
+	openfile: function(fileId) {
 		
 	},
 	
-	downloadFile: function(id) {
-		
+	downloadFile: function(fileId) {
+		Sonicle.URLMgr.download(WTF.processBinUrl(this.ID, 'DownloadFiles', {
+			id: fileId
+		}));
 	},
 	
 	renameFile: function(fileId, name, opts) {
@@ -582,7 +583,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				name: name
 			},
 			callback: function(success, json) {
-				Ext.callback(opts.callback, opts.scope || me, [success, json]);
+				Ext.callback(opts.callback, opts.scope || me, [success, json.data, json]);
 			}
 		});
 	},
@@ -596,7 +597,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				ids: WTU.arrayAsParam(ids)
 			},
 			callback: function(success, json) {
-				Ext.callback(opts.callback, opts.scope || me, [success, json]);
+				Ext.callback(opts.callback, opts.scope || me, [success, json.data, json]);
 			}
 		});
 	},
@@ -631,7 +632,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				id: linkId
 			},
 			callback: function(success, json) {
-				Ext.callback(opts.callback, opts.scope || me, [success, json]);
+				Ext.callback(opts.callback, opts.scope || me, [success, json.data, json]);
 			}
 		});
 	},
@@ -701,7 +702,12 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				'-',
 				me.getAction('addUploadLink'),
 				me.getAction('deleteUploadLink')
-			]
+			],
+			listeners: {
+				beforeshow: function(s) {
+					me.updateCxmGridFile();
+				}
+			}
 		}));
 	},
 	
@@ -744,6 +750,14 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 	
 	getSelectedFiles: function() {
 		return this.gpFiles().getSelection();
+	},
+	
+	selectionIds: function(sel) {
+		var ids = [];
+		Ext.iterate(sel, function(rec) {
+			ids.push(rec.getId());
+		});
+		return ids;
 	},
 	
 	setupStoreFtp: function() {

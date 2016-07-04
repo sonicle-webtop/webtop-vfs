@@ -206,29 +206,51 @@ public class VfsManager extends BaseManager {
 		}	
 	}
 	
-	public void renameStoreFile(int storeId, String path, String newName) throws FileSystemException, WTException {
+	public FileObject getStoreFile(int storeId, String path) throws FileSystemException, WTException {
+		try {
+			checkRightsOnStoreFolder(storeId, "READ"); // Rights check!
+			return getTargetFileObject(storeId, path);
+			
+		} catch(Exception ex) {
+			logger.warn("Error getting store file", ex);
+			throw ex;
+		}
+	}
+	
+	public String renameStoreFile(int storeId, String path, String newName) throws FileSystemException, WTException {
 		FileObject tfo = null, ntfo = null;
 		
 		try {
+			checkRightsOnStoreElements(storeId, "UPDATE"); // Rights check!
+			
 			tfo = getTargetFileObject(storeId, path);
 			String newPath = FilenameUtils.getFullPath(path) + newName;
 			ntfo = getTargetFileObject(storeId, newPath);
-			logger.debug("Renaming '{}' to '{}'", path, newPath);
+			logger.debug("Renaming store file [{}, {} -> {}]", storeId, path, newPath);
+			tfo.moveTo(ntfo);
+			return newPath;
 			
-			
+		} catch(Exception ex) {
+			logger.warn("Error renaming store file", ex);
+			throw ex;
 		} finally {
 			IOUtils.closeQuietly(tfo);
 			IOUtils.closeQuietly(ntfo);
 		}
 	}
 	
-	public boolean deleteStoreFile(int storeId, String path) throws FileSystemException, WTException {
+	public void deleteStoreFile(int storeId, String path) throws FileSystemException, WTException {
 		FileObject tfo = null;
 		try {
-			tfo = getTargetFileObject(storeId, path);
-			return false;
-			//return tfo.delete();
+			checkRightsOnStoreElements(storeId, "DELETE"); // Rights check!
 			
+			tfo = getTargetFileObject(storeId, path);
+			logger.debug("Deleting store file [{}, {}]", storeId, path);
+			tfo.delete(Selectors.SELECT_ALL);
+			
+		} catch(Exception ex) {
+			logger.warn("Error deleting store file", ex);
+			throw ex;
 		} finally {
 			IOUtils.closeQuietly(tfo);
 		}
@@ -452,7 +474,7 @@ public class VfsManager extends BaseManager {
 		
 		dl.validate();
 		OSharingLink o = new OSharingLink(dl);
-		o.setSharingLinkId(generateLinkId(pid, o.getLinkType(), o.getStoreId(), o.getFilePath()));
+		o.setSharingLinkId(generateLinkId(pid, OSharingLink.LINK_TYPE_DOWNLOAD, o.getStoreId(), o.getFilePath()));
 		o.setDomainId(pid.getDomainId());
 		o.setUserId(pid.getUserId());
 		o.setLinkType(OSharingLink.LINK_TYPE_DOWNLOAD);
@@ -474,7 +496,7 @@ public class VfsManager extends BaseManager {
 		
 		ul.validate();
 		OSharingLink o = new OSharingLink(ul);
-		o.setSharingLinkId(generateLinkId(pid, o.getLinkType(), o.getStoreId(), o.getFilePath()));
+		o.setSharingLinkId(generateLinkId(pid, OSharingLink.LINK_TYPE_UPLOAD, o.getStoreId(), o.getFilePath()));
 		o.setDomainId(pid.getDomainId());
 		o.setUserId(pid.getUserId());
 		o.setLinkType(OSharingLink.LINK_TYPE_UPLOAD);
