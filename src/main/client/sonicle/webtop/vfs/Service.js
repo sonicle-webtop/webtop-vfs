@@ -225,7 +225,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 					xtype: 'soiconcolumn',
 					dataIndex: 'type',
 					header: WTF.headerWithGlyphIcon('fa fa-file-o'),
-					iconField: function(v,rec) {
+					getIconCls: function(v,rec) {
 						return (v === 'folder') ? 'wt-ftype-folder-xs' : WTF.fileTypeCssIconCls(rec.get('ext'), 'xs');
 					},
 					iconSize: WTU.imgSizeToPx('xs'),
@@ -255,7 +255,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 					xtype: 'soiconcolumn',
 					dataIndex: 'dLink',
 					header: WTF.headerWithGlyphIcon('fa fa-cloud-download'),
-					iconField: function(v) {
+					getIconCls: function(v) {
 						return Ext.isEmpty(v) ? '' : 'wtvfs-icon-downloadLink-xs';
 					},
 					iconSize: WTU.imgSizeToPx('xs'),
@@ -264,7 +264,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 					xtype: 'soiconcolumn',
 					dataIndex: 'uLink',
 					header: WTF.headerWithGlyphIcon('fa fa-cloud-upload'),
-					iconField: function(v) {
+					getIconCls: function(v) {
 						return Ext.isEmpty(v) ? '' : 'wtvfs-icon-uploadLink-xs';
 					},
 					iconSize: WTU.imgSizeToPx('xs'),
