@@ -46,6 +46,31 @@ Ext.define('Sonicle.webtop.vfs.model.StoreNode', {
 		}),
 		WTF.calcField('_userId', 'string', '_pid', function(v, rec) {
 			return (rec.get('_pid')) ? rec.get('_pid').split('@')[0] : null;
-		})
-	]
+		}),
+		WTF.calcField('_fileId', 'string', 'id', function(v, rec) {
+			return v;
+		}),
+		WTF.roField('_dLink', 'string'),
+		WTF.roField('_uLink', 'string')
+	],
+	
+	getFileId: function() {
+		return this.get('id');
+	},
+	
+	getFileType: function() {
+		return 'folder';
+	},
+	
+	getFileName: function() {
+		return this.get('text');
+	},
+	
+	getFileDLink: function() {
+		return this.get('_dLink');
+	},
+	
+	getFileULink: function() {
+		return this.get('_uLink');
+	}
 });

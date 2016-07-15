@@ -171,17 +171,13 @@ public class VfsManager extends BaseManager {
 		if(sfs == null) throw new WTException("Unable to get store fileSystem");
 		
 		FileObject tfo = null;
-		if(path == null) {
+		if(path.equals("/")) {
 			tfo = sfs.getRootFileObject();
 		} else {
 			tfo = sfs.getRootFileObject().resolveFile(path);
 		}
 		if(tfo == null) throw new WTException("Cannot resolve target path");
 		return tfo;
-	}
-	
-	public FileObject[] listStoreFiles(int storeId) throws FileSystemException, WTException {
-		return listStoreFiles(StoreFileType.FOLDER, storeId, null);
 	}
 	
 	public FileObject[] listStoreFiles(StoreFileType fileType, int storeId, String path) throws FileSystemException, WTException {
@@ -274,6 +270,7 @@ public class VfsManager extends BaseManager {
 		Connection con = null;
 		
 		try {
+			if(StringUtils.isBlank(path)) return items;
 			ensureUser(); // Rights check!
 			con = WT.getConnection(SERVICE_ID, false);
 			
@@ -300,6 +297,7 @@ public class VfsManager extends BaseManager {
 		Connection con = null;
 		
 		try {
+			if(StringUtils.isBlank(path)) return items;
 			ensureUser(); // Rights check!
 			con = WT.getConnection(SERVICE_ID, false);
 			

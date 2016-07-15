@@ -45,5 +45,25 @@ Ext.define('Sonicle.webtop.vfs.model.GridFile', {
 		WTF.roField('lastModified', 'date', {dateFormat: 'Y-m-d H:i:s'}),
 		WTF.roField('dLink', 'string'),
 		WTF.roField('uLink', 'string')
-	]
+	],
+	
+	getFileId: function() {
+		return this.get('fileId');
+	},
+	
+	getFileType: function() {
+		return this.get('type');
+	},
+	
+	getFileName: function() {
+		return this.get('name');
+	},
+	
+	getFileDLink: function() {
+		return this.get('dLink');
+	},
+	
+	getFileULink: function() {
+		return this.get('uLink');
+	}
 });

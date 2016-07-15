@@ -47,6 +47,7 @@ import com.sonicle.commons.web.ServletUtils;
 import com.sonicle.commons.web.ServletUtils.StringArray;
 import com.sonicle.commons.web.json.CompositeId;
 import com.sonicle.commons.web.json.JsonResult;
+import com.sonicle.commons.web.json.MapItem;
 import com.sonicle.commons.web.json.extjs.ExtTreeNode;
 import com.sonicle.vfs2.util.DropboxApiUtils;
 import com.sonicle.vfs2.util.GoogleDriveApiUtils;
@@ -57,8 +58,11 @@ import com.sonicle.webtop.core.app.WebTopSession;
 import com.sonicle.webtop.core.bol.js.JsWizardData;
 import com.sonicle.webtop.core.bol.model.SharePermsRoot;
 import com.sonicle.webtop.core.sdk.BaseService;
+import com.sonicle.webtop.core.sdk.UploadException;
 import com.sonicle.webtop.core.sdk.UserProfile;
 import com.sonicle.webtop.core.sdk.WTException;
+import com.sonicle.webtop.core.sdk.interfaces.IServiceUploadListener;
+import com.sonicle.webtop.core.sdk.interfaces.IServiceUploadStreamListener;
 import com.sonicle.webtop.core.servlet.ServletHelper;
 import com.sonicle.webtop.vfs.bol.js.JsGridFile;
 import com.sonicle.webtop.vfs.bol.model.DownloadLink;
@@ -72,6 +76,7 @@ import com.sonicle.webtop.vfs.bol.model.MyStoreFolder;
 import com.sonicle.webtop.vfs.bol.model.MyStoreRoot;
 import com.sonicle.webtop.vfs.bol.model.StoreFileType;
 import com.sonicle.webtop.vfs.bol.model.UploadLink;
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -105,6 +110,8 @@ public class Service extends BaseService {
 		manager = (VfsManager)WT.getServiceManager(SERVICE_ID, up.getId());
 		us = new VfsUserSettings(SERVICE_ID, up.getId());
 		initShares();
+		
+		registerUploadListener("UploadStoreFile", new OnUploadStoreFile());
 	}
 
 	@Override
@@ -119,6 +126,33 @@ public class Service extends BaseService {
 		co.put("privateUploadMaxFileSize", LangUtils.coalesce(us.getPrivateUploadMaxFileSize(), maxUpload));
 		co.put("publicUploadMaxFileSize", LangUtils.coalesce(us.getPublicUploadMaxFileSize(), maxUpload));
 		return co;
+	}
+	
+	private class OnUploadStoreFile implements IServiceUploadStreamListener {
+
+		@Override
+		public void onUpload(String context, HttpServletRequest request, WebTopSession.UploadedFile file, InputStream is, MapItem responseData) throws UploadException {
+			
+			
+			
+			
+			/*
+			try {
+				String id = ServletUtils.getStringParameter(request, "folder", true);
+				String name = ServletUtils.getStringParameter(request, "name", true);
+				
+				StoreNodeId nodeId = (StoreNodeId)new StoreNodeId().parse(id);
+				int storeId = Integer.valueOf(nodeId.getStoreId());
+				
+				
+				
+			}
+			*/
+			
+			
+			
+			
+		}
 	}
 	
 	private void initShares() throws WTException {
@@ -167,19 +201,19 @@ public class Service extends BaseService {
 			super(3);
 		}
 		
-		/*
-		public StoreNodeId(String rootId, String storeId, String path) {
+		public StoreNodeId(String shareId, String storeId, String path) {
 			this();
-			
+			setShareId(shareId);
+			setStoreId(storeId);
+			setPath(path);
 		}
-		*/
 		
 		public String getShareId() {
 			return getToken(0);
 		}
 		
-		public void setShareId(String rootId) {
-			setToken(0, rootId);
+		public void setShareId(String shareId) {
+			setToken(0, shareId);
 		}
 		
 		public String getStoreId() {
@@ -244,17 +278,18 @@ public class Service extends BaseService {
 		return node;
 	}
 	
-	private ExtTreeNode createFileNode(String shareId, int storeId, FileObject fo) {
+	private ExtTreeNode createFileNode(String shareId, int storeId, String filePath, String dLink, String uLink, FileObject fo) {
 		StoreNodeId nodeId = new StoreNodeId();
 		nodeId.setShareId(shareId);
 		nodeId.setStoreId(String.valueOf(storeId));
-		nodeId.setPath(fo.getName().getPath());
+		nodeId.setPath(filePath);
 		
 		ExtTreeNode node = new ExtTreeNode(nodeId.toString(true), fo.getName().getBaseName(), false);
 		node.put("_type", "file");//JsFolderNode.TYPE_FOLDER);
 		//node.put("_pid", store.getProfileId().toString());
 		node.put("_storeId", storeId);
-		
+		node.put("_dLink", dLink);
+		node.put("_uLink", uLink);
 		//node.setIconClass("wt-palette-" + cat.getHexColor());
 		
 		return node;
@@ -293,9 +328,32 @@ public class Service extends BaseService {
 							}
 						}
 
-					} else if(nodeId.getSize() == 2) { // Store's folders...
+					} else if(nodeId.getSize() == 2 || nodeId.getSize() == 3) { // Store's folders (2) or folder's folders (3)...
 						int storeId = Integer.valueOf(nodeId.getStoreId());
-						for(FileObject file : manager.listStoreFiles(storeId)) {
+						String path = (nodeId.getSize() == 2) ? "/" : nodeId.getPath();
+						
+						LinkedHashMap<String, DownloadLink> dls = manager.listDownloadLinks(storeId, path);
+						LinkedHashMap<String, UploadLink> uls = manager.listUploadLinks(storeId, path);
+
+						for(FileObject fo : manager.listStoreFiles(StoreFileType.FOLDER, storeId, path)) {
+							final String filePath = fo.getName().getPath();
+							//final String fileId = new StoreNodeId(nodeId.getShareId(), nodeId.getStoreId(), filePath).toString();
+							final String fileHash = manager.generateStoreFileHash(storeId, filePath);
+							
+							String dLink = null, uLink = null;
+							if(dls.containsKey(fileHash)) {
+								dLink = dls.get(fileHash).getLinkId();
+							}
+							if(uls.containsKey(fileHash)) {
+								uLink = uls.get(fileHash).getLinkId();
+							}
+							children.add(createFileNode(nodeId.getShareId(), storeId, filePath, dLink, uLink, fo));
+						}
+						
+						
+					}/* else if(nodeId.getSize() == 2) { // Store's folders...
+						int storeId = Integer.valueOf(nodeId.getStoreId());
+						for(FileObject file : manager.listStoreFiles(StoreFileType.FOLDER, storeId, "/")) {
 							children.add(createFileNode(nodeId.getShareId(), storeId, file));
 						}
 						
@@ -308,7 +366,7 @@ public class Service extends BaseService {
 						}
 						
 						//TODO: listare file(cartelle) della cartella
-					}
+					}*/
 				}
 				
 				new JsonResult("children", children).printTo(out);
@@ -352,21 +410,20 @@ public class Service extends BaseService {
 		ArrayList<JsGridFile> items = new ArrayList<>();
 		
 		try {
-			UserProfile up = getEnv().getProfile();
-			//DateTimeZone utz = up.getTimeZone();
-			
 			String crud = ServletUtils.getStringParameter(request, "crud", true);
 			if(crud.equals(Crud.READ)) {
 				String parentFileId = ServletUtils.getStringParameter(request, "fileId", null);
+				
 				StoreNodeId parentNodeId = (StoreNodeId)new StoreNodeId().parse(parentFileId);
 				int storeId = Integer.valueOf(parentNodeId.getStoreId());
+				String path = (parentNodeId.getSize() == 2) ? "/" : parentNodeId.getPath();
 				
-				LinkedHashMap<String, DownloadLink> dls = manager.listDownloadLinks(storeId, parentNodeId.getPath());
-				LinkedHashMap<String, UploadLink> uls = manager.listUploadLinks(storeId, parentNodeId.getPath());
+				LinkedHashMap<String, DownloadLink> dls = manager.listDownloadLinks(storeId, path);
+				LinkedHashMap<String, UploadLink> uls = manager.listUploadLinks(storeId, path);
 				
-				for(FileObject fo : manager.listStoreFiles(StoreFileType.FILE_OR_FOLDER, storeId, parentNodeId.getPath())) {
-					final String filePath = parentNodeId.getPath() + "/" + fo.getName().getBaseName();
-					final String fileId = parentFileId + "/" + fo.getName().getBaseName();
+				for(FileObject fo : manager.listStoreFiles(StoreFileType.FILE_OR_FOLDER, storeId, path)) {
+					final String filePath = fo.getName().getPath();
+					final String fileId = new StoreNodeId(parentNodeId.getShareId(), parentNodeId.getStoreId(), filePath).toString();
 					final String fileHash = manager.generateStoreFileHash(storeId, filePath);
 					
 					String dLink = null, uLink = null;
@@ -392,10 +449,10 @@ public class Service extends BaseService {
 		try {
 			String crud = ServletUtils.getStringParameter(request, "crud", true);
 			if(crud.equals("rename")) {
-				String id = ServletUtils.getStringParameter(request, "id", true);
+				String fileId = ServletUtils.getStringParameter(request, "fileId", true);
 				String name = ServletUtils.getStringParameter(request, "name", true);
 				
-				StoreNodeId nodeId = (StoreNodeId)new StoreNodeId().parse(id);
+				StoreNodeId nodeId = (StoreNodeId)new StoreNodeId().parse(fileId);
 				int storeId = Integer.valueOf(nodeId.getStoreId());
 				
 				String newPath = manager.renameStoreFile(storeId, nodeId.getPath(), name);
@@ -403,10 +460,10 @@ public class Service extends BaseService {
 				new JsonResult(fileHash).printTo(out);
 				
 			} else if(crud.equals(Crud.DELETE)) {
-				StringArray ids = ServletUtils.getObjectParameter(request, "ids", StringArray.class, true);
+				StringArray fileIds = ServletUtils.getObjectParameter(request, "fileIds", StringArray.class, true);
 				
-				for(String id : ids) {
-					StoreNodeId nodeId = (StoreNodeId)new StoreNodeId().parse(id);
+				for(String fileId : fileIds) {
+					StoreNodeId nodeId = (StoreNodeId)new StoreNodeId().parse(fileId);
 					int storeId = Integer.valueOf(nodeId.getStoreId());
 					
 					manager.deleteStoreFile(storeId, nodeId.getPath());
@@ -423,9 +480,9 @@ public class Service extends BaseService {
 	public void processDownloadFiles(HttpServletRequest request, HttpServletResponse response) {
 		
 		try {
-			String id = ServletUtils.getStringParameter(request, "id", true);
+			String fileId = ServletUtils.getStringParameter(request, "fileId", true);
 			
-			StoreNodeId nodeId = (StoreNodeId)new StoreNodeId().parse(id);
+			StoreNodeId nodeId = (StoreNodeId)new StoreNodeId().parse(fileId);
 			int storeId = Integer.valueOf(nodeId.getStoreId());
 			
 			FileObject fo = null;
