@@ -106,6 +106,7 @@ public class StoreDAO extends BaseDAO {
 						.and(STORES.USER_ID.equal(userId))
 				)
 				.orderBy(
+						STORES.BUILT_IN.desc(),
 						STORES.NAME.asc()
 				)
 				.fetchInto(OStore.class);
@@ -122,6 +123,7 @@ public class StoreDAO extends BaseDAO {
 						.and(STORES.STORE_ID.in(storeIds))
 				)
 				.orderBy(
+						STORES.BUILT_IN.desc(),
 						STORES.NAME.asc()
 				)
 				.fetchInto(OStore.class);

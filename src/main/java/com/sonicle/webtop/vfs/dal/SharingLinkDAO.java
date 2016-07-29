@@ -76,7 +76,7 @@ public class SharingLinkDAO extends BaseDAO {
 			.fetchOneInto(OSharingLink.class);
 	}
 	
-	public List<OSharingLink> selectByTypeProfileStorePath(Connection con, String linkType, UserProfile.Id profileId, int storeId, String filePathStartsWith) throws DAOException {
+	public List<OSharingLink> selectByProfileTypeStorePath(Connection con, UserProfile.Id profileId, String linkType, int storeId, String filePathStartsWith) throws DAOException {
 		DSLContext dsl = getDSL(con);
 		return dsl
 			.select()
@@ -108,6 +108,27 @@ public class SharingLinkDAO extends BaseDAO {
 			.where(
 					SHARING_LINKS.SHARING_LINK_ID.equal(linkId)
 					.and(SHARING_LINKS.LINK_TYPE.equal(linkType))
+			)
+			.execute();
+	}
+	
+	public int deleteByStore(Connection con, int storeId) throws DAOException {
+		DSLContext dsl = getDSL(con);
+		return dsl
+			.delete(SHARING_LINKS)
+			.where(
+					SHARING_LINKS.STORE_ID.equal(storeId)
+			)
+			.execute();
+	}
+	
+	public int deleteByStorePath(Connection con, int storeId, String filePathStartsWith) throws DAOException {
+		DSLContext dsl = getDSL(con);
+		return dsl
+			.delete(SHARING_LINKS)
+			.where(
+					SHARING_LINKS.STORE_ID.equal(storeId)
+					.and(SHARING_LINKS.FILE_PATH.startsWith(filePathStartsWith))
 			)
 			.execute();
 	}

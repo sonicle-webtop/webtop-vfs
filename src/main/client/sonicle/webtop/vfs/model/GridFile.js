@@ -33,6 +33,9 @@
  */
 Ext.define('Sonicle.webtop.vfs.model.GridFile', {
 	extend: 'WT.ux.data.BaseModel',
+	mixins: [
+		'WT.mixin.SharePerms'
+	],
 	
 	idProperty: 'fileId',
 	fields: [
@@ -43,27 +46,40 @@ Ext.define('Sonicle.webtop.vfs.model.GridFile', {
 		WTF.roField('ext', 'string'),
 		WTF.roField('size', 'int'),
 		WTF.roField('lastModified', 'date', {dateFormat: 'Y-m-d H:i:s'}),
-		WTF.roField('dLink', 'string'),
-		WTF.roField('uLink', 'string')
+		WTF.roField('dlLink', 'string'),
+		WTF.roField('ulLink', 'string'),
+		WTF.roField('eperms', 'string')
 	],
 	
-	getFileId: function() {
+	getFId: function() {
 		return this.get('fileId');
 	},
 	
-	getFileType: function() {
+	getFType: function() {
 		return this.get('type');
 	},
 	
-	getFileName: function() {
+	getFName: function() {
 		return this.get('name');
 	},
 	
-	getFileDLink: function() {
-		return this.get('dLink');
+	getFDlLink: function() {
+		return this.get('dlLink');
 	},
 	
-	getFileULink: function() {
-		return this.get('uLink');
+	setFDlLink: function(v) {
+		return this.set('dlLink', v);
+	},
+	
+	getFUlLink: function() {
+		return this.get('ulLink');
+	},
+	
+	setFUlLink: function(v) {
+		return this.set('ulLink', v);
+	},
+	
+	getEPerms: function() {
+		return this.toPermsObj(this.get('eperms'));
 	}
 });

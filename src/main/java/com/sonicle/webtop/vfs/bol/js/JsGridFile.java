@@ -36,6 +36,7 @@ package com.sonicle.webtop.vfs.bol.js;
 import com.sonicle.commons.time.DateTimeUtils;
 import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.servlet.ServletHelper;
+import com.sonicle.webtop.vfs.bol.model.StoreShareFolder;
 import org.apache.commons.vfs2.FileObject;
 import org.apache.commons.vfs2.FileSystemException;
 import org.apache.commons.vfs2.FileType;
@@ -55,22 +56,23 @@ public class JsGridFile {
 	public String ext;
 	public Long size;
 	public String lastModified;
-	public String dLink;
-	public String uLink;
+	public String dlLink;
+	public String ulLink;
+	public String eperms;
 	
 	public JsGridFile() {}
 	
-	public JsGridFile(FileObject fo, String fileId, String dLink, String uLink) {
+	public JsGridFile(StoreShareFolder folder, FileObject fo, String fileId, String dlLink, String ulLink) {
 		this.fileId = fileId;
 		this.type = getFileType(fo);
 		this.mtype = (type.equals("folder")) ? "" : ServletHelper.guessMediaType(fo.getName().getBaseName(), true);
-		
 		this.name = fo.getName().getBaseName();
 		this.ext = fo.getName().getExtension();
 		this.size = getFileSize(fo);
 		this.lastModified = getFileLastModified(fo);
-		this.dLink = dLink;
-		this.uLink = uLink;
+		this.dlLink = dlLink;
+		this.ulLink = ulLink;
+		this.eperms = folder.getElementsPerms().toString();
 	}
 	
 	private String getFileLastModified(FileObject fo) {

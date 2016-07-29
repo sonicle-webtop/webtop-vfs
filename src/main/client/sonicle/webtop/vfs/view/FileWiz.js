@@ -31,15 +31,15 @@
  * feasible for technical reasons, the Appropriate Legal Notices must display
  * the words "Powered by Sonicle WebTop".
  */
-Ext.define('Sonicle.webtop.vfs.view.FtpWiz', {
+Ext.define('Sonicle.webtop.vfs.view.FileWiz', {
 	extend: 'WT.sdk.WizardView',
 	requires: [
 		'WT.ux.panel.Form'
 	],
 	
 	dockableConfig: {
-		title: '{ftpWiz.tit}',
-		iconCls: 'wtvfs-icon-storeFtp-xs',
+		title: '{fileWiz.tit}',
+		iconCls: 'wtvfs-icon-storeFile-xs',
 		width: 450,
 		height: 320
 	},
@@ -48,11 +48,6 @@ Ext.define('Sonicle.webtop.vfs.view.FtpWiz', {
 	viewModel: {
 		data: {
 			profileId: null,
-			schema: 'sftp',
-			host: null,
-			port: null,
-			username: null,
-			password: null,
 			path: null,
 			name: null
 		}
@@ -62,11 +57,6 @@ Ext.define('Sonicle.webtop.vfs.view.FtpWiz', {
 		var me = this,
 				ic = me.getInitialConfig();
 		if(!Ext.isEmpty(ic.profileId)) me.getVM().set('profileId', ic.profileId);
-		if(!Ext.isEmpty(ic.schema)) me.getVM().set('schema', ic.schema);
-		if(!Ext.isEmpty(ic.host)) me.getVM().set('host', ic.host);
-		if(!Ext.isEmpty(ic.port)) me.getVM().set('port', ic.port);
-		if(!Ext.isEmpty(ic.username)) me.getVM().set('username', ic.username);
-		if(!Ext.isEmpty(ic.password)) me.getVM().set('password', ic.password);
 		if(!Ext.isEmpty(ic.path)) me.getVM().set('path', ic.path);
 		me.callParent(arguments);
 		me.on('beforenavigate', me.onBeforeNavigate);
@@ -83,13 +73,13 @@ Ext.define('Sonicle.webtop.vfs.view.FtpWiz', {
 			xtype: 'wtwizardpage',
 			items: [{
 				xtype: 'label',
-				html: me.mys.res('ftpWiz.s1.tit'),
+				html: me.mys.res('fileWiz.s1.tit'),
 				cls: 'x-window-header-title-default'
 			}, {
 				xtype: 'sospacer'
 			}, {
 				xtype: 'label',
-				html: me.mys.res('ftpWiz.s1.txt')
+				html: me.mys.res('fileWiz.s1.txt')
 			}, {
 				xtype: 'sospacer'
 			}, {
@@ -97,48 +87,7 @@ Ext.define('Sonicle.webtop.vfs.view.FtpWiz', {
 				defaults: {
 					labelWidth: 80
 				},
-				items: [
-				WTF.lookupCombo('id', 'desc', {
-					bind: '{schema}',
-					allowBlank: false,
-					store: Ext.create('Sonicle.webtop.vfs.store.FtpSchema', {
-						autoLoad: true
-					}),
-					fieldLabel: me.mys.res('ftpWiz.fld-schema.lbl'),
-					width: 350
-				}), {
-					xtype: 'fieldcontainer',
-					layout: 'hbox',
-					items: [{
-						xtype: 'textfield',
-						bind: '{host}',
-						allowBlank: false,
-						width: 160
-					}, {
-						xtype: 'displayfield',
-						value: '&nbsp;:&nbsp;'
-					}, {
-						xtype: 'numberfield',
-						bind: '{port}',
-						hideTrigger: true,
-						minValue: 1,
-						maxValue: 65000,
-						width: 60,
-						emptyText: me.mys.res('ftpWiz.fld-port.lbl')
-					}],
-					fieldLabel: me.mys.res('ftpWiz.fld-host.lbl')
-				}, {
-					xtype: 'textfield',
-					bind: '{username}',
-					width: 280,
-					fieldLabel: me.mys.res('ftpWiz.fld-username.lbl')
-				}, {
-					xtype: 'textfield',
-					bind: '{password}',
-					inputType: 'password',
-					width: 280,
-					fieldLabel: me.mys.res('ftpWiz.fld-password.lbl')
-				}, {
+				items: [{
 					xtype: 'fieldcontainer',
 					layout: 'hbox',
 					items: [{
@@ -149,7 +98,7 @@ Ext.define('Sonicle.webtop.vfs.view.FtpWiz', {
 						bind: '{path}',
 						width: 330
 					}],
-					fieldLabel: me.mys.res('ftpWiz.fld-path.lbl')
+					fieldLabel: me.mys.res('fileWiz.fld-path.lbl')
 				}]
 			}]
 		}, {
@@ -157,13 +106,13 @@ Ext.define('Sonicle.webtop.vfs.view.FtpWiz', {
 			xtype: 'wtwizardpage',
 			items: [{
 				xtype: 'label',
-				html: me.mys.res('ftpWiz.s2.tit'),
+				html: me.mys.res('fileWiz.s2.tit'),
 				cls: 'x-window-header-title-default'
 			}, {
 				xtype: 'sospacer'
 			}, {
 				xtype: 'label',
-				html: me.mys.res('ftpWiz.s2.txt')
+				html: me.mys.res('fileWiz.s2.txt')
 			}, {
 				xtype: 'sospacer'
 			}, {
@@ -176,7 +125,7 @@ Ext.define('Sonicle.webtop.vfs.view.FtpWiz', {
 					bind: '{name}',
 					allowBlank: false,
 					width: 400,
-					fieldLabel: me.mys.res('ftpWiz.fld-name.lbl')
+					fieldLabel: me.mys.res('fileWiz.fld-name.lbl')
 				}]
 			}]
 		}, {
@@ -184,13 +133,13 @@ Ext.define('Sonicle.webtop.vfs.view.FtpWiz', {
 			xtype: 'wtwizardpage',
 			items: [{
 				xtype: 'label',
-				html: me.mys.res('ftpWiz.s3.tit'),
+				html: me.mys.res('fileWiz.s3.tit'),
 				cls: 'x-window-header-title-default'
 			}, {
 				xtype: 'sospacer'
 			}, {
 				xtype: 'label',
-				html: me.mys.res('ftpWiz.s3.txt')
+				html: me.mys.res('fileWiz.s3.txt')
 			}]
 		}];
 	},
@@ -206,15 +155,10 @@ Ext.define('Sonicle.webtop.vfs.view.FtpWiz', {
 			ret = ppcmp.down('wtform').isValid();
 			if(!ret) return false;
 			
-			WT.ajaxReq(me.mys.ID, 'SetupStoreFtp', {
+			WT.ajaxReq(me.mys.ID, 'SetupStoreFile', {
 				params: {
 					crud: 's1',
 					profileId: vm.get('profileId'),
-					schema: vm.get('schema'),
-					host: vm.get('host'),
-					port: vm.get('port'),
-					username: vm.get('username'),
-					password: vm.get('password'),
 					path: vm.get('path')
 				},
 				callback: function(success, json) {
@@ -232,7 +176,7 @@ Ext.define('Sonicle.webtop.vfs.view.FtpWiz', {
 			ret = ppcmp.down('wtform').isValid();
 			if(!ret) return false;
 			
-			WT.ajaxReq(me.mys.ID, 'SetupStoreFtp', {
+			WT.ajaxReq(me.mys.ID, 'SetupStoreFile', {
 				params: {
 					crud: 's2',
 					profileId: vm.get('profileId'),

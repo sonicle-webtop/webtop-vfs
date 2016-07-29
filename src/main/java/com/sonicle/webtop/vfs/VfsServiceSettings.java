@@ -35,6 +35,7 @@ package com.sonicle.webtop.vfs;
 
 import com.sonicle.webtop.core.sdk.BaseServiceSettings;
 import static com.sonicle.webtop.vfs.VfsSettings.*;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  *
@@ -52,5 +53,21 @@ public class VfsServiceSettings extends BaseServiceSettings {
 	
 	public Integer getPublicUploadMaxFileSize() {
 		return getInteger(UPLOAD_PUBLIC_MAXFILESIZE, null);
+	}
+	
+	public String getMyDocumentsUri(MyDocumentsUriTemplateValues tpl) {
+		String value = getString(MYDOCUMENTS_URI, null);
+		value = StringUtils.replace(value, "{SERVICE_ID}", tpl.SERVICE_ID);
+		value = StringUtils.replace(value, "{DOMAIN_ID}", tpl.DOMAIN_ID);
+		value = StringUtils.replace(value, "{USER_ID}", tpl.USER_ID);
+		return value;
+	}
+	
+	public Integer getUploadLinkExpiration() {
+		return getInteger(LINK_UPLOAD_EXPIRATION, 3);
+	}
+	
+	public Integer getDownloadLinkExpiration() {
+		return getInteger(LINK_UPLOAD_EXPIRATION, 3);
 	}
 }

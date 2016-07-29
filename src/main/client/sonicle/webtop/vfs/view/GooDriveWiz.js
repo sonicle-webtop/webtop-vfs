@@ -39,7 +39,7 @@ Ext.define('Sonicle.webtop.vfs.view.GooDriveWiz', {
 	
 	dockableConfig: {
 		title: '{gooDriveWiz.tit}',
-		iconCls: 'wtvfs-icon-store-gooDrive-xs',
+		iconCls: 'wtvfs-icon-storeGooDrive-xs',
 		width: 460,
 		height: 340
 	},
@@ -55,7 +55,9 @@ Ext.define('Sonicle.webtop.vfs.view.GooDriveWiz', {
 	},
 	
 	initComponent: function() {
-		var me = this;
+		var me = this,
+				ic = me.getInitialConfig();
+		if(!Ext.isEmpty(ic.profileId)) me.getVM().set('profileId', ic.profileId);
 		me.callParent(arguments);
 		me.on('beforenavigate', me.onBeforeNavigate);
 	},

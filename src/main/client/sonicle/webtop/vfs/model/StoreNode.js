@@ -33,6 +33,9 @@
  */
 Ext.define('Sonicle.webtop.vfs.model.StoreNode', {
 	extend: 'Ext.data.Model',
+	mixins: [
+		'WT.mixin.SharePerms'
+	],
 	
 	fields: [
 		WTF.field('_type', 'string', false),
@@ -47,30 +50,47 @@ Ext.define('Sonicle.webtop.vfs.model.StoreNode', {
 		WTF.calcField('_userId', 'string', '_pid', function(v, rec) {
 			return (rec.get('_pid')) ? rec.get('_pid').split('@')[0] : null;
 		}),
-		WTF.calcField('_fileId', 'string', 'id', function(v, rec) {
-			return v;
-		}),
-		WTF.roField('_dLink', 'string'),
-		WTF.roField('_uLink', 'string')
+		WTF.field('_dlLink', 'string', true),
+		WTF.field('_ulLink', 'string', true)
 	],
 	
-	getFileId: function() {
+	getFId: function() {
 		return this.get('id');
 	},
 	
-	getFileType: function() {
+	getFType: function() {
 		return 'folder';
 	},
 	
-	getFileName: function() {
+	getFName: function() {
 		return this.get('text');
 	},
 	
-	getFileDLink: function() {
-		return this.get('_dLink');
+	getFDlLink: function() {
+		return this.get('_dlLink');
 	},
 	
-	getFileULink: function() {
-		return this.get('_uLink');
+	setFDlLink: function(v) {
+		return this.set('_dlLink', v);
+	},
+	
+	getFUlLink: function() {
+		return this.get('_ulLink');
+	},
+	
+	setFUlLink: function(v) {
+		return this.set('_ulLink', v);
+	},
+	
+	getRPerms: function() {
+		return this.toPermsObj(this.get('_rperms'));
+	},
+	
+	getFPerms: function() {
+		return this.toPermsObj(this.get('_fperms'));
+	},
+	
+	getEPerms: function() {
+		return this.toPermsObj(this.get('_eperms'));
 	}
 });

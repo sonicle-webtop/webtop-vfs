@@ -36,6 +36,8 @@ Ext.define('Sonicle.webtop.vfs.model.ClientOptions', {
 	
 	fields: [
 		WTF.field('privateUploadMaxFileSize', 'int', true),
-		WTF.field('publicUploadMaxFileSize', 'int', true)
+		WTF.field('publicUploadMaxFileSize', 'int', true),
+		WTF.field('uploadLinkExpiration', 'int', true),
+		WTF.field('downloadLinkExpiration', 'int', true)
 	]
 });

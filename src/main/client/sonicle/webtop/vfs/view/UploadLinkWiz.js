@@ -49,10 +49,9 @@ Ext.define('Sonicle.webtop.vfs.view.UploadLinkWiz', {
 	viewModel: {
 		data: {
 			profileId: null,
-			//fileId: '0|3|/sonicle/tomcat8/webappstemp/webtop5/WEB-INF/web.xml',
 			fileId: null,
 			expire: true,
-			expirationDate: Sonicle.Date.add(new Date(), {days: 3}),
+			expirationDate: null,
 			authMode: 'P',
 			password: null,
 			link: null,
@@ -67,6 +66,7 @@ Ext.define('Sonicle.webtop.vfs.view.UploadLinkWiz', {
 		
 		if(Ext.isEmpty(ic.fileId)) Ext.Error.raise('Provide a value for fileId');
 		vm.set('fileId', ic.fileId);
+		vm.set('expirationDate', Sonicle.Date.add(new Date(), {days: me.mys.getOption('uploadLinkExpiration')}));
 		
 		WTU.applyFormulas(vm, {
 			foExpire: WTF.radioGroupBind('', 'expire', me.sufId('expire')),

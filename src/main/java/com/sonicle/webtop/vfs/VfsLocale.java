@@ -40,5 +40,6 @@ package com.sonicle.webtop.vfs;
 public class VfsLocale {
 	public static final String SERVICE_NAME = "service.name";
 	public static final String SERVICE_DESCRIPTION = "service.description";
-	public static final String STORES_MY = "stores.my";  
+	public static final String STORES_MY = "stores.my";
+	public static final String STORES_MYDOCUMENTS = "stores.mydocuments";
 }

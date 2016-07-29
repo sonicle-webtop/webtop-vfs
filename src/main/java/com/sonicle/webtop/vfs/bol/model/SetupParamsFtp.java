@@ -33,97 +33,34 @@
  */
 package com.sonicle.webtop.vfs.bol.model;
 
-import com.sonicle.webtop.core.sdk.UserProfile;
-import com.sonicle.webtop.vfs.bol.OStore;
+import java.text.MessageFormat;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  *
  * @author malbinola
  */
-public class Store {
-	private Integer storeId;
-	private String domainId;
-	private String userId;
-	private Boolean builtIn;
-	private String name;
-	private String uri;
-	private String parameters;
+public class SetupParamsFtp extends SetupParams {
+	public String schema = null;
+	public String host = null;
+	public Integer port = null;
+	public String username = null;
+	public String password = null;
+	public String path = null;
 	
-	public Store() {}
-	
-	public Store(OStore o) {
-		if(o == null) return;
-		storeId = o.getStoreId();
-		domainId = o.getDomainId();
-		userId = o.getUserId();
-		builtIn = o.getBuiltIn();
-		name = o.getName();
-		uri = o.getUri();
-		parameters = o.getParameters();
-	}
+	public SetupParamsFtp() {}
 
-	public Integer getStoreId() {
-		return storeId;
-	}
-
-	public void setStoreId(Integer storeId) {
-		this.storeId = storeId;
-	}
-
-	public String getDomainId() {
-		return domainId;
-	}
-
-	public void setDomainId(String domainId) {
-		this.domainId = domainId;
-	}
-
-	public String getUserId() {
-		return userId;
-	}
-
-	public void setUserId(String userId) {
-		this.userId = userId;
+	@Override
+	public String generateURI() {
+		String s1 = (StringUtils.isBlank(username)) ? "" : username;
+		String s2 = (StringUtils.isBlank(password)) ? "" : ":" + password;
+		String s4 = (port == null) ? "" : ":" + String.valueOf(port);
+		String s5 = (StringUtils.isBlank(path)) ? "" : path;
+		return MessageFormat.format("{0}://{1}{2}@{3}{4}/{5}", schema, s1, s2, host, s4, s5);
 	}
 	
-	public Boolean getBuiltIn() {
-		return builtIn;
-	}
-
-	public void setBuiltIn(Boolean builtIn) {
-		this.builtIn = builtIn;
-	}
-
-	public String getName() {
-		return name;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	public String getUri() {
-		return uri;
-	}
-
-	public void setUri(String uri) {
-		this.uri = uri;
-	}
-
-	public String getParameters() {
-		return parameters;
-	}
-
-	public void setParameters(String parameters) {
-		this.parameters = parameters;
-	}
-	
-	public UserProfile.Id getProfileId() {
-		return new UserProfile.Id(getDomainId(), getUserId());
-	}
-	
-	public void setProfileId(UserProfile.Id pid) {
-		setDomainId(pid.getDomain());
-		setUserId(pid.getUser());
+	@Override
+	public void buildName() {
+		name = MessageFormat.format("{0} ({1})", host, StringUtils.defaultIfEmpty(username, "anonymous"));
 	}
 }

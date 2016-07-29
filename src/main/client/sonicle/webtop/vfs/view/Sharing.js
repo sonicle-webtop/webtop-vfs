@@ -27,55 +27,16 @@
  *
  * In accordance with Section 7(b) of the GNU Affero General Public License
  * version 3, these Appropriate Legal Notices must retain the display of the
- * "Powered by Sonicle WebTop" logo. If the display of the logo is not reasonably
- * feasible for technical reasons, the Appropriate Legal Notices must display
- * the words "Powered by Sonicle WebTop".
+ * Sonicle logo and Sonicle copyright notice. If the display of the logo is not
+ * reasonably feasible for technical reasons, the Appropriate Legal Notices must
+ * display the words "Copyright (C) 2014 Sonicle S.r.l.".
  */
-package com.sonicle.webtop.vfs;
-
-/**
- *
- * @author malbinola
- */
-public class VfsSettings {
+Ext.define('Sonicle.webtop.vfs.view.Sharing', {
+	extend: 'WT.sdk.Sharing',
+	requires: [
+		'Sonicle.webtop.vfs.model.Sharing'
+	],
 	
-	/**
-	 * [user+domain+system][default]
-	 * [int]
-	 * Maximum file size for internal uploads
-	 */
-	public static final String UPLOAD_PRIVATE_MAXFILESIZE = "upload.private.maxfilesize";
-	
-	/**
-	 * [user+domain+system][default]
-	 * [int]
-	 * Maximum file size for public uploads
-	 */
-	public static final String UPLOAD_PUBLIC_MAXFILESIZE = "upload.public.maxfilesize";
-	
-	/**
-	 * [domain+system]
-	 * [string][templatable]
-	 * 
-	 */
-	public static final String MYDOCUMENTS_URI = "mydocuments.uri";
-	public static class MyDocumentsUriTemplateValues {
-		public String SERVICE_ID;
-		public String DOMAIN_ID;
-		public String USER_ID;
-	}
-	
-	/**
-	 * [domain+system]
-	 * [int]
-	 * Default expiration days of upload links
-	 */
-	public static final String LINK_UPLOAD_EXPIRATION = "link.upload.expiration";
-	
-	/**
-	 * [domain+system]
-	 * [int]
-	 * Default expiration days of download links
-	 */
-	public static final String LINK_DOWNLOAD_EXPIRATION = "link.download.expiration";
-}
+	modelName: 'Sonicle.webtop.vfs.model.Sharing',
+	fieldTitle: 'description'
+});

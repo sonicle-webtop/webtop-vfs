@@ -31,99 +31,26 @@
  * feasible for technical reasons, the Appropriate Legal Notices must display
  * the words "Powered by Sonicle WebTop".
  */
-package com.sonicle.webtop.vfs.bol.model;
+package com.sonicle.webtop.vfs.sfs;
 
-import com.sonicle.webtop.core.sdk.UserProfile;
-import com.sonicle.webtop.vfs.bol.OStore;
+import com.sonicle.vfs2.provider.googledrive.GDriveFileSystemConfigBuilder;
+import com.sonicle.webtop.core.app.WT;
+import java.net.URISyntaxException;
+import org.apache.commons.vfs2.FileSystemException;
 
 /**
  *
  * @author malbinola
  */
-public class Store {
-	private Integer storeId;
-	private String domainId;
-	private String userId;
-	private Boolean builtIn;
-	private String name;
-	private String uri;
-	private String parameters;
+public class GoogleDriveSFS extends StoreFileSystem {
 	
-	public Store() {}
-	
-	public Store(OStore o) {
-		if(o == null) return;
-		storeId = o.getStoreId();
-		domainId = o.getDomainId();
-		userId = o.getUserId();
-		builtIn = o.getBuiltIn();
-		name = o.getName();
-		uri = o.getUri();
-		parameters = o.getParameters();
+	public GoogleDriveSFS(String uri, String parameters) throws URISyntaxException {
+		super(uri, parameters);
 	}
 
-	public Integer getStoreId() {
-		return storeId;
-	}
-
-	public void setStoreId(Integer storeId) {
-		this.storeId = storeId;
-	}
-
-	public String getDomainId() {
-		return domainId;
-	}
-
-	public void setDomainId(String domainId) {
-		this.domainId = domainId;
-	}
-
-	public String getUserId() {
-		return userId;
-	}
-
-	public void setUserId(String userId) {
-		this.userId = userId;
-	}
-	
-	public Boolean getBuiltIn() {
-		return builtIn;
-	}
-
-	public void setBuiltIn(Boolean builtIn) {
-		this.builtIn = builtIn;
-	}
-
-	public String getName() {
-		return name;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	public String getUri() {
-		return uri;
-	}
-
-	public void setUri(String uri) {
-		this.uri = uri;
-	}
-
-	public String getParameters() {
-		return parameters;
-	}
-
-	public void setParameters(String parameters) {
-		this.parameters = parameters;
-	}
-	
-	public UserProfile.Id getProfileId() {
-		return new UserProfile.Id(getDomainId(), getUserId());
-	}
-	
-	public void setProfileId(UserProfile.Id pid) {
-		setDomainId(pid.getDomain());
-		setUserId(pid.getUser());
+	@Override
+	protected void configureOptions() throws FileSystemException {
+		GDriveFileSystemConfigBuilder builder = GDriveFileSystemConfigBuilder.getInstance();
+		builder.setApplicationName(fso, WT.getPlatformName());
 	}
 }

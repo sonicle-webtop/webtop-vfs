@@ -40,7 +40,7 @@ Ext.define('Sonicle.webtop.vfs.view.DropboxWiz', {
 	
 	dockableConfig: {
 		title: '{dropboxWiz.tit}',
-		iconCls: 'wtvfs-icon-store-dropbox-xs',
+		iconCls: 'wtvfs-icon-storeDropbox-xs',
 		width: 460,
 		height: 320
 	},
@@ -56,7 +56,9 @@ Ext.define('Sonicle.webtop.vfs.view.DropboxWiz', {
 	},
 	
 	initComponent: function() {
-		var me = this;
+		var me = this,
+				ic = me.getInitialConfig();
+		if(!Ext.isEmpty(ic.profileId)) me.getVM().set('profileId', ic.profileId);
 		me.callParent(arguments);
 		me.on('beforenavigate', me.onBeforeNavigate);
 	},

@@ -3,22 +3,42 @@
 .wtvfs-icon-service-m { background-image: url('service_32.png') !important; }
 .wtvfs-icon-service-l { background-image: url('service_48.png') !important; }
 
+
+.wtvfs-icon-addStore-xs { background-image: url('store-add_16.png') !important; }
+.wtvfs-icon-addStoreFtp-xs { background-image: url('storeFtp_16.png') !important; }
+.wtvfs-icon-addStoreDropbox-xs { background-image: url('dropbox_16.png') !important; }
+.wtvfs-icon-addStoreGooDrive-xs { background-image: url('googledrive_16.png') !important; }
+.wtvfs-icon-addStoreFile-xs { background-image: url('storeFile_16.png') !important; }
+.wtvfs-icon-editStore-xs { background-image: url('store-edit_16.png') !important; }
+.wtvfs-icon-deleteStore-xs { background-image: url('store-delete_16.png') !important; }
+
+.wtvfs-icon-goUp-xs { background-image: url('goUp_16.png') !important; }
+.wtvfs-icon-uploadFile-xs { background-image: url('file-upload_16.png') !important; }
 .wtvfs-icon-downloadFile-xs { background-image: url('file-download_16.png') !important; }
 .wtvfs-icon-renameFile-xs { background-image: url('file-rename_16.png') !important; }
 .wtvfs-icon-deleteFile-xs { background-image: url('file-delete_16.png') !important; }
+.wtvfs-icon-createFileFolder-xs { background-image: url('file-createFolder_16.png') !important; }
 .wtvfs-icon-addFileDlLink-xs { background-image: url('link-download_16.png') !important; }
 /*.wtvfs-icon-deleteFileDlLink-xs { background-image: url('link-delete_16.png') !important; }*/
 .wtvfs-icon-addFileUlLink-xs { background-image: url('link-upload_16.png') !important; }
 /*.wtvfs-icon-deleteFileUlLink-xs { background-image: url('link-delete_16.png') !important; }*/
-.wtvfs-icon-addFolder-xs { background-image: url('folder-add_16.png') !important; }
 
-.wtvfs-icon-server-xs { background-image: url('server_16.png') !important; }
-.wtvfs-icon-addServer-xs { background-image: url('task-add_16.png') !important; }
 .wtvfs-icon-store-xs { background-image: url('store_16.png') !important; }
 .wtvfs-icon-myStore-xs { background-image: url('store_16.png') !important; }
-.wtvfs-icon-incomingStore-xs { background-image: url('store-incoming.png') !important; }
-.wtvfs-icon-store-ftp-xs { background-image: url('store-ftp_16.png') !important; }
-.wtvfs-icon-store-dropbox-xs { background-image: url('dropbox_16.png') !important; }
-.wtvfs-icon-store-gooDrive-xs { background-image: url('googledrive_16.png') !important; }
+.wtvfs-icon-incomingStore-xs { background-image: url('incomingStore_16.png') !important; }
+.wtvfs-icon-storeMyDocs-xs { background-image: url('storeMyDocs_16.png') !important; }
+.wtvfs-icon-storeFtp-xs { background-image: url('storeFtp_16.png') !important; }
+.wtvfs-icon-storeDropbox-xs { background-image: url('dropbox_16.png') !important; }
+.wtvfs-icon-storeGooDrive-xs { background-image: url('googledrive_16.png') !important; }
+.wtvfs-icon-storeFile-xs { background-image: url('storeFile_16.png') !important; }
+.wtvfs-icon-storeWebdav-xs { background-image: url('storeWebdav_16.png') !important; }
+.wtvfs-icon-storeOther-xs { background-image: url('storeOther_16.png') !important; }
 .wtvfs-icon-downloadLink-xs { background-image: url('link-download_16.png') !important; }
 .wtvfs-icon-uploadLink-xs { background-image: url('link-upload_16.png') !important; }
+
+.wtvfs-drophere {
+	border-color: #cecece !important;
+}
+.wtvfs-drophere-text {
+	color: #a0a0a0 !important;
+}

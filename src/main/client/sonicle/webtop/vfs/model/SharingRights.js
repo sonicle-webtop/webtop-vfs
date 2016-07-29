@@ -31,51 +31,6 @@
  * feasible for technical reasons, the Appropriate Legal Notices must display
  * the words "Powered by Sonicle WebTop".
  */
-package com.sonicle.webtop.vfs;
-
-/**
- *
- * @author malbinola
- */
-public class VfsSettings {
-	
-	/**
-	 * [user+domain+system][default]
-	 * [int]
-	 * Maximum file size for internal uploads
-	 */
-	public static final String UPLOAD_PRIVATE_MAXFILESIZE = "upload.private.maxfilesize";
-	
-	/**
-	 * [user+domain+system][default]
-	 * [int]
-	 * Maximum file size for public uploads
-	 */
-	public static final String UPLOAD_PUBLIC_MAXFILESIZE = "upload.public.maxfilesize";
-	
-	/**
-	 * [domain+system]
-	 * [string][templatable]
-	 * 
-	 */
-	public static final String MYDOCUMENTS_URI = "mydocuments.uri";
-	public static class MyDocumentsUriTemplateValues {
-		public String SERVICE_ID;
-		public String DOMAIN_ID;
-		public String USER_ID;
-	}
-	
-	/**
-	 * [domain+system]
-	 * [int]
-	 * Default expiration days of upload links
-	 */
-	public static final String LINK_UPLOAD_EXPIRATION = "link.upload.expiration";
-	
-	/**
-	 * [domain+system]
-	 * [int]
-	 * Default expiration days of download links
-	 */
-	public static final String LINK_DOWNLOAD_EXPIRATION = "link.download.expiration";
-}
+Ext.define('Sonicle.webtop.vfs.model.SharingRights', {
+	extend: 'WT.sdk.model.SharingRights'
+});
