@@ -32,13 +32,40 @@
 .wtvfs-icon-storeGooDrive-xs { background-image: url('googledrive_16.png') !important; }
 .wtvfs-icon-storeFile-xs { background-image: url('storeFile_16.png') !important; }
 .wtvfs-icon-storeWebdav-xs { background-image: url('storeWebdav_16.png') !important; }
-.wtvfs-icon-storeOther-xs { background-image: url('storeOther_16.png') !important; }
+.wtvfs-icon-storeSmb-xs { background-image: url('storeSmb_16.png') !important; }
+.wtvfs-icon-storeOther-xs { background-image: url('store_16.png') !important; }
 .wtvfs-icon-downloadLink-xs { background-image: url('link-download_16.png') !important; }
 .wtvfs-icon-uploadLink-xs { background-image: url('link-upload_16.png') !important; }
 
-.wtvfs-drophere {
-	border-color: #cecece !important;
+.so-filedrop {
+	position: absolute;
+	top: 0 !important;
+	bottom: 0 !important;
+	left: 0 !important;
+	right: 0 !important;
+	background: transparent !important;
 }
-.wtvfs-drophere-text {
-	color: #a0a0a0 !important;
+
+.so-filedrop:before {
+	position: absolute;
+	top: 5px;
+	bottom: 5px;
+	left: 5px;
+	right: 5px;
+	border: 4px dashed #cfcfcf;
+	content: '';
+}
+
+.so-filedrop .x-mask-msg-inner {
+	position: absolute;
+    top: 50%;
+    width: 100%;
+    color: #cfcfcf;
+    font-size: 30px;
+    text-align: center;
+}
+
+.so-filedrop .x-mask-msg-inner .x-mask-msg-text  {
+	padding: 0px;
+	background-image: none;
 }

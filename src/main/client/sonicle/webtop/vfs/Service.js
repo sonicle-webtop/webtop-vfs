@@ -85,7 +85,6 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 					me.reloadGridFiles();
 				}
 			}
-			tbu.mergeUploaderExtraParams({fileId: fileId});
 		}
 	},
 	
@@ -197,7 +196,8 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 			}]
 		}));
 		
-		var sto = me.trStores().getStore();
+		var sto = me.trStores().getStore(),
+			gpId = Ext.id(null, 'gridpanel');
 		
 		me.setMainComponent(Ext.create({
 			xtype: 'container',
@@ -229,6 +229,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 			items: [{
 				region: 'center',
 				xtype: 'grid',
+				id: gpId,
 				reference: 'gpfiles',
 				stateful: true,
 				stateId: me.buildStateId('gpfiles'),
@@ -331,7 +332,14 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				bbar: {
 					xtype: 'wtvfsuploadtoolbar',
 					reference: 'tbupload',
-					mys: me
+					mys: me,
+					dropElement: gpId,
+					fileExtraParams: function() {
+						console.log('fileExtraParams '+me.curFile);
+						return {
+							fileId: me.curFile
+						};
+					}
 				},
 				plugins: [
 					Ext.create('Sonicle.plugin.FileDrop', {

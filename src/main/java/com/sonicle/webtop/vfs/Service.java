@@ -141,11 +141,12 @@ public class Service extends BaseService {
 	private class OnUploadStoreFile implements IServiceUploadStreamListener {
 
 		@Override
-		public void onUpload(String context, HttpServletRequest request, WebTopSession.UploadedFile file, InputStream is, MapItem responseData) throws UploadException {
+		public void onUpload(String context, HttpServletRequest request, HashMap<String, String> multipartParams, WebTopSession.UploadedFile file, InputStream is, MapItem responseData) throws UploadException {
 			
 			if(context.equals("UploadStoreFile")) {
 				try {
-					String parentFileId = ServletUtils.getStringParameter(request, "fileId", true);
+					String parentFileId = multipartParams.get("fileId");
+					if(StringUtils.isBlank(parentFileId)) throw new UploadException("Parameter not specified [fileId]");
 
 					StoreNodeId parentNodeId = (StoreNodeId)new StoreNodeId().parse(parentFileId);
 					int storeId = Integer.valueOf(parentNodeId.getStoreId());
@@ -280,7 +281,9 @@ public class Service extends BaseService {
 				return "wtvfs-icon-storeFtp-xs";
 			} else if(StringUtils.startsWith(uri, "webdav")) {
 				return "wtvfs-icon-storeWebdav-xs";
-			} else {
+			} else if(StringUtils.startsWith(uri, "smb")) {
+				return "wtvfs-icon-storeSmb-xs";
+			}  else {
 				return "wtvfs-icon-store-xs";
 			}
 		}

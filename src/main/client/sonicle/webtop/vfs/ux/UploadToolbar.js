@@ -45,10 +45,19 @@ Ext.define('Sonicle.webtop.vfs.ux.UploadToolbar', {
 	 */
 	mys: null,
 	
+	/**
+	 * @cfg {String} dropElement
+	 * The ID of DOM element to be used as the dropzone for the files.
+	 */
+	dropElement: null,
+	
+	fileExtraParams: null,
+	
 	initComponent: function() {
 		var me = this,
 				SoByt = Sonicle.Bytes,
-				maxUpSize = me.mys.getOption('privateUploadMaxFileSize');
+				maxUpSize = me.mys.getOption('privateUploadMaxFileSize'),
+				de = me.dropElement;
 		me.callParent(arguments);
 		me.add([{
 			xtype: 'souploadbutton',
@@ -58,15 +67,29 @@ Ext.define('Sonicle.webtop.vfs.ux.UploadToolbar', {
 			iconCls: me.mys.cssIconCls('uploadFile', 'xs'),
 			uploaderConfig: WTF.uploader(me.mys.ID, 'UploadStoreFile', {
 				maxFileSize: maxUpSize,
+				dropElement: de ? de : undefined,
+				fileExtraParams: function() {
+					if(Ext.isFunction(me.fileExtraParams)) {
+						return me.fileExtraParams.apply(me);
+					} else {
+						return null;
+					}
+				},
 				listeners: {
 					invalidfilesize: function() {
 						WT.warn(WT.res(WT.ID, 'error.upload.sizeexceeded', SoByt.format(maxUpSize)));
+					},
+					fileuploaded: function() {
+						me.fireEvent('fileuploaded', me);
+					},
+					uploaderror: function(s) {
+						WT.error('Upload error');
 					},
 					overallprogress: function(s, percent, total, succeeded, failed, queued, speed) {
 						var pro = me.getProgress(),
 								drh = me.geDropHere();
 						if(queued > 0) {
-							pro.updateProgress(percent*0.01, Ext.String.format('{0}% ({1}/s)', percent, SoByt.format(speed || 0)));
+							pro.updateProgress(percent*0.01, me.mys.res('tbupload.progress.lbl', percent, queued-1, SoByt.format(speed || 0)));
 							pro.setHidden(false);
 							drh.setHidden(true);
 						} else {
@@ -114,9 +137,5 @@ Ext.define('Sonicle.webtop.vfs.ux.UploadToolbar', {
 	
 	geDropHere: function() {
 		return this.getComponent('drophere');
-	},
-	
-	mergeUploaderExtraParams: function(params) {
-		this.getUploadButton().uploader.mergeExtraParams(params);
 	}
 });
