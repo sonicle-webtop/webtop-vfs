@@ -33,6 +33,8 @@
  */
 package com.sonicle.webtop.vfs.bol.model;
 
+import java.net.URISyntaxException;
+
 /**
  *
  * @author malbinola
@@ -41,6 +43,6 @@ public abstract class SetupParams {
 	public String profileId = null;
 	public String name = null;
 	
-	public abstract String generateURI();
+	public abstract String generateURI() throws URISyntaxException;
 	public abstract void buildName();
 }

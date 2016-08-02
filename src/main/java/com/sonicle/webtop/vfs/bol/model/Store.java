@@ -33,8 +33,12 @@
  */
 package com.sonicle.webtop.vfs.bol.model;
 
+import com.sonicle.vfs2.VfsURI;
 import com.sonicle.webtop.core.sdk.UserProfile;
 import com.sonicle.webtop.vfs.bol.OStore;
+import java.net.URI;
+import java.net.URISyntaxException;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  *
@@ -125,5 +129,31 @@ public class Store {
 	public void setProfileId(UserProfile.Id pid) {
 		setDomainId(pid.getDomain());
 		setUserId(pid.getUser());
+	}
+	
+	public static String buildURI(String scheme, String host, Integer port, String username, String password, String path) throws URISyntaxException {
+		return new VfsURI.Builder()
+				.scheme(scheme)
+				.host(host)
+				.port(port)
+				.username(username)
+				.password(password)
+				.path(path)
+				.build();
+	}
+	
+	public static Integer extractPort(String uri) throws URISyntaxException {
+		return extractPort(new URI(uri));
+	}
+	
+	public static Integer extractPort(URI uri) {
+		int port = uri.getPort();
+		return port == -1 ? null : port;
+	}
+	
+	public static String[] extractUserInfo(URI uri) {
+		String[] tokens = StringUtils.split(uri.getUserInfo(), ":", 2);
+		if(tokens == null || tokens.length == 0) return null;
+		return (tokens.length == 1) ? new String[]{tokens[0], null} : tokens;
 	}
 }

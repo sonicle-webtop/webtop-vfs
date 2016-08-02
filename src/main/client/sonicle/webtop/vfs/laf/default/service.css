@@ -37,6 +37,8 @@
 .wtvfs-icon-downloadLink-xs { background-image: url('link-download_16.png') !important; }
 .wtvfs-icon-uploadLink-xs { background-image: url('link-upload_16.png') !important; }
 
+.vtvfs-gpfiles .x-grid-empty {text-align: center;}
+
 .so-filedrop {
 	position: absolute;
 	top: 0 !important;

@@ -31,20 +31,57 @@
  * feasible for technical reasons, the Appropriate Legal Notices must display
  * the words "Powered by Sonicle WebTop".
  */
-Ext.define('Sonicle.webtop.vfs.store.OtherSchema', {
-	extend: 'Ext.data.ArrayStore',
+package com.sonicle.webtop.vfs.bol.js;
+
+import com.sonicle.webtop.vfs.bol.model.Store;
+import java.net.URI;
+import java.net.URISyntaxException;
+
+/**
+ *
+ * @author malbinola
+ */
+public class JsStore {
+	public Integer storeId;
+	public String domainId;
+	public String userId;
+	public Boolean builtIn;
+	public String name;
+	public String scheme;
+	public String host;
+	public Integer port;
+	public String username;
+	public String password;
+	public String path;
 	
-	model: 'WT.model.Simple',
-	data: [
-		['smb',''],
-		['webdav','']
-	],
+	public JsStore() {}
 	
-	constructor: function(cfg) {
-		var me = this;
-		Ext.each(me.config.data, function(row) {
-			row[1] = WT.res('com.sonicle.webtop.vfs', 'store.otherschema.'+row[0]);
-		});
-		me.callParent([cfg]);
+	public JsStore(Store store) throws URISyntaxException {
+		this.storeId = store.getStoreId();
+		this.domainId = store.getDomainId();
+		this.userId = store.getUserId();
+		this.builtIn = store.getBuiltIn();
+		this.name = store.getName();
+		URI uri = new URI(store.getUri());
+		this.scheme = uri.getScheme();
+		this.host = uri.getHost();
+		this.port = Store.extractPort(uri);
+		String[] ui = Store.extractUserInfo(uri);
+		if(ui != null) {
+			this.username = ui[0];
+			this.password = ui[1];
+		}
+		this.path = uri.getPath();
 	}
-});
+	
+	public static Store createStore(JsStore js) throws URISyntaxException {
+		Store bean = new Store();
+		bean.setStoreId(js.storeId);
+		bean.setDomainId(js.domainId);
+		bean.setUserId(js.userId);
+		bean.setBuiltIn(js.builtIn);
+		bean.setName(js.name);
+		bean.setUri(Store.buildURI(js.scheme, js.host, js.port, js.username, js.password, js.path));
+		return bean;
+	}
+}

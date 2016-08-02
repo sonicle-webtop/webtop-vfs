@@ -40,6 +40,7 @@ Ext.define('Sonicle.webtop.vfs.model.StoreNode', {
 	fields: [
 		WTF.field('_type', 'string', false),
 		WTF.field('_pid', 'string', false),
+		WTF.roField('_builtIn', 'boolean'),
 		WTF.roField('_rperms', 'string'),
 		WTF.roField('_fperms', 'string'),
 		WTF.roField('_eperms', 'string'),

@@ -31,20 +31,25 @@
  * feasible for technical reasons, the Appropriate Legal Notices must display
  * the words "Powered by Sonicle WebTop".
  */
-Ext.define('Sonicle.webtop.vfs.store.FtpSchema', {
+Ext.define('Sonicle.webtop.vfs.store.Scheme', {
 	extend: 'Ext.data.ArrayStore',
 	
 	model: 'WT.model.Simple',
 	data: [
+		['file',''],
 		['ftp',''],
 		['sftp',''],
-		['ftps','']
+		['ftps',''],
+		['smb',''],
+		['webdav',''],
+		['dropbox',''],
+		['googledrive','']
 	],
 	
 	constructor: function(cfg) {
 		var me = this;
 		Ext.each(me.config.data, function(row) {
-			row[1] = WT.res('com.sonicle.webtop.vfs', 'store.ftpschema.'+row[0]);
+			row[1] = WT.res('com.sonicle.webtop.vfs', 'store.scheme.'+row[0]);
 		});
 		me.callParent([cfg]);
 	}

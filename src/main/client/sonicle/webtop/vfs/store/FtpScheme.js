@@ -31,51 +31,21 @@
  * feasible for technical reasons, the Appropriate Legal Notices must display
  * the words "Powered by Sonicle WebTop".
  */
-package com.sonicle.webtop.vfs;
-
-import com.sonicle.commons.PathUtils;
-import com.sonicle.webtop.core.sdk.BaseServiceSettings;
-import static com.sonicle.webtop.vfs.VfsSettings.*;
-import org.apache.commons.lang3.StringUtils;
-
-/**
- *
- * @author malbinola
- */
-public class VfsServiceSettings extends BaseServiceSettings {
-
-	public VfsServiceSettings(String serviceId, String domainId) {
-		super(serviceId, domainId);
-	}
+Ext.define('Sonicle.webtop.vfs.store.FtpScheme', {
+	extend: 'Ext.data.ArrayStore',
 	
-	public Integer getPrivateUploadMaxFileSize() {
-		return getInteger(UPLOAD_PRIVATE_MAXFILESIZE, null);
-	}
+	model: 'WT.model.Simple',
+	data: [
+		['ftp',''],
+		['sftp',''],
+		['ftps','']
+	],
 	
-	public Integer getPublicUploadMaxFileSize() {
-		return getInteger(UPLOAD_PUBLIC_MAXFILESIZE, null);
+	constructor: function(cfg) {
+		var me = this;
+		Ext.each(me.config.data, function(row) {
+			row[1] = WT.res('com.sonicle.webtop.vfs', 'store.scheme.'+row[0]);
+		});
+		me.callParent([cfg]);
 	}
-	
-	public String getStoreFileBasepath(StoreFileBasepathTemplateValues tpl) {
-		String value = getString(STORE_FILE_BASEPATH, null);
-		value = StringUtils.replace(value, "{SERVICE_ID}", tpl.SERVICE_ID);
-		value = StringUtils.replace(value, "{DOMAIN_ID}", tpl.DOMAIN_ID);
-		return PathUtils.ensureTrailingSeparator(value);
-	}
-	
-	public String getMyDocumentsUri(MyDocumentsUriTemplateValues tpl) {
-		String value = getString(MYDOCUMENTS_URI, null);
-		value = StringUtils.replace(value, "{SERVICE_ID}", tpl.SERVICE_ID);
-		value = StringUtils.replace(value, "{DOMAIN_ID}", tpl.DOMAIN_ID);
-		value = StringUtils.replace(value, "{USER_ID}", tpl.USER_ID);
-		return PathUtils.ensureTrailingSeparator(value);
-	}
-	
-	public Integer getUploadLinkExpiration() {
-		return getInteger(LINK_UPLOAD_EXPIRATION, 3);
-	}
-	
-	public Integer getDownloadLinkExpiration() {
-		return getInteger(LINK_UPLOAD_EXPIRATION, 3);
-	}
-}
+});

@@ -58,6 +58,17 @@ public class VfsSettings {
 	 * [string][templatable]
 	 * 
 	 */
+	public static final String STORE_FILE_BASEPATH = "store.file.basepath";
+	public static class StoreFileBasepathTemplateValues {
+		public String SERVICE_ID;
+		public String DOMAIN_ID;
+	}
+	
+	/**
+	 * [domain+system]
+	 * [string][templatable]
+	 * 
+	 */
 	public static final String MYDOCUMENTS_URI = "mydocuments.uri";
 	public static class MyDocumentsUriTemplateValues {
 		public String SERVICE_ID;

@@ -41,7 +41,7 @@ Ext.define('Sonicle.webtop.vfs.view.FileWiz', {
 		title: '{fileWiz.tit}',
 		iconCls: 'wtvfs-icon-storeFile-xs',
 		width: 450,
-		height: 320
+		height: 220
 	},
 	useTrail: true,
 	
@@ -88,16 +88,9 @@ Ext.define('Sonicle.webtop.vfs.view.FileWiz', {
 					labelWidth: 80
 				},
 				items: [{
-					xtype: 'fieldcontainer',
-					layout: 'hbox',
-					items: [{
-						xtype: 'displayfield',
-						value: '/&nbsp;'
-					}, {
-						xtype: 'textfield',
-						bind: '{path}',
-						width: 330
-					}],
+					xtype: 'textfield',
+					bind: '{path}',
+					width: 330,
 					fieldLabel: me.mys.res('fileWiz.fld-path.lbl')
 				}]
 			}]

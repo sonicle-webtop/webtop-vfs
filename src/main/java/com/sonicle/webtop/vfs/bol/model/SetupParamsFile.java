@@ -33,9 +33,8 @@
  */
 package com.sonicle.webtop.vfs.bol.model;
 
-import java.text.MessageFormat;
+import java.net.URISyntaxException;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang3.StringUtils;
 
 /**
  *
@@ -47,9 +46,8 @@ public class SetupParamsFile extends SetupParams {
 	public SetupParamsFile() {}
 
 	@Override
-	public String generateURI() {
-		String s1 = (StringUtils.isBlank(path)) ? "" : path;
-		return MessageFormat.format("file://{0}", s1);
+	public String generateURI() throws URISyntaxException {
+		return Store.buildURI("file", null, null, null, null, path);
 	}
 	
 	@Override

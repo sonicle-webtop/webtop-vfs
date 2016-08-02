@@ -33,6 +33,7 @@
  */
 package com.sonicle.webtop.vfs.bol.model;
 
+import java.net.URISyntaxException;
 import java.text.MessageFormat;
 import org.apache.commons.lang3.StringUtils;
 
@@ -41,7 +42,7 @@ import org.apache.commons.lang3.StringUtils;
  * @author malbinola
  */
 public class SetupParamsFtp extends SetupParams {
-	public String schema = null;
+	public String scheme = null;
 	public String host = null;
 	public Integer port = null;
 	public String username = null;
@@ -51,12 +52,8 @@ public class SetupParamsFtp extends SetupParams {
 	public SetupParamsFtp() {}
 
 	@Override
-	public String generateURI() {
-		String s1 = (StringUtils.isBlank(username)) ? "" : username;
-		String s2 = (StringUtils.isBlank(password)) ? "" : ":" + password;
-		String s4 = (port == null) ? "" : ":" + String.valueOf(port);
-		String s5 = (StringUtils.isBlank(path)) ? "" : path;
-		return MessageFormat.format("{0}://{1}{2}@{3}{4}/{5}", schema, s1, s2, host, s4, s5);
+	public String generateURI() throws URISyntaxException {
+		return Store.buildURI(scheme, host, port, username, password, path);
 	}
 	
 	@Override

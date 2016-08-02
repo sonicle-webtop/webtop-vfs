@@ -34,6 +34,7 @@
 package com.sonicle.webtop.vfs.bol.model;
 
 import com.sonicle.commons.web.json.JsonResult;
+import java.net.URISyntaxException;
 import java.text.MessageFormat;
 
 /**
@@ -49,8 +50,8 @@ public class SetupParamsDropbox extends SetupParams {
 	public SetupParamsDropbox() {}
 
 	@Override
-	public String generateURI() {
-		return MessageFormat.format("dropbox://{0}:{1}@{2}/", accountId, accessToken, "dropbox.com");
+	public String generateURI() throws URISyntaxException {
+		return Store.buildURI("dropbox", "dropbox.com", null, accountId, accessToken, null);
 	}
 	
 	@Override

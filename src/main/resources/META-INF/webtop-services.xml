@@ -25,7 +25,10 @@
 		</userOptions>
 		
 		<permissions>
-			<sharePermission group="DRIVE" />
+			<sharePermission group="STORE" />
+			<permission group="STORE_FILE" actions="CREATE" />
+			<permission group="STORE_CLOUD" actions="CREATE" />
+			<permission group="STORE_OTHER" actions="CREATE" />
 		</permissions>
 	</service>
 </services>

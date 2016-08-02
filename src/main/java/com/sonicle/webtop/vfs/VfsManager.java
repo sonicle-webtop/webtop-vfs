@@ -33,6 +33,7 @@
  */
 package com.sonicle.webtop.vfs;
 
+import com.sonicle.commons.PathUtils;
 import com.sonicle.commons.db.DbUtils;
 import com.sonicle.commons.time.DateTimeUtils;
 import com.sonicle.commons.web.json.CompositeId;
@@ -74,6 +75,7 @@ import com.sonicle.webtop.vfs.sfs.SftpSFS;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -115,41 +117,39 @@ public class VfsManager extends BaseManager {
 	}
 	
 	private StoreFileSystem createFileSystem(Store store) throws URISyntaxException {
-		StoreFileSystem sfs = null;
 		String uri = null;
 		
 		if(store.getBuiltIn()) {
 			VfsSettings.MyDocumentsUriTemplateValues tpl = new VfsSettings.MyDocumentsUriTemplateValues();
 			tpl.SERVICE_ID = SERVICE_ID;
-			tpl.DOMAIN_ID = getTargetProfileId().getDomain();
-			tpl.USER_ID = getTargetProfileId().getUser();
+			tpl.DOMAIN_ID = store.getDomainId();
+			tpl.USER_ID = store.getUserId();
 			
-			VfsServiceSettings vus = new VfsServiceSettings(SERVICE_ID, getTargetProfileId().getDomain());
+			VfsServiceSettings vus = new VfsServiceSettings(SERVICE_ID, store.getDomainId());
 			uri = vus.getMyDocumentsUri(tpl);
 			if(StringUtils.isBlank(uri)) {
-				uri = WT.getServiceHomePath(SERVICE_ID) + "mydocuments/" + getTargetProfileId().getUser() + "/";
+				uri = WT.getServiceHomePath(SERVICE_ID) + "mydocuments/" + store.getUserId() + "/";
 			}
-			sfs = new DefaultSFS(uri, null, true);
+			return new DefaultSFS(uri, null, true);
 			
 		} else {
 			uri = store.getUri();
 			String scheme = UriParser.extractScheme(uri);
-			if(scheme.equals("ftp")) {
-				sfs = new FtpSFS(uri, store.getParameters());
-			} else if(scheme.equals("sftp")) {
-				sfs = new SftpSFS(uri, store.getParameters());
-			} else if(scheme.equals("ftps")) {
-				sfs = new FtpsSFS(uri, store.getParameters());
-			} else if(scheme.equals("dropbox")) {
-				sfs = new DropboxSFS(uri, store.getParameters());
-			} else if(scheme.equals("googledrive")) {
-				sfs = new GoogleDriveSFS(uri, store.getParameters());
-			} else {
-				sfs = new DefaultSFS(uri, store.getParameters());
+			switch(scheme) {
+				case "ftp":
+					return new FtpSFS(uri, store.getParameters());
+				case "sftp":
+					return new SftpSFS(uri, store.getParameters());
+				case "ftps":
+					return new FtpsSFS(uri, store.getParameters());
+				case "dropbox":
+					return new DropboxSFS(uri, store.getParameters());
+				case "googledrive":
+					return new GoogleDriveSFS(uri, store.getParameters());
+				default:
+					return new DefaultSFS(uri, store.getParameters());
 			}
 		}
-			
-		return sfs;
 	}
 	
 	private void initFileSystems() throws WTException {
@@ -182,7 +182,7 @@ public class VfsManager extends BaseManager {
 		}
 	}
 	
-	private void addFileSystem(Store store) throws WTException {
+	private void addStoreFileSystemToCache(Store store) throws WTException {
 		synchronized(storeFileSystems) {
 			StoreFileSystem sfs = null;
 			try {
@@ -194,13 +194,13 @@ public class VfsManager extends BaseManager {
 		}
 	}
 	
-	private void removeFileSystem(int storeId) throws WTException {
+	private void removeStoreFileSystemFromCache(int storeId) throws WTException {
 		synchronized(storeFileSystems) {
 			storeFileSystems.remove(String.valueOf(storeId));
 		}
 	}
 	
-	private StoreFileSystem getFileSystem(String key) {
+	private StoreFileSystem getStoreFileSystemFromCache(String key) {
 		synchronized(storeFileSystems) {
 			return storeFileSystems.get(key);
 		}
@@ -308,12 +308,39 @@ public class VfsManager extends BaseManager {
 		
 		try {
 			checkRightsOnStoreRoot(item.getProfileId(), "MANAGE"); // Rights check!
+			checkRightsOnStoreSchema(item.getUri()); // Rights check!
 			con = WT.getConnection(SERVICE_ID, false);
 			item.setBuiltIn(false);
-			item = new Store(doStoreInsert(con, item));
+			item = new Store(doStoreUpdate(true, con, item));
 			DbUtils.commitQuietly(con);
 			writeLog("STORE_INSERT", item.getStoreId().toString());
-			addFileSystem(item);
+			addStoreFileSystemToCache(item);
+			return item;
+			
+		} catch(SQLException | DAOException ex) {
+			DbUtils.rollbackQuietly(con);
+			throw new WTException(ex, "DB error");
+		} catch(Exception ex) {
+			DbUtils.rollbackQuietly(con);
+			throw ex;
+		} finally {
+			DbUtils.closeQuietly(con);
+		}
+	}
+	
+	public Store addBuiltInStore(Store item) throws WTException {
+		Connection con = null;
+		
+		try {
+			checkRightsOnStoreRoot(item.getProfileId(), "MANAGE"); // Rights check!
+			checkRightsOnStoreSchema(item.getUri()); // Rights check!
+			con = WT.getConnection(SERVICE_ID, false);
+			item.setBuiltIn(true);
+			item.setUri("file:///this/is/an/automatic/path");
+			item = new Store(doStoreUpdate(true, con, item));
+			DbUtils.commitQuietly(con);
+			writeLog("STORE_INSERT", item.getStoreId().toString());
+			addStoreFileSystemToCache(item);
 			return item;
 			
 		} catch(SQLException | DAOException ex) {
@@ -333,7 +360,7 @@ public class VfsManager extends BaseManager {
 		try {
 			checkRightsOnStoreFolder(item.getStoreId(), "UPDATE"); // Rights check!
 			con = WT.getConnection(SERVICE_ID, false);
-			doStoreUpdate(con, item);
+			doStoreUpdate(false, con, item);
 			DbUtils.commitQuietly(con);
 			writeLog("STORE_UPDATE", String.valueOf(item.getStoreId()));
 			return item;
@@ -358,7 +385,7 @@ public class VfsManager extends BaseManager {
 			doStoreDelete(con, storeId);
 			DbUtils.commitQuietly(con);
 			writeLog("STORE_DELETE", String.valueOf(storeId));
-			removeFileSystem(storeId);
+			removeStoreFileSystemFromCache(storeId);
 			
 		} catch(SQLException | DAOException ex) {
 			DbUtils.rollbackQuietly(con);
@@ -372,7 +399,7 @@ public class VfsManager extends BaseManager {
 	}
 	
 	public StoreFileSystem getStoreFileSystem(int storeId) throws WTException {
-		return getFileSystem(String.valueOf(storeId));
+		return getStoreFileSystemFromCache(String.valueOf(storeId));
 	}
 	
 	public String generateStoreFileHash(int storeId, String path) {
@@ -778,6 +805,21 @@ public class VfsManager extends BaseManager {
 		}
 	}
 	
+	private void checkRightsOnStoreSchema(String uri) {
+		String scheme = UriParser.extractScheme(uri);
+		switch(scheme) {
+			case "file":
+				RunContext.ensureIsPermitted(SERVICE_ID, "STORE_FILE", "CREATE");
+				break;
+			case "dropbox":
+			case "googledrive":
+				RunContext.ensureIsPermitted(SERVICE_ID, "STORE_CLOUD", "CREATE");
+				break;
+			default:
+				RunContext.ensureIsPermitted(SERVICE_ID, "STORE_OTHER", "CREATE");
+		}
+	}
+	
 	private void checkRightsOnStoreRoot(UserProfile.Id ownerPid, String action) throws WTException {
 		UserProfile.Id targetPid = getTargetProfileId();
 		
@@ -839,20 +881,38 @@ public class VfsManager extends BaseManager {
 		throw new AuthException("Action not allowed on folderEls share [{0}, {1}, {2}, {3}]", shareId, action, GROUPNAME_STORE, targetPid.toString());
 	}
 	
-	private OStore doStoreInsert(Connection con, Store store) throws WTException {
+	private String prependFileBasePath(URI uri) {
+		VfsSettings.StoreFileBasepathTemplateValues tpl = new VfsSettings.StoreFileBasepathTemplateValues();
+		tpl.SERVICE_ID = SERVICE_ID;
+		tpl.DOMAIN_ID = getTargetProfileId().getDomain();
+		
+		VfsServiceSettings vus = new VfsServiceSettings(SERVICE_ID, getTargetProfileId().getDomain());
+		return PathUtils.concatPaths(vus.getStoreFileBasepath(tpl), uri.getPath());
+	}
+	
+	private OStore doStoreUpdate(boolean insert, Connection con, Store store) throws WTException {
 		StoreDAO dao = StoreDAO.getInstance();
+		
 		OStore item = new OStore(store);
 		if(item.getDomainId() == null) item.setDomainId(getTargetProfileId().getDomainId());
 		if(item.getUserId() == null) item.setUserId(getTargetProfileId().getUserId());
-        item.setStoreId(dao.getSequence(con).intValue());
-        dao.insert(con, item);
+		
+		try {
+			URI uri = new URI(store.getUri());
+			if(store.getBuiltIn() && uri.getScheme().equals("file")) {
+				item.setUri(prependFileBasePath(uri));
+			}
+		} catch(URISyntaxException ex) {
+			throw new WTException("Provided uri is not valid", ex);
+		}
+		
+		if(insert) {
+			item.setStoreId(dao.getSequence(con).intValue());
+			dao.insert(con, item);
+		} else {
+			dao.update(con, item);
+		}
         return item;
-	}
-	
-	private void doStoreUpdate(Connection con, Store store) throws WTException {
-		StoreDAO dao = StoreDAO.getInstance();
-		OStore item = new OStore(store);
-        dao.update(con, item);
 	}
 	
 	private void doStoreDelete(Connection con, int storeId) throws WTException {
@@ -863,7 +923,7 @@ public class VfsManager extends BaseManager {
 	}
 	
 	private FileObject getTargetFileObject(int storeId, String path) throws FileSystemException, WTException {
-		StoreFileSystem sfs = getFileSystem(String.valueOf(storeId));
+		StoreFileSystem sfs = getStoreFileSystemFromCache(String.valueOf(storeId));
 		if(sfs == null) throw new WTException("Unable to get store fileSystem");
 		
 		FileObject tfo = null;

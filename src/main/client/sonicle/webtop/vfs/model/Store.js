@@ -42,6 +42,11 @@ Ext.define('Sonicle.webtop.vfs.model.Store', {
 		WTF.field('domainId', 'string', false),
 		WTF.field('userId', 'string', false),
 		WTF.field('name', 'string', false),
-		WTF.field('url', 'string', false)
+		WTF.field('scheme', 'string', false),
+		WTF.field('host', 'string', false),
+		WTF.field('port', 'int', true),
+		WTF.field('username', 'string', true),
+		WTF.field('password', 'string', true),
+		WTF.field('path', 'string', true)
 	]
 });

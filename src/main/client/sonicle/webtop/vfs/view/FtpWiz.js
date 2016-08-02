@@ -34,7 +34,8 @@
 Ext.define('Sonicle.webtop.vfs.view.FtpWiz', {
 	extend: 'WT.sdk.WizardView',
 	requires: [
-		'WT.ux.panel.Form'
+		'WT.ux.panel.Form',
+		'Sonicle.webtop.vfs.store.FtpScheme'
 	],
 	
 	dockableConfig: {
@@ -48,7 +49,7 @@ Ext.define('Sonicle.webtop.vfs.view.FtpWiz', {
 	viewModel: {
 		data: {
 			profileId: null,
-			schema: 'sftp',
+			scheme: 'sftp',
 			host: null,
 			port: null,
 			username: null,
@@ -62,7 +63,7 @@ Ext.define('Sonicle.webtop.vfs.view.FtpWiz', {
 		var me = this,
 				ic = me.getInitialConfig();
 		if(!Ext.isEmpty(ic.profileId)) me.getVM().set('profileId', ic.profileId);
-		if(!Ext.isEmpty(ic.schema)) me.getVM().set('schema', ic.schema);
+		if(!Ext.isEmpty(ic.scheme)) me.getVM().set('scheme', ic.scheme);
 		if(!Ext.isEmpty(ic.host)) me.getVM().set('host', ic.host);
 		if(!Ext.isEmpty(ic.port)) me.getVM().set('port', ic.port);
 		if(!Ext.isEmpty(ic.username)) me.getVM().set('username', ic.username);
@@ -99,12 +100,12 @@ Ext.define('Sonicle.webtop.vfs.view.FtpWiz', {
 				},
 				items: [
 				WTF.lookupCombo('id', 'desc', {
-					bind: '{schema}',
+					bind: '{scheme}',
 					allowBlank: false,
-					store: Ext.create('Sonicle.webtop.vfs.store.FtpSchema', {
+					store: Ext.create('Sonicle.webtop.vfs.store.FtpScheme', {
 						autoLoad: true
 					}),
-					fieldLabel: me.mys.res('ftpWiz.fld-schema.lbl'),
+					fieldLabel: me.mys.res('ftpWiz.fld-scheme.lbl'),
 					width: 350
 				}), {
 					xtype: 'fieldcontainer',
@@ -113,6 +114,7 @@ Ext.define('Sonicle.webtop.vfs.view.FtpWiz', {
 						xtype: 'textfield',
 						bind: '{host}',
 						allowBlank: false,
+						inputType: 'url',
 						width: 160
 					}, {
 						xtype: 'displayfield',
@@ -120,6 +122,7 @@ Ext.define('Sonicle.webtop.vfs.view.FtpWiz', {
 					}, {
 						xtype: 'numberfield',
 						bind: '{port}',
+						inputType: 'number',
 						hideTrigger: true,
 						minValue: 1,
 						maxValue: 65000,
@@ -139,16 +142,9 @@ Ext.define('Sonicle.webtop.vfs.view.FtpWiz', {
 					width: 280,
 					fieldLabel: me.mys.res('ftpWiz.fld-password.lbl')
 				}, {
-					xtype: 'fieldcontainer',
-					layout: 'hbox',
-					items: [{
-						xtype: 'displayfield',
-						value: '/&nbsp;'
-					}, {
-						xtype: 'textfield',
-						bind: '{path}',
-						width: 330
-					}],
+					xtype: 'textfield',
+					bind: '{path}',
+					width: 330,
 					fieldLabel: me.mys.res('ftpWiz.fld-path.lbl')
 				}]
 			}]
@@ -210,7 +206,7 @@ Ext.define('Sonicle.webtop.vfs.view.FtpWiz', {
 				params: {
 					crud: 's1',
 					profileId: vm.get('profileId'),
-					schema: vm.get('schema'),
+					scheme: vm.get('scheme'),
 					host: vm.get('host'),
 					port: vm.get('port'),
 					username: vm.get('username'),

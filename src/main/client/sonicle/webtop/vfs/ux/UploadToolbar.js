@@ -79,8 +79,8 @@ Ext.define('Sonicle.webtop.vfs.ux.UploadToolbar', {
 					invalidfilesize: function() {
 						WT.warn(WT.res(WT.ID, 'error.upload.sizeexceeded', SoByt.format(maxUpSize)));
 					},
-					fileuploaded: function() {
-						me.fireEvent('fileuploaded', me);
+					fileuploaded: function(s, file) {
+						me.fireEvent('fileuploaded', me, file);
 					},
 					uploaderror: function(s) {
 						WT.error('Upload error');

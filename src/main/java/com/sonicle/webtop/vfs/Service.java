@@ -68,6 +68,8 @@ import com.sonicle.webtop.core.sdk.interfaces.IServiceUploadListener;
 import com.sonicle.webtop.core.sdk.interfaces.IServiceUploadStreamListener;
 import com.sonicle.webtop.core.servlet.ServletHelper;
 import com.sonicle.webtop.vfs.bol.js.JsGridFile;
+import com.sonicle.webtop.vfs.bol.js.JsSharing;
+import com.sonicle.webtop.vfs.bol.js.JsStore;
 import com.sonicle.webtop.vfs.bol.model.DownloadLink;
 import com.sonicle.webtop.vfs.bol.model.Store;
 import com.sonicle.webtop.vfs.bol.model.SetupParamsDropbox;
@@ -85,6 +87,7 @@ import com.sonicle.webtop.vfs.sfs.StoreFileSystem;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -107,9 +110,9 @@ public class Service extends BaseService {
 	private VfsServiceSettings ss = null;
 	private VfsUserSettings us = null;
 	
-	private final LinkedHashMap<String, StoreShareRoot> roots = new LinkedHashMap<>();
-	private final HashMap<String, ArrayList<StoreShareFolder>> foldersByRoot = new HashMap<>();
-	private final LinkedHashMap<Integer, StoreShareFolder> folders = new LinkedHashMap<>();
+	private final LinkedHashMap<String, StoreShareRoot> cacheRootsById = new LinkedHashMap<>();
+	private final HashMap<String, ArrayList<StoreShareFolder>> cacheFoldersByRoot = new HashMap<>();
+	private final LinkedHashMap<Integer, StoreShareFolder> cacheFoldersByStore = new LinkedHashMap<>();
 
 	@Override
 	public void initialize() throws Exception {
@@ -165,7 +168,7 @@ public class Service extends BaseService {
 	}
 	
 	private void initShares() throws WTException {
-		synchronized(roots) {
+		synchronized(cacheRootsById) {
 			updateRootsCache();
 			updateFoldersCache();
 		}
@@ -173,34 +176,62 @@ public class Service extends BaseService {
 	
 	private void updateRootsCache() throws WTException {
 		UserProfile.Id pid = getEnv().getProfile().getId();
-		synchronized(roots) {
-			roots.clear();
-			roots.put(MyStoreRoot.SHARE_ID, new MyStoreRoot(pid));
+		synchronized(cacheRootsById) {
+			cacheRootsById.clear();
+			cacheRootsById.put(MyStoreRoot.SHARE_ID, new MyStoreRoot(pid));
 			for(StoreShareRoot root : manager.listIncomingStoreRoots()) {
-				roots.put(root.getShareId(), root);
+				cacheRootsById.put(root.getShareId(), root);
 			}
 		}
 	}
 	
 	private void updateFoldersCache() throws WTException {
-		synchronized(roots) {
-			foldersByRoot.clear();
-			folders.clear();
-			for(StoreShareRoot root : roots.values()) {
-				foldersByRoot.put(root.getShareId(), new ArrayList<StoreShareFolder>());
+		synchronized(cacheRootsById) {
+			cacheFoldersByRoot.clear();
+			cacheFoldersByStore.clear();
+			for(StoreShareRoot root : cacheRootsById.values()) {
+				cacheFoldersByRoot.put(root.getShareId(), new ArrayList<StoreShareFolder>());
 				if(root instanceof MyStoreRoot) {
 					for(Store store : manager.listStores()) {
 						MyStoreFolder fold = new MyStoreFolder(root.getShareId(), root.getOwnerProfileId(), store);
-						foldersByRoot.get(root.getShareId()).add(fold);
-						folders.put(store.getStoreId(), fold);
+						cacheFoldersByRoot.get(root.getShareId()).add(fold);
+						cacheFoldersByStore.put(store.getStoreId(), fold);
 					}
 				} else {
 					for(StoreShareFolder fold : manager.listIncomingStoreFolders(root.getShareId()).values()) {
-						foldersByRoot.get(root.getShareId()).add(fold);
-						folders.put(fold.getStore().getStoreId(), fold);
+						cacheFoldersByRoot.get(root.getShareId()).add(fold);
+						cacheFoldersByStore.put(fold.getStore().getStoreId(), fold);
 					}
 				}
 			}
+		}
+	}
+	
+	private Collection<StoreShareRoot> getRootsFromCache() {
+		synchronized(cacheRootsById) {
+			return cacheRootsById.values();
+		}
+	}
+	
+	private StoreShareRoot getRootFromCache(String shareId) {
+		synchronized(cacheRootsById) {
+			return cacheRootsById.get(shareId);
+		}
+	}
+	
+	private List<StoreShareFolder> getFoldersFromCache(String rootShareId) {
+		synchronized(cacheRootsById) {
+			if(cacheFoldersByRoot.containsKey(rootShareId)) {
+				return cacheFoldersByRoot.get(rootShareId);
+			} else {
+				return new ArrayList<>();
+			}
+		}
+	}
+	
+	private StoreShareFolder getFolderFromCache(int storeId) {
+		synchronized(cacheRootsById) {
+			return cacheFoldersByStore.get(storeId);
 		}
 	}
 	
@@ -299,6 +330,7 @@ public class Service extends BaseService {
 		node.put("_type", "folder");//JsFolderNode.TYPE_FOLDER);
 		node.put("_pid", store.getProfileId().toString());
 		node.put("_storeId", store.getStoreId());
+		node.put("_builtIn", store.getBuiltIn());
 		node.put("_rperms", rootPerms.toString());
 		node.put("_fperms", folder.getPerms().toString());
 		node.put("_eperms", folder.getElementsPerms().toString());
@@ -343,29 +375,27 @@ public class Service extends BaseService {
 				String node = ServletUtils.getStringParameter(request, "node", true);
 				
 				if(node.equals("root")) { // Share roots...
-					for(StoreShareRoot root : roots.values()) {
+					for(StoreShareRoot root : getRootsFromCache()) {
 						children.add(createRootNode(root));
 					}
 				} else {
 					StoreNodeId nodeId = (StoreNodeId)new StoreNodeId().parse(node);
 					if(nodeId.getSize() == 1) { // Root share's folders...
-						StoreShareRoot root = roots.get(nodeId.getShareId());
+						StoreShareRoot root = getRootFromCache(nodeId.getShareId());
 						if(root instanceof MyStoreRoot) {
 							for(Store cal : manager.listStores()) {
 								MyStoreFolder folder = new MyStoreFolder(node, root.getOwnerProfileId(), cal);
 								children.add(createFolderNode(folder, root.getPerms()));
 							}
 						} else {
-							if(foldersByRoot.containsKey(root.getShareId())) {
-								for(StoreShareFolder fold : foldersByRoot.get(root.getShareId())) {
-									children.add(createFolderNode(fold, root.getPerms()));
-								}
+							for(StoreShareFolder fold : getFoldersFromCache(root.getShareId())) {
+								children.add(createFolderNode(fold, root.getPerms()));
 							}
 						}
 
 					} else if(nodeId.getSize() == 2 || nodeId.getSize() == 3) { // Store's folders (2) or folder's folders (3)...
 						int storeId = Integer.valueOf(nodeId.getStoreId());
-						StoreShareFolder folder = folders.get(storeId);
+						StoreShareFolder folder = getFolderFromCache(storeId);
 						String path = (nodeId.getSize() == 2) ? "/" : nodeId.getPath();
 						
 						LinkedHashMap<String, DownloadLink> dls = manager.listDownloadLinks(storeId, path);
@@ -405,14 +435,14 @@ public class Service extends BaseService {
 				String id = ServletUtils.getStringParameter(request, "id", true);
 				
 				Sharing sharing = manager.getSharing(id);
-				//String description = buildSharingPath(sharing);
-				//new JsonResult(new JsSharing(sharing, description)).printTo(out);
+				String description = buildSharingPath(sharing);
+				new JsonResult(new JsSharing(sharing, description)).printTo(out);
 				
 			} else if(crud.equals(Crud.UPDATE)) {
 				Payload<MapItem, Sharing> pl = ServletUtils.getPayload(request, Sharing.class);
 				
-				//manager.updateSharing(pl.data);
-				//new JsonResult().printTo(out);
+				manager.updateSharing(pl.data);
+				new JsonResult().printTo(out);
 			}
 			
 		} catch(Exception ex) {
@@ -422,20 +452,298 @@ public class Service extends BaseService {
 	}
 	
 	public void processManageStores(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		Store item = null;
 		
 		try {
 			String crud = ServletUtils.getStringParameter(request, "crud", true);
-			if(crud.equals(Crud.CREATE)) {
+			if(crud.equals(Crud.READ)) {
+				Integer id = ServletUtils.getIntParameter(request, "id", true);
+				
+				item = manager.getStore(id);
+				new JsonResult(new JsStore(item)).printTo(out);
+				
+			} else if(crud.equals(Crud.UPDATE)) {
+				Payload<MapItem, JsStore> pl = ServletUtils.getPayload(request, JsStore.class);
+				
+				manager.updateStore(JsStore.createStore(pl.data));
+				new JsonResult().printTo(out);
 				
 			} else if(crud.equals(Crud.DELETE)) {
 				String storeId = ServletUtils.getStringParameter(request, "storeId", true);
 				manager.deleteStore(Integer.valueOf(storeId));
+				
+				updateFoldersCache();
 				
 				new JsonResult().printTo(out);
 			}
 		
 		} catch(Exception ex) {
 			logger.error("Error in ManageStores", ex);
+		}
+	}
+	
+	public void processSetupStoreFtp(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		WebTopSession wts = RunContext.getWebTopSession();
+		String PROPERTY = "SETUP_FTP";
+		
+		try {
+			String crud = ServletUtils.getStringParameter(request, "crud", true);
+			if(crud.equals("s1")) {
+				String profileId = ServletUtils.getStringParameter(request, "profileId", true);
+				String scheme = ServletUtils.getStringParameter(request, "scheme", true);
+				String host = ServletUtils.getStringParameter(request, "host", true);
+				Integer port = ServletUtils.getIntParameter(request, "port", null);
+				String username = ServletUtils.getStringParameter(request, "username", true);
+				String password = ServletUtils.getStringParameter(request, "password", null);
+				String path = ServletUtils.getStringParameter(request, "path", null);
+				
+				SetupParamsFtp params = new SetupParamsFtp();
+				params.profileId = profileId;
+				params.scheme = scheme;
+				params.host = host;
+				params.port = port;
+				params.username = username;
+				params.password = password;
+				params.path = path;
+				params.buildName();
+				wts.setProperty(PROPERTY, params);
+				//TODO: controllo connessione
+				
+				new JsonResult(params).printTo(out);
+				
+			} else if(crud.equals("s2")) {
+				String name = ServletUtils.getStringParameter(request, "name", true);
+				if(!wts.hasProperty(PROPERTY)) throw new WTException();
+				SetupParamsFtp params = (SetupParamsFtp) wts.getProperty(PROPERTY);
+				
+				Store store = new Store();
+				store.setProfileId(new UserProfile.Id(params.profileId));
+				store.setName(StringUtils.defaultIfBlank(name, params.name));
+				store.setUri(params.generateURI());
+				manager.addStore(store);
+				
+				wts.clearProperty(PROPERTY);
+				updateFoldersCache();
+				
+				new JsonResult().printTo(out);
+			}
+			
+		} catch (Exception ex) {
+			logger.error("Error in SetupStoreFtp", ex);
+			new JsonResult(false, ex.getMessage()).printTo(out);
+		}
+	}
+	
+	public void processSetupStoreDropbox(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		WebTopSession wts = RunContext.getWebTopSession();
+		String PROPERTY = "SETUP_DROPBOX";
+		String APP_NAME = WT.getPlatformName();
+		String DROPBOX_APP_KEY = getEnv().getCoreServiceSettings().getDropboxAppKey();
+		String DROPBOX_APP_SECRET = getEnv().getCoreServiceSettings().getDropboxAppSecret();
+		String DROPBOX_USER_LOCALE = WT.getUserData(getEnv().getProfileId()).getLanguageTag();
+		
+		try {
+			String crud = ServletUtils.getStringParameter(request, "crud", true);
+			if(crud.equals("s1")) {
+				String profileId = ServletUtils.getStringParameter(request, "profileId", true);
+				
+				SetupParamsDropbox params = new SetupParamsDropbox();
+				params.profileId = profileId;
+				params.authUrl = DropboxApiUtils.getAuthorizationUrl(APP_NAME, DROPBOX_USER_LOCALE, DROPBOX_APP_KEY, DROPBOX_APP_SECRET);
+				wts.setProperty(PROPERTY, params);
+				
+				new JsonResult(params).printTo(out);
+				
+			} else if(crud.equals("s2")) {
+				String code = ServletUtils.getStringParameter(request, "code", true);
+				if(!wts.hasProperty(PROPERTY)) throw new WTException();
+				SetupParamsDropbox params = (SetupParamsDropbox) wts.getProperty(PROPERTY);
+				
+				DbxAppInfo appInfo = DropboxApiUtils.createAppInfo(DROPBOX_APP_KEY, DROPBOX_APP_SECRET);
+				DbxRequestConfig reqConfig = DropboxApiUtils.createRequestConfig(APP_NAME, DROPBOX_USER_LOCALE);
+				DbxAuthFinish auth = DropboxApiUtils.exchangeAuthorizationCode(code, reqConfig, appInfo);
+				DbxAccountInfo ai = DropboxApiUtils.getAccountInfo(auth.accessToken, reqConfig);
+				params.accountId = String.valueOf(ai.userId);
+				params.accountName = ai.displayName;
+				params.accessToken = auth.accessToken;
+				params.buildName();
+				
+				new JsonResult(params).printTo(out);
+				
+			} else if(crud.equals("s3")) {
+				String name = ServletUtils.getStringParameter(request, "name", true);
+				if(!wts.hasProperty(PROPERTY)) throw new WTException();
+				SetupParamsDropbox params = (SetupParamsDropbox) wts.getProperty(PROPERTY);
+				
+				Store store = new Store();
+				store.setProfileId(new UserProfile.Id(params.profileId));
+				store.setName(StringUtils.defaultIfBlank(name, params.name));
+				store.setUri(params.generateURI());
+				store.setParameters(LangUtils.serialize(params, SetupParamsDropbox.class));
+				manager.addStore(store);
+				
+				wts.clearProperty(PROPERTY);
+				updateFoldersCache();
+				
+				new JsonResult().printTo(out);
+			}
+			
+		} catch (Exception ex) {
+			logger.error("Error in SetupStoreDropbox", ex);
+			new JsonResult(false, ex.getMessage()).printTo(out);
+		}
+	}
+	
+	public void processSetupStoreGoogleDrive(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		WebTopSession wts = RunContext.getWebTopSession();
+		String PROPERTY = "SETUP_GOOGLEDRIVE";
+		String APP_NAME = WT.getPlatformName();
+		String GDRIVE_CLIENT_ID = getEnv().getCoreServiceSettings().getGoogleDriveClientID();
+		String GDRIVE_CLIENT_SECRET = getEnv().getCoreServiceSettings().getGoogleDriveClientSecret();
+		
+		try {
+			String crud = ServletUtils.getStringParameter(request, "crud", true);
+			if(crud.equals("s1")) {
+				String profileId = ServletUtils.getStringParameter(request, "profileId", true);
+				
+				GoogleDriveAppInfo appInfo = new GoogleDriveAppInfo(APP_NAME, GDRIVE_CLIENT_ID, GDRIVE_CLIENT_SECRET);
+				SetupParamsGoogleDrive params = new SetupParamsGoogleDrive();
+				params.profileId = profileId;
+				params.authUrl = GoogleDriveApiUtils.getAuthorizationUrl(appInfo);
+				wts.setProperty(PROPERTY, params);
+				
+				new JsonResult(params).printTo(out);
+				
+			} else if(crud.equals("s2")) {
+				String code = ServletUtils.getStringParameter(request, "code", true);
+				if(!wts.hasProperty(PROPERTY)) throw new WTException();
+				SetupParamsGoogleDrive params = (SetupParamsGoogleDrive) wts.getProperty(PROPERTY);
+				
+				GoogleDriveAppInfo appInfo = new GoogleDriveAppInfo(APP_NAME, GDRIVE_CLIENT_ID, GDRIVE_CLIENT_SECRET);
+				GoogleCredential cred = GoogleDriveApiUtils.exchangeAuthorizationCode(code, appInfo);
+				params.refreshToken = cred.getRefreshToken();
+				params.accessToken = cred.getAccessToken();
+				Userinfoplus uip = GoogleDriveApiUtils.getUserInfo(params.accessToken, appInfo);
+				params.accountEmail = uip.getEmail();
+				params.accountName = uip.getName();
+				params.buildName();
+				
+				new JsonResult(params).printTo(out);
+				
+			} else if(crud.equals("s3")) {
+				String name = ServletUtils.getStringParameter(request, "name", true);
+				if(!wts.hasProperty(PROPERTY)) throw new WTException();
+				SetupParamsGoogleDrive params = (SetupParamsGoogleDrive) wts.getProperty(PROPERTY);
+				
+				Store store = new Store();
+				store.setProfileId(new UserProfile.Id(params.profileId));
+				store.setName(StringUtils.defaultIfBlank(name, params.name));
+				store.setUri(params.generateURI());
+				store.setParameters(LangUtils.serialize(params, SetupParamsGoogleDrive.class));
+				manager.addStore(store);
+				
+				wts.clearProperty(PROPERTY);
+				updateFoldersCache();
+				
+				new JsonResult().printTo(out);
+			}
+			
+		} catch (Exception ex) {
+			logger.error("Error in SetupStoreGoogleDrive", ex);
+			new JsonResult(false, ex.getMessage()).printTo(out);
+		}
+	}
+	
+	public void processSetupStoreFile(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		WebTopSession wts = RunContext.getWebTopSession();
+		String PROPERTY = "SETUP_FILE";
+		
+		try {
+			String crud = ServletUtils.getStringParameter(request, "crud", true);
+			if(crud.equals("s1")) {
+				String profileId = ServletUtils.getStringParameter(request, "profileId", true);
+				String path = ServletUtils.getStringParameter(request, "path", null);
+				
+				SetupParamsFile params = new SetupParamsFile();
+				params.profileId = profileId;
+				params.path = path;
+				params.buildName();
+				wts.setProperty(PROPERTY, params);
+				
+				new JsonResult(params).printTo(out);
+				
+			} else if(crud.equals("s2")) {
+				String name = ServletUtils.getStringParameter(request, "name", true);
+				if(!wts.hasProperty(PROPERTY)) throw new WTException();
+				SetupParamsFile params = (SetupParamsFile) wts.getProperty(PROPERTY);
+				
+				Store store = new Store();
+				store.setProfileId(new UserProfile.Id(params.profileId));
+				store.setName(StringUtils.defaultIfBlank(name, params.name));
+				store.setUri(params.generateURI());
+				manager.addStore(store);
+				
+				wts.clearProperty(PROPERTY);
+				updateFoldersCache();
+				
+				new JsonResult().printTo(out);
+			}
+			
+		} catch (Exception ex) {
+			logger.error("Error in SetupStoreFile", ex);
+			new JsonResult(false, ex.getMessage()).printTo(out);
+		}
+	}
+	
+	public void processSetupStoreOther(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		WebTopSession wts = RunContext.getWebTopSession();
+		String PROPERTY = "SETUP_OTHER";
+		
+		try {
+			String crud = ServletUtils.getStringParameter(request, "crud", true);
+			if(crud.equals("s1")) {
+				String profileId = ServletUtils.getStringParameter(request, "profileId", true);
+				String scheme = ServletUtils.getStringParameter(request, "scheme", true);
+				String host = ServletUtils.getStringParameter(request, "host", true);
+				Integer port = ServletUtils.getIntParameter(request, "port", null);
+				String username = ServletUtils.getStringParameter(request, "username", true);
+				String password = ServletUtils.getStringParameter(request, "password", null);
+				String path = ServletUtils.getStringParameter(request, "path", null);
+				
+				SetupParamsOther params = new SetupParamsOther();
+				params.profileId = profileId;
+				params.scheme = scheme;
+				params.host = host;
+				params.port = port;
+				params.username = username;
+				params.password = password;
+				params.path = path;
+				params.buildName();
+				wts.setProperty(PROPERTY, params);
+				//TODO: controllo connessione
+				
+				new JsonResult(params).printTo(out);
+				
+			} else if(crud.equals("s2")) {
+				String name = ServletUtils.getStringParameter(request, "name", true);
+				if(!wts.hasProperty(PROPERTY)) throw new WTException();
+				SetupParamsOther params = (SetupParamsOther) wts.getProperty(PROPERTY);
+				
+				Store store = new Store();
+				store.setProfileId(new UserProfile.Id(params.profileId));
+				store.setName(StringUtils.defaultIfBlank(name, params.name));
+				store.setUri(params.generateURI());
+				manager.addStore(store);
+				
+				wts.clearProperty(PROPERTY);
+				updateFoldersCache();
+				
+				new JsonResult().printTo(out);
+			}
+			
+		} catch (Exception ex) {
+			logger.error("Error in SetupStoreOther", ex);
+			new JsonResult(false, ex.getMessage()).printTo(out);
 		}
 	}
 	
@@ -449,7 +757,7 @@ public class Service extends BaseService {
 				
 				StoreNodeId parentNodeId = (StoreNodeId)new StoreNodeId().parse(parentFileId);
 				int storeId = Integer.valueOf(parentNodeId.getStoreId());
-				StoreShareFolder folder = folders.get(storeId);
+				StoreShareFolder folder = getFolderFromCache(storeId);
 				String path = (parentNodeId.getSize() == 2) ? "/" : parentNodeId.getPath();
 				
 				LinkedHashMap<String, DownloadLink> dls = manager.listDownloadLinks(storeId, path);
@@ -656,257 +964,28 @@ public class Service extends BaseService {
 		}
 	}
 	
-	public void processSetupStoreFtp(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-		WebTopSession wts = RunContext.getWebTopSession();
-		String PROPERTY = "SETUP_FTP";
+	private String buildSharingPath(Sharing sharing) throws WTException {
+		StringBuilder sb = new StringBuilder();
 		
-		try {
-			String crud = ServletUtils.getStringParameter(request, "crud", true);
-			if(crud.equals("s1")) {
-				String profileId = ServletUtils.getStringParameter(request, "profileId", true);
-				String schema = ServletUtils.getStringParameter(request, "schema", true);
-				String host = ServletUtils.getStringParameter(request, "host", true);
-				Integer port = ServletUtils.getIntParameter(request, "port", null);
-				String username = ServletUtils.getStringParameter(request, "username", true);
-				String password = ServletUtils.getStringParameter(request, "password", null);
-				String path = ServletUtils.getStringParameter(request, "path", null);
-				
-				SetupParamsFtp params = new SetupParamsFtp();
-				params.profileId = profileId;
-				params.schema = schema;
-				params.host = host;
-				params.port = port;
-				params.username = username;
-				params.password = password;
-				params.path = path;
-				params.buildName();
-				wts.setProperty(PROPERTY, params);
-				//TODO: controllo connessione
-				
-				new JsonResult(params).printTo(out);
-				
-			} else if(crud.equals("s2")) {
-				String name = ServletUtils.getStringParameter(request, "name", true);
-				if(!wts.hasProperty(PROPERTY)) throw new WTException();
-				SetupParamsFtp params = (SetupParamsFtp) wts.getProperty(PROPERTY);
-				
-				Store store = new Store();
-				store.setProfileId(new UserProfile.Id(params.profileId));
-				store.setName(StringUtils.defaultIfBlank(name, params.name));
-				store.setUri(params.generateURI());
-				manager.addStore(store);
-				wts.clearProperty(PROPERTY);
-				
-				new JsonResult().printTo(out);
+		// Root description part
+		CompositeId cid = new CompositeId().parse(sharing.getId());
+		StoreShareRoot root = getRootFromCache(cid.getToken(0));
+		if(root != null) {
+			if(root instanceof MyStoreRoot) {
+				sb.append(lookupResource(VfsLocale.STORES_MY));
+			} else {
+				sb.append(root.getDescription());
 			}
-			
-		} catch (Exception ex) {
-			logger.error("Error in SetupStoreFtp", ex);
-			new JsonResult(false, ex.getMessage()).printTo(out);
 		}
-	}
-	
-	public void processSetupStoreDropbox(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-		WebTopSession wts = RunContext.getWebTopSession();
-		String PROPERTY = "SETUP_DROPBOX";
-		String APP_NAME = WT.getPlatformName();
-		String DROPBOX_APP_KEY = getEnv().getCoreServiceSettings().getDropboxAppKey();
-		String DROPBOX_APP_SECRET = getEnv().getCoreServiceSettings().getDropboxAppSecret();
-		String DROPBOX_USER_LOCALE = WT.getUserData(getEnv().getProfileId()).getLanguageTag();
 		
-		try {
-			String crud = ServletUtils.getStringParameter(request, "crud", true);
-			if(crud.equals("s1")) {
-				String profileId = ServletUtils.getStringParameter(request, "profileId", true);
-				
-				SetupParamsDropbox params = new SetupParamsDropbox();
-				params.profileId = profileId;
-				params.authUrl = DropboxApiUtils.getAuthorizationUrl(APP_NAME, DROPBOX_USER_LOCALE, DROPBOX_APP_KEY, DROPBOX_APP_SECRET);
-				wts.setProperty(PROPERTY, params);
-				
-				new JsonResult(params).printTo(out);
-				
-			} else if(crud.equals("s2")) {
-				String code = ServletUtils.getStringParameter(request, "code", true);
-				if(!wts.hasProperty(PROPERTY)) throw new WTException();
-				SetupParamsDropbox params = (SetupParamsDropbox) wts.getProperty(PROPERTY);
-				
-				DbxAppInfo appInfo = DropboxApiUtils.createAppInfo(DROPBOX_APP_KEY, DROPBOX_APP_SECRET);
-				DbxRequestConfig reqConfig = DropboxApiUtils.createRequestConfig(APP_NAME, DROPBOX_USER_LOCALE);
-				DbxAuthFinish auth = DropboxApiUtils.exchangeAuthorizationCode(code, reqConfig, appInfo);
-				DbxAccountInfo ai = DropboxApiUtils.getAccountInfo(auth.accessToken, reqConfig);
-				params.accountId = String.valueOf(ai.userId);
-				params.accountName = ai.displayName;
-				params.accessToken = auth.accessToken;
-				params.buildName();
-				
-				new JsonResult(params).printTo(out);
-				
-			} else if(crud.equals("s3")) {
-				String name = ServletUtils.getStringParameter(request, "name", true);
-				if(!wts.hasProperty(PROPERTY)) throw new WTException();
-				SetupParamsDropbox params = (SetupParamsDropbox) wts.getProperty(PROPERTY);
-				
-				Store store = new Store();
-				store.setProfileId(new UserProfile.Id(params.profileId));
-				store.setName(StringUtils.defaultIfBlank(name, params.name));
-				store.setUri(params.generateURI());
-				store.setParameters(LangUtils.serialize(params, SetupParamsDropbox.class));
-				manager.addStore(store);
-				wts.clearProperty(PROPERTY);
-				
-				new JsonResult().printTo(out);
-			}
-			
-		} catch (Exception ex) {
-			logger.error("Error in SetupStoreDropbox", ex);
-			new JsonResult(false, ex.getMessage()).printTo(out);
+		// Folder description part
+		if(sharing.getLevel() == 1) {
+			int storeId = Integer.valueOf(cid.getToken(1));
+			Store store = manager.getStore(storeId);
+			sb.append("/");
+			sb.append((store != null) ? store.getName() : cid.getToken(1));
 		}
-	}
-	
-	public void processSetupStoreGoogleDrive(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-		WebTopSession wts = RunContext.getWebTopSession();
-		String PROPERTY = "SETUP_GOOGLEDRIVE";
-		String APP_NAME = WT.getPlatformName();
-		String GDRIVE_CLIENT_ID = getEnv().getCoreServiceSettings().getGoogleDriveClientID();
-		String GDRIVE_CLIENT_SECRET = getEnv().getCoreServiceSettings().getGoogleDriveClientSecret();
 		
-		try {
-			String crud = ServletUtils.getStringParameter(request, "crud", true);
-			if(crud.equals("s1")) {
-				String profileId = ServletUtils.getStringParameter(request, "profileId", true);
-				
-				GoogleDriveAppInfo appInfo = new GoogleDriveAppInfo(APP_NAME, GDRIVE_CLIENT_ID, GDRIVE_CLIENT_SECRET);
-				SetupParamsGoogleDrive params = new SetupParamsGoogleDrive();
-				params.profileId = profileId;
-				params.authUrl = GoogleDriveApiUtils.getAuthorizationUrl(appInfo);
-				wts.setProperty(PROPERTY, params);
-				
-				new JsonResult(params).printTo(out);
-				
-			} else if(crud.equals("s2")) {
-				String code = ServletUtils.getStringParameter(request, "code", true);
-				if(!wts.hasProperty(PROPERTY)) throw new WTException();
-				SetupParamsGoogleDrive params = (SetupParamsGoogleDrive) wts.getProperty(PROPERTY);
-				
-				GoogleDriveAppInfo appInfo = new GoogleDriveAppInfo(APP_NAME, GDRIVE_CLIENT_ID, GDRIVE_CLIENT_SECRET);
-				GoogleCredential cred = GoogleDriveApiUtils.exchangeAuthorizationCode(code, appInfo);
-				params.refreshToken = cred.getRefreshToken();
-				params.accessToken = cred.getAccessToken();
-				Userinfoplus uip = GoogleDriveApiUtils.getUserInfo(params.accessToken, appInfo);
-				params.accountEmail = uip.getEmail();
-				params.accountName = uip.getName();
-				params.buildName();
-				
-				new JsonResult(params).printTo(out);
-				
-			} else if(crud.equals("s3")) {
-				String name = ServletUtils.getStringParameter(request, "name", true);
-				if(!wts.hasProperty(PROPERTY)) throw new WTException();
-				SetupParamsGoogleDrive params = (SetupParamsGoogleDrive) wts.getProperty(PROPERTY);
-				
-				Store store = new Store();
-				store.setProfileId(new UserProfile.Id(params.profileId));
-				store.setName(StringUtils.defaultIfBlank(name, params.name));
-				store.setUri(params.generateURI());
-				store.setParameters(LangUtils.serialize(params, SetupParamsGoogleDrive.class));
-				manager.addStore(store);
-				
-				new JsonResult().printTo(out);
-			}
-			
-		} catch (Exception ex) {
-			logger.error("Error in SetupStoreGoogleDrive", ex);
-			new JsonResult(false, ex.getMessage()).printTo(out);
-		}
-	}
-	
-	public void processSetupStoreFile(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-		WebTopSession wts = RunContext.getWebTopSession();
-		String PROPERTY = "SETUP_FILE";
-		
-		try {
-			String crud = ServletUtils.getStringParameter(request, "crud", true);
-			if(crud.equals("s1")) {
-				String profileId = ServletUtils.getStringParameter(request, "profileId", true);
-				String path = ServletUtils.getStringParameter(request, "path", null);
-				
-				SetupParamsFile params = new SetupParamsFile();
-				params.profileId = profileId;
-				params.path = path;
-				params.buildName();
-				wts.setProperty(PROPERTY, params);
-				
-				new JsonResult(params).printTo(out);
-				
-			} else if(crud.equals("s2")) {
-				String name = ServletUtils.getStringParameter(request, "name", true);
-				if(!wts.hasProperty(PROPERTY)) throw new WTException();
-				SetupParamsFile params = (SetupParamsFile) wts.getProperty(PROPERTY);
-				
-				Store store = new Store();
-				store.setProfileId(new UserProfile.Id(params.profileId));
-				store.setName(StringUtils.defaultIfBlank(name, params.name));
-				store.setUri(params.generateURI());
-				manager.addStore(store);
-				wts.clearProperty(PROPERTY);
-				
-				new JsonResult().printTo(out);
-			}
-			
-		} catch (Exception ex) {
-			logger.error("Error in SetupStoreFile", ex);
-			new JsonResult(false, ex.getMessage()).printTo(out);
-		}
-	}
-	
-	public void processSetupStoreOther(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-		WebTopSession wts = RunContext.getWebTopSession();
-		String PROPERTY = "SETUP_OTHER";
-		
-		try {
-			String crud = ServletUtils.getStringParameter(request, "crud", true);
-			if(crud.equals("s1")) {
-				String profileId = ServletUtils.getStringParameter(request, "profileId", true);
-				String schema = ServletUtils.getStringParameter(request, "schema", true);
-				String host = ServletUtils.getStringParameter(request, "host", true);
-				Integer port = ServletUtils.getIntParameter(request, "port", null);
-				String username = ServletUtils.getStringParameter(request, "username", true);
-				String password = ServletUtils.getStringParameter(request, "password", null);
-				String path = ServletUtils.getStringParameter(request, "path", null);
-				
-				SetupParamsOther params = new SetupParamsOther();
-				params.profileId = profileId;
-				params.schema = schema;
-				params.host = host;
-				params.port = port;
-				params.username = username;
-				params.password = password;
-				params.path = path;
-				params.buildName();
-				wts.setProperty(PROPERTY, params);
-				//TODO: controllo connessione
-				
-				new JsonResult(params).printTo(out);
-				
-			} else if(crud.equals("s2")) {
-				String name = ServletUtils.getStringParameter(request, "name", true);
-				if(!wts.hasProperty(PROPERTY)) throw new WTException();
-				SetupParamsOther params = (SetupParamsOther) wts.getProperty(PROPERTY);
-				
-				Store store = new Store();
-				store.setProfileId(new UserProfile.Id(params.profileId));
-				store.setName(StringUtils.defaultIfBlank(name, params.name));
-				store.setUri(params.generateURI());
-				manager.addStore(store);
-				wts.clearProperty(PROPERTY);
-				
-				new JsonResult().printTo(out);
-			}
-			
-		} catch (Exception ex) {
-			logger.error("Error in SetupStoreOther", ex);
-			new JsonResult(false, ex.getMessage()).printTo(out);
-		}
+		return sb.toString();
 	}
 }

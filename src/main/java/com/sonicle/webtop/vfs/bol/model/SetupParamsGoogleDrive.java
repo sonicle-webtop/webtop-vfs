@@ -34,6 +34,7 @@
 package com.sonicle.webtop.vfs.bol.model;
 
 import com.sonicle.commons.web.json.JsonResult;
+import java.net.URISyntaxException;
 import java.text.MessageFormat;
 import org.apache.commons.lang3.StringUtils;
 
@@ -51,9 +52,9 @@ public class SetupParamsGoogleDrive extends SetupParams {
 	public SetupParamsGoogleDrive() {}
 
 	@Override
-	public String generateURI() {
+	public String generateURI() throws URISyntaxException {
 		String[] tokens = StringUtils.split(accountEmail, "@");
-		return MessageFormat.format("googledrive://{0}:{1}@{2}/", tokens[0], accessToken, tokens[1]);
+		return Store.buildURI("googledrive", tokens[1], null, tokens[0], accessToken, null);
 	}
 	
 	@Override

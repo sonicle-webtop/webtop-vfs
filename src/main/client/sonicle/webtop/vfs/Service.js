@@ -84,11 +84,18 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 					node.expand();
 					me.reloadGridFiles();
 				}
+			} else {
+				me.gpFiles().getStore().removeAll();
+				me.bcFiles().setSelection(null);
+				tbu.setDisabled(true);
 			}
 		}
 	},
 	
-	
+	isInCurFile: function(fileId) {
+		var cf = this.curFile;
+		return (cf && cf.indexOf(fileId) > -1);
+	},
 	
 	init: function() {
 		var me = this, ies, iitems = [];
@@ -231,6 +238,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				xtype: 'grid',
 				id: gpId,
 				reference: 'gpfiles',
+				cls: 'vtvfs-gpfiles',
 				stateful: true,
 				stateId: me.buildStateId('gpfiles'),
 				store: {
@@ -241,17 +249,10 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 						}
 					})
 				},
-				/*
 				viewConfig: {
-					getRowClass: function (rec, indx) {
-						if (rec.get('status') === 'completed')
-							return 'wttasks-row-completed';
-						if (Ext.isDate(rec.get('dueDate')) && Sonicle.Date.compare(rec.get('dueDate'),new Date(),false)>0 )
-							return 'wttasks-row-expired';
-						return '';
-					}
+					deferEmptyText: false,
+					emptyText: me.res('gpfiles.emptyText')
 				},
-				*/
 				selModel: {
 					type: 'checkboxmodel',
 					mode : 'MULTI'
@@ -335,17 +336,22 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 					mys: me,
 					dropElement: gpId,
 					fileExtraParams: function() {
-						console.log('fileExtraParams '+me.curFile);
 						return {
 							fileId: me.curFile
 						};
-					}
+					},
+					listeners: {
+						fileuploaded: function(s, file) {
+							if(file._extraParams) {
+								me.reloadGridFilesIf(file._extraParams['fileId']);
+							}
+						}
+					},
+					disabled: true
 				},
-				plugins: [
-					Ext.create('Sonicle.plugin.FileDrop', {
-						pluginId: 'filedrop'
-					})
-				],
+				plugins: [{
+					ptype: 'sofiledrop'
+				}],
 				listeners: {
 					selectionchange: function() {
 						//me.updateCxmGridFile();
@@ -382,15 +388,6 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				items: []
 			}]
 		}));
-	},
-	
-	
-	proUpload: function() {
-		return this.getMainComponent().lookupReference('proupload');
-	},
-	
-	dropHere: function() {
-		return this.getMainComponent().lookupReference('drophere');
 	},
 	
 	
@@ -679,7 +676,12 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 	},
 	
 	editStoreUI: function(node) {
-		WT.info('TODO');
+		var me = this;
+		me.editStore(node.get('_storeId'), {
+			callback: function(success) {
+				if(success) me.loadTreeRootNode(node.get('_pid'));
+			}
+		});
 	},
 	
 	deleteStoreUI: function(node) {
@@ -689,7 +691,10 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 			if(bid === 'yes') {
 				me.deleteStore(node.get('_storeId'), {
 					callback: function(success) {
-						if(success) sto.remove(node);
+						if(success) {
+							sto.remove(node);
+							if(me.isInCurFile(node.getFId())) me.setCurFile(null);
+						}
 					}
 				});
 			}
@@ -745,7 +750,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 									if(sel.isNode) {
 										pfid = sel.parentNode.getFId(); // Keep here before load
 										me.loadTreeFileNode(sel.parentNode);
-										if(me.curFile && me.curFile.indexOf(sel.getFId()) > -1) {
+										if(me.isInCurFile(sel.getFId())) {
 											me.setCurFile(pfid);
 											me.reloadGridFiles();
 										} else {
@@ -875,6 +880,22 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 			vct.getView().begin('edit', {
 				data: {
 					id: id
+				}
+			});
+		});
+	},
+	
+	editStore: function(storeId, opts) {
+		var me = this,
+				vct = WT.createView(me.ID, 'view.Store');
+		
+		vct.getView().on('viewsave', function(s, success, model) {
+			Ext.callback(opts.callback, opts.scope || me, [success, model]);
+		});
+		vct.show(false, function() {
+			vct.getView().begin('edit', {
+				data: {
+					storeId: storeId
 				}
 			});
 		});
@@ -1226,6 +1247,11 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		this.reloadTreeFile();
 	},
 	
+	reloadGridFilesIf: function(fileId) {
+		var me = this;
+		if(me.curFile === fileId) me.reloadGridFiles();
+	},
+	
 	reloadGridFiles: function() {
 		var me = this, tr, node;
 		if(me.isActive()) {
@@ -1339,6 +1365,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 			case 'editStore':
 				sel = me.getCurrentFileNode();
 				if(sel) {
+					if(sel.get('_builtIn')) return true;
 					return !sel.getFPerms().UPDATE;
 				} else {
 					return true;
@@ -1346,11 +1373,13 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 			case 'deleteStore':
 				sel = me.getCurrentFileNode();
 				if(sel) {
+					if(sel.get('_builtIn')) return true;
 					return !sel.getFPerms().DELETE;
 				} else {
 					return true;
 				}
 			case 'addStoreFtp':
+				if(!me.isPermitted('STORE_OTHER', 'CREATE')) return true;
 				sel = me.getCurrentFileNode();
 				if(sel) {
 					return !sel.getRPerms().MANAGE;
@@ -1358,6 +1387,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 					return true;
 				}
 			case 'addStoreDropbox':
+				if(!me.isPermitted('STORE_CLOUD', 'CREATE')) return true;
 				sel = me.getCurrentFileNode();
 				if(sel) {
 					return !sel.getRPerms().MANAGE;
@@ -1365,6 +1395,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 					return true;
 				}
 			case 'addStoreGooDrive':
+				if(!me.isPermitted('STORE_CLOUD', 'CREATE')) return true;
 				sel = me.getCurrentFileNode();
 				if(sel) {
 					return !sel.getRPerms().MANAGE;
@@ -1372,6 +1403,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 					return true;
 				}
 			case 'addStoreFile':
+				if(!me.isPermitted('STORE_FILE', 'CREATE')) return true;
 				sel = me.getCurrentFileNode();
 				if(sel) {
 					return !sel.getRPerms().MANAGE;
@@ -1379,6 +1411,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 					return true;
 				}
 			case 'addStoreOther':
+				if(!me.isPermitted('STORE_OTHER', 'CREATE')) return true;
 				sel = me.getCurrentFileNode();
 				if(sel) {
 					return !sel.getRPerms().MANAGE;
