@@ -45,6 +45,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		'Sonicle.webtop.vfs.model.StoreNode',
 		'Sonicle.webtop.vfs.model.GridFile',
 		'Sonicle.webtop.vfs.view.Sharing',
+		'Sonicle.webtop.vfs.view.SharingLinks',
 		
 		'Sonicle.plugin.FileDrop',
 		'Sonicle.webtop.vfs.ux.UploadToolbar'
@@ -109,6 +110,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 			xtype: 'toolbar',
 			referenceHolder: true,
 			items: [
+				me.getAction('showSharingLinks')
 				/*
 				'->'
 				me.addRef('txtsearch', Ext.create({
@@ -295,8 +297,13 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 					xtype: 'soiconcolumn',
 					dataIndex: 'dlLink',
 					header: WTF.headerWithGlyphIcon('fa fa-cloud-download'),
-					getIconCls: function(v) {
-						return Ext.isEmpty(v) ? '' : 'wtvfs-icon-downloadLink-xs';
+					getIconCls: function(v,rec) {
+						var exp = rec.get('dlLinkExp') ? 'Exp' : '';
+						return Ext.isEmpty(v) ? '' : me.cssIconCls('downloadLink'+exp, 'xs');
+					},
+					getTip: function(v,rec) {
+						var exp = rec.get('dlLinkExp') ? '.exp' : '';
+						return me.res('gpfiles.dlLink'+exp);
 					},
 					iconSize: WTU.imgSizeToPx('xs'),
 					width: 40
@@ -304,8 +311,13 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 					xtype: 'soiconcolumn',
 					dataIndex: 'ulLink',
 					header: WTF.headerWithGlyphIcon('fa fa-cloud-upload'),
-					getIconCls: function(v) {
-						return Ext.isEmpty(v) ? '' : 'wtvfs-icon-uploadLink-xs';
+					getIconCls: function(v,rec) {
+						var exp = rec.get('ulLinkExp') ? 'Exp' : '';
+						return Ext.isEmpty(v) ? '' : me.cssIconCls('uploadLink'+exp, 'xs');
+					},
+					getTip: function(v,rec) {
+						var exp = rec.get('dlLinkExp') ? '.exp' : '';
+						return me.res('gpfiles.ulLink'+exp);
 					},
 					iconSize: WTU.imgSizeToPx('xs'),
 					width: 40
@@ -364,7 +376,8 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 						WT.showContextMenu(e, me.getRef('cxmGridFile0'));
 					},
 					rowcontextmenu: function(s, rec, itm, i, e) {
-						s.getSelectionModel().select(rec);
+						var sm = s.getSelectionModel();
+						if(sm.getSelection().length <= 1) sm.select(rec);
 						WT.showContextMenu(e, me.getRef('cxmGridFile'), {
 							file: rec,
 							files: s.getSelection()
@@ -424,6 +437,21 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 	
 	initActions: function() {
 		var me = this;
+		me.addAction('showSharingLinks', {
+			iconCls: me.cssIconCls('sharingLink', 'xs'),
+			handler: function() {
+				me.showSharingLinks({
+					listeners: {
+						linkdelete: function(s, type, linkId, paFileId) {
+							var trsto = me.trStores().getStore(),
+									node = trsto.getNodeById(paFileId);
+							if(node) trsto.load({node: node});
+							me.reloadGridFilesIf(paFileId);
+						}
+					}
+				});
+			}
+		});
 		me.addAction('editSharing', {
 			text: WT.res('sharing.tit'),
 			iconCls: WTF.cssIconCls(WT.XID, 'sharing', 'xs'),
@@ -503,7 +531,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 			iconCls: me.cssIconCls('addFileDlLink', 'xs'),
 			handler: function() {
 				var node = me.getCurrentFileNode();
-				if(node) me.addFileLinkUI('d', node);
+				if(node) me.addFileLinkUI('D', node);
 			}
 		});
 		me.addAction('deleteFileNodeDlLink', {
@@ -511,7 +539,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 			iconCls: me.cssIconCls('deleteFileDlLink', 'xs'),
 			handler: function() {
 				var node = me.getCurrentFileNode();
-				if(node) me.deleteFileLinkUI('d', node);
+				if(node) me.deleteFileLinkUI('D', node);
 			}
 		});
 		me.addAction('addFileNodeUlLink', {
@@ -519,7 +547,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 			iconCls: me.cssIconCls('addFileUlLink', 'xs'),
 			handler: function() {
 				var sel = me.getCurrentFileNode();
-				if(sel) me.addFileLinkUI('u', sel);
+				if(sel) me.addFileLinkUI('U', sel);
 			}
 		});
 		me.addAction('deleteFileNodeUlLink', {
@@ -527,7 +555,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 			iconCls: me.cssIconCls('deleteFileUlLink', 'xs'),
 			handler: function() {
 				var sel = me.getCurrentFileNode();
-				if(sel) me.deleteFileLinkUI('u', sel);
+				if(sel) me.deleteFileLinkUI('U', sel);
 			}
 		});
 		
@@ -572,25 +600,25 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		me.addAction('addFileDlLink', {
 			handler: function() {
 				var sel = me.getSelectedFile();
-				if(sel) me.addFileLinkUI('d', sel);
+				if(sel) me.addFileLinkUI('D', sel);
 			}
 		});
 		me.addAction('deleteFileDlLink', {
 			handler: function() {
 				var sel = me.getSelectedFile();
-				if(sel) me.deleteFileLinkUI('d', sel);
+				if(sel) me.deleteFileLinkUI('D', sel);
 			}
 		});
 		me.addAction('addFileUlLink', {
 			handler: function() {
 				var sel = me.getSelectedFile();
-				if(sel) me.addFileLinkUI('u', sel);
+				if(sel) me.addFileLinkUI('U', sel);
 			}
 		});
 		me.addAction('deleteFileUlLink', {
 			handler: function() {
 				var sel = me.getSelectedFile();
-				if(sel) me.deleteFileLinkUI('u', sel);
+				if(sel) me.deleteFileLinkUI('U', sel);
 			}
 		});
 	},
@@ -840,7 +868,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 	
 	deleteFileLinkUI: function(type, sel) {
 		var me = this,
-				linkId = (type === 'd') ? sel.getFDlLink() : sel.getFUlLink(),
+				linkId = (type === 'D') ? sel.getFDlLink() : sel.getFUlLink(),
 				rec2;
 		WT.confirm(me.res('link.confirm.delete'), function(bid) {
 			if(bid === 'yes') {
@@ -852,15 +880,13 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 							} else {
 								rec2 = me.trStores().getStore().getNodeById(sel.getFId());
 							}
-							if(type === 'd') {
+							if(type === 'D') {
 								sel.setFDlLink(null);
 								if(rec2) rec2.setFDlLink(null);
-							} else if(type === 'u') {
+							} else if(type === 'U') {
 								sel.setFUlLink(null);
 								if(rec2) rec2.setFUlLink(null);
 							}
-							//me.updateCxmFile();
-							//me.updateCxmGridFile();
 						}
 					}
 				});
@@ -974,13 +1000,13 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		opts = opts || {};
 		var me = this, vct;
 		
-		if(type === 'd') {
+		if(type === 'D') {
 			vct = WT.createView(me.ID, 'view.DownloadLinkWiz', {
 				viewCfg: {
 					fileId: fileId
 				}
 			});
-		} else if(type === 'u') {
+		} else if(type === 'U') {
 			vct = WT.createView(me.ID, 'view.UploadLinkWiz', {
 				viewCfg: {
 					fileId: fileId
@@ -998,9 +1024,9 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		opts = opts || {};
 		var me = this, act;
 		
-		if(type === 'd') {
+		if(type === 'D') {
 			act = 'ManageDownloadLink';
-		} else if(type === 'u') {
+		} else if(type === 'U') {
 			act = 'ManageUploadLink';
 		}
 		WT.ajaxReq(me.ID, act, {
@@ -1086,6 +1112,18 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		vct.getView().on('viewclose', function(s) {
 			Ext.callback(opts.callback, opts.scope || me, [true, s.getVMData()]);
 		});
+		vct.show();
+	},
+	
+	showSharingLinks: function(opts) {
+		opts = opts || {};
+		var me = this,
+			vct = WT.createView(me.ID, 'view.SharingLinks');
+		
+		vct.getView().on('viewclose', function(s) {
+			Ext.callback(opts.callback, opts.scope || me, [true]);
+		});
+		if(opts.listeners) vct.getView().on(opts.listeners);
 		vct.show();
 	},
 	
@@ -1519,6 +1557,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 			case 'addFileUlLink':
 				sel = me.getSelectedFiles();
 				if(sel.length === 1) {
+					if(!sel[0].getEPerms().CREATE) return true;
 					return (sel[0].getFType() !== 'folder') ? true : !Ext.isEmpty(sel[0].getFUlLink());
 				} else {
 					return true;
@@ -1526,6 +1565,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 			case 'deleteFileUlLink':
 				sel = me.getSelectedFiles();
 				if(sel.length === 1) {
+					if(!sel[0].getEPerms().CREATE) return true;
 					return Ext.isEmpty(sel[0].getFUlLink());
 				} else {
 					return true;

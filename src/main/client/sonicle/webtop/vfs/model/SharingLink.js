@@ -31,13 +31,18 @@
  * feasible for technical reasons, the Appropriate Legal Notices must display
  * the words "Powered by Sonicle WebTop".
  */
-Ext.define('Sonicle.webtop.vfs.model.UserOptions', {
-	extend: 'WT.sdk.model.UserOptions',
+Ext.define('Sonicle.webtop.vfs.model.Store', {
+	extend: 'WT.ux.data.BaseModel',
+	proxy: WTF.apiProxy('com.sonicle.webtop.vfs', 'ManageSharingLink'),
 	
-	proxy: WT.optionsProxy('com.sonicle.webtop.vfs'),
+	identifier: 'negative',
+	idProperty: 'sharingLinkId',
 	fields: [
-		WTF.field('privateUploadMaxFileSize', 'int', true),
-		WTF.field('publicUploadMaxFileSize', 'int', true),
-		WTF.field('showHiddenFiles', 'boolean', true)
+		WTF.field('sharingLinkId', 'string', false),
+		WTF.field('type', 'string', false),
+		WTF.roField('filePath', 'string'),
+		WTF.field('expirationDate', 'string', true),
+		WTF.field('authMode', 'string', false),
+		WTF.field('password', 'string', true)
 	]
 });

@@ -169,4 +169,23 @@ public class StoreDAO extends BaseDAO {
 				.where(STORES.STORE_ID.equal(storeId))
 				.execute();
 	}
+	
+	public int deleteByDomain(Connection con, String domainId) throws DAOException {
+		DSLContext dsl = getDSL(con);
+		return dsl
+				.delete(STORES)
+				.where(STORES.DOMAIN_ID.equal(domainId))
+				.execute();
+	}
+	
+	public int deleteByDomainUser(Connection con, String domainId, String userId) throws DAOException {
+		DSLContext dsl = getDSL(con);
+		return dsl
+				.delete(STORES)
+				.where(
+						STORES.DOMAIN_ID.equal(domainId)
+						.and(STORES.USER_ID.equal(userId))
+				)
+				.execute();
+	}
 }

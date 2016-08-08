@@ -34,14 +34,14 @@
 package com.sonicle.webtop.vfs.bol.js;
 
 import com.sonicle.commons.time.DateTimeUtils;
-import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.servlet.ServletHelper;
+import com.sonicle.webtop.vfs.bol.model.DownloadLink;
 import com.sonicle.webtop.vfs.bol.model.StoreShareFolder;
+import com.sonicle.webtop.vfs.bol.model.UploadLink;
 import org.apache.commons.vfs2.FileObject;
 import org.apache.commons.vfs2.FileSystemException;
 import org.apache.commons.vfs2.FileType;
 import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
 import org.joda.time.format.DateTimeFormatter;
 
 /**
@@ -57,12 +57,14 @@ public class JsGridFile {
 	public Long size;
 	public String lastModified;
 	public String dlLink;
+	public Boolean dlLinkExp;
 	public String ulLink;
+	public Boolean ulLinkExp;
 	public String eperms;
 	
 	public JsGridFile() {}
 	
-	public JsGridFile(StoreShareFolder folder, FileObject fo, String fileId, String dlLink, String ulLink) {
+	public JsGridFile(StoreShareFolder folder, FileObject fo, String fileId, DownloadLink dlLink, UploadLink ulLink) {
 		this.fileId = fileId;
 		this.type = getFileType(fo);
 		this.mtype = (type.equals("folder")) ? "" : ServletHelper.guessMediaType(fo.getName().getBaseName(), true);
@@ -70,8 +72,21 @@ public class JsGridFile {
 		this.ext = fo.getName().getExtension();
 		this.size = getFileSize(fo);
 		this.lastModified = getFileLastModified(fo);
-		this.dlLink = dlLink;
-		this.ulLink = ulLink;
+		DateTime now = DateTimeUtils.now();
+		if(dlLink != null) {
+			this.dlLink = dlLink.getLinkId();
+			this.dlLinkExp = dlLink.isExpired(now);
+		} else {
+			this.dlLink = null;
+			this.dlLinkExp = false;
+		}
+		if(ulLink != null) {
+			this.ulLink = ulLink.getLinkId();
+			this.ulLinkExp = ulLink.isExpired(now);
+		} else {
+			this.ulLink = null;
+			this.ulLinkExp = false;
+		}
 		this.eperms = folder.getElementsPerms().toString();
 	}
 	

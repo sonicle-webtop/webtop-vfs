@@ -40,6 +40,7 @@ import com.dropbox.core.DbxRequestConfig;
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.services.oauth2.model.Userinfoplus;
 import com.sonicle.commons.LangUtils;
+import com.sonicle.commons.PathUtils;
 import com.sonicle.commons.time.DateTimeUtils;
 import com.sonicle.commons.web.Crud;
 import com.sonicle.commons.web.DispositionType;
@@ -68,6 +69,7 @@ import com.sonicle.webtop.core.sdk.interfaces.IServiceUploadListener;
 import com.sonicle.webtop.core.sdk.interfaces.IServiceUploadStreamListener;
 import com.sonicle.webtop.core.servlet.ServletHelper;
 import com.sonicle.webtop.vfs.bol.js.JsGridFile;
+import com.sonicle.webtop.vfs.bol.js.JsGridSharingLink;
 import com.sonicle.webtop.vfs.bol.js.JsSharing;
 import com.sonicle.webtop.vfs.bol.js.JsStore;
 import com.sonicle.webtop.vfs.bol.model.DownloadLink;
@@ -96,6 +98,9 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.vfs2.FileObject;
+import org.apache.commons.vfs2.FileSystemException;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.joda.time.format.DateTimeFormatter;
 import org.slf4j.Logger;
 
@@ -235,7 +240,7 @@ public class Service extends BaseService {
 		}
 	}
 	
-	private class StoreNodeId extends CompositeId {
+	public static class StoreNodeId extends CompositeId {
 		
 		public StoreNodeId() {
 			super(3);
@@ -293,29 +298,29 @@ public class Service extends BaseService {
 		return node;
 	}
 	
-	private String storeIconCls(Store store) {
+	private String storeIcon(Store store) {
 		String uri = store.getUri();
 		if(store.getBuiltIn()) {
-			return "wtvfs-icon-storeMyDocs-xs";
+			return "storeMyDocs";
 		} else {
 			if(StringUtils.startsWith(uri, "dropbox")) {
-				return "wtvfs-icon-storeDropbox-xs";
+				return "storeDropbox";
 			} else if(StringUtils.startsWith(uri, "file")) {
-				return "wtvfs-icon-storeFile-xs";
+				return "storeFile";
 			} else if(StringUtils.startsWith(uri, "ftp")) {
-				return "wtvfs-icon-storeFtp-xs";
+				return "storeFtp";
 			} else if(StringUtils.startsWith(uri, "ftps")) {
-				return "wtvfs-icon-storeFtp-xs";
+				return "storeFtp";
 			} else if(StringUtils.startsWith(uri, "googledrive")) {
-				return "wtvfs-icon-storeGooDrive-xs";
+				return "storeGooDrive";
 			} else if(StringUtils.startsWith(uri, "sftp")) {
-				return "wtvfs-icon-storeFtp-xs";
+				return "storeFtp";
 			} else if(StringUtils.startsWith(uri, "webdav")) {
-				return "wtvfs-icon-storeWebdav-xs";
+				return "storeWebdav";
 			} else if(StringUtils.startsWith(uri, "smb")) {
-				return "wtvfs-icon-storeSmb-xs";
+				return "storeSmb";
 			}  else {
-				return "wtvfs-icon-store-xs";
+				return "store-xs";
 			}
 		}
 	}
@@ -341,7 +346,7 @@ public class Service extends BaseService {
 				&& !folder.getElementsPerms().implies("DELETE")) classes.add("wttasks-tree-readonly");
 		node.setCls(StringUtils.join(classes, " "));
 		
-		node.setIconClass(storeIconCls(store));
+		node.setIconClass("wtvfs-icon-"+storeIcon(store)+"-xs");
 		
 		return node;
 	}
@@ -398,12 +403,16 @@ public class Service extends BaseService {
 						StoreShareFolder folder = getFolderFromCache(storeId);
 						String path = (nodeId.getSize() == 2) ? "/" : nodeId.getPath();
 						
+						boolean showHidden = us.getShowHiddenFiles();
+						
 						LinkedHashMap<String, DownloadLink> dls = manager.listDownloadLinks(storeId, path);
 						LinkedHashMap<String, UploadLink> uls = manager.listUploadLinks(storeId, path);
 						
 						StoreFileSystem sfs = manager.getStoreFileSystem(storeId);
 						for(FileObject fo : manager.listStoreFiles(StoreFileType.FOLDER, storeId, path)) {
-							final String filePath = sfs.getRelativePath(fo);
+							if(!showHidden && isFileHidden(fo)) continue;
+							// Relativize path and force trailing separator (it's a folder)
+							final String filePath = PathUtils.ensureTrailingSeparator(sfs.getRelativePath(fo), false);
 							//final String fileId = new StoreNodeId(nodeId.getShareId(), nodeId.getStoreId(), filePath).toString();
 							final String fileHash = manager.generateStoreFileHash(storeId, filePath);
 							
@@ -760,23 +769,19 @@ public class Service extends BaseService {
 				StoreShareFolder folder = getFolderFromCache(storeId);
 				String path = (parentNodeId.getSize() == 2) ? "/" : parentNodeId.getPath();
 				
+				boolean showHidden = us.getShowHiddenFiles();
+				
 				LinkedHashMap<String, DownloadLink> dls = manager.listDownloadLinks(storeId, path);
 				LinkedHashMap<String, UploadLink> uls = manager.listUploadLinks(storeId, path);
 				
 				StoreFileSystem sfs = manager.getStoreFileSystem(storeId);
 				for(FileObject fo : manager.listStoreFiles(StoreFileType.FILE_OR_FOLDER, storeId, path)) {
-					final String filePath = sfs.getRelativePath(fo);
+					if(!showHidden && isFileHidden(fo)) continue;
+					// Relativize path and force trailing separator if file is a folder
+					final String filePath = fo.isFolder() ? PathUtils.ensureTrailingSeparator(sfs.getRelativePath(fo), false) : sfs.getRelativePath(fo);
 					final String fileId = new StoreNodeId(parentNodeId.getShareId(), parentNodeId.getStoreId(), filePath).toString();
 					final String fileHash = manager.generateStoreFileHash(storeId, filePath);
-					
-					String dlLink = null, ulLink = null;
-					if(dls.containsKey(fileHash)) {
-						dlLink = dls.get(fileHash).getLinkId();
-					}
-					if(uls.containsKey(fileHash)) {
-						ulLink = uls.get(fileHash).getLinkId();
-					}
-					items.add(new JsGridFile(folder, fo, fileId, dlLink, ulLink));
+					items.add(new JsGridFile(folder, fo, fileId, dls.get(fileHash), uls.get(fileHash)));
 				}
 				new JsonResult("files", items).printTo(out);
 			}
@@ -786,6 +791,8 @@ public class Service extends BaseService {
 			new JsonResult(false, "Error").printTo(out);
 		}
 	}
+	
+	
 	
 	public void processManageFiles(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		
@@ -886,7 +893,10 @@ public class Service extends BaseService {
 				DownloadLink dl = new DownloadLink();
 				dl.setStoreId(storeId);
 				dl.setFilePath(nodeId.getPath());
-				if(!StringUtils.isBlank(expirationDate)) dl.setExpiresOn(ymdHmsFmt.parseDateTime(expirationDate));
+				if(!StringUtils.isBlank(expirationDate)) {
+					DateTime dt = ymdHmsFmt.parseDateTime(expirationDate);
+					dl.setExpiresOn(DateTimeUtils.withTimeAtEndOfDay(dt));
+				}
 				dl.setAuthMode(authMode);
 				dl.setPassword(password);
 				dl = manager.addDownloadLink(dl);
@@ -934,7 +944,10 @@ public class Service extends BaseService {
 				UploadLink ul = new UploadLink();
 				ul.setStoreId(storeId);
 				ul.setFilePath(nodeId.getPath());
-				if(!StringUtils.isBlank(expirationDate)) ul.setExpiresOn(ymdHmsFmt.parseDateTime(expirationDate));
+				if(!StringUtils.isBlank(expirationDate)) {
+					DateTime dt = ymdHmsFmt.parseDateTime(expirationDate);
+					ul.setExpiresOn(DateTimeUtils.withTimeAtEndOfDay(dt));
+				}
 				ul.setAuthMode(authMode);
 				ul.setPassword(password);
 				ul = manager.addUploadLink(ul);
@@ -964,6 +977,59 @@ public class Service extends BaseService {
 		}
 	}
 	
+	public void processManageSharingLinks(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		UserProfile up = getEnv().getProfile();
+		DateTimeZone ptz = up.getTimeZone();
+		
+		try {
+			String crud = ServletUtils.getStringParameter(request, "crud", true);
+			if(crud.equals(Crud.READ)) {
+				Integer id = ServletUtils.getIntParameter(request, "id", null);
+				if(id == null) {
+					List<JsGridSharingLink> items = new ArrayList<>();
+					for(StoreShareRoot root : getRootsFromCache()) {
+						for(StoreShareFolder folder : getFoldersFromCache(root.getShareId())) {
+							final Store store = folder.getStore();
+							StoreNodeId baseNodeId = new StoreNodeId();
+							baseNodeId.setShareId(folder.getShareId());
+							baseNodeId.setStoreId(store.getStoreId().toString());
+							
+							for(DownloadLink dl : manager.listDownloadLinks(folder.getStore().getStoreId(), "/").values()) {
+								items.add(new JsGridSharingLink(dl, "", store.getName(), storeIcon(folder.getStore()), baseNodeId, ptz));
+							}
+						}
+					}
+					for(StoreShareRoot root : getRootsFromCache()) {
+						for(StoreShareFolder folder : getFoldersFromCache(root.getShareId())) {
+							final Store store = folder.getStore();
+							StoreNodeId baseNodeId = new StoreNodeId();
+							baseNodeId.setShareId(folder.getShareId());
+							baseNodeId.setStoreId(store.getStoreId().toString());
+							
+							for(UploadLink ul : manager.listUploadLinks(folder.getStore().getStoreId(), "/").values()) {
+								items.add(new JsGridSharingLink(ul, "", store.getName(), storeIcon(folder.getStore()), baseNodeId, ptz));
+							}
+						}
+					}
+					new JsonResult("sharingLinks", items, items.size()).printTo(out);
+				} else {
+					//OActivity item = core.getActivity(id);
+					//new JsonResult(item).printTo(out);
+				}
+				
+			} else if(crud.equals(Crud.UPDATE)) {
+				//Payload<MapItem, OActivity> pl = ServletUtils.getPayload(request, OActivity.class);
+				//core.updateActivity(pl.data);
+				//new JsonResult().printTo(out);
+			}
+			
+		} catch(Exception ex) {
+			logger.error("Error in ManageActivities", ex);
+			new JsonResult(false, "Error").printTo(out);
+			
+		}
+	}
+	
 	private String buildSharingPath(Sharing sharing) throws WTException {
 		StringBuilder sb = new StringBuilder();
 		
@@ -987,5 +1053,9 @@ public class Service extends BaseService {
 		}
 		
 		return sb.toString();
+	}
+	
+	private boolean isFileHidden(FileObject fo) throws FileSystemException {
+		return fo.isHidden() || StringUtils.startsWith(fo.getName().getBaseName(), ".");
 	}
 }

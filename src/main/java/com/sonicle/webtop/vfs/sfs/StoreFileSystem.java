@@ -33,6 +33,7 @@
  */
 package com.sonicle.webtop.vfs.sfs;
 
+import com.sonicle.commons.PathUtils;
 import java.net.URI;
 import java.net.URISyntaxException;
 import org.apache.commons.lang.StringUtils;
@@ -92,6 +93,6 @@ public abstract class StoreFileSystem {
 	}
 	
 	public String relativizePath(String path) {
-		return StringUtils.removeStart(path, uri.getPath());
+		return PathUtils.ensureBeginningSeparator(StringUtils.removeStart(path, uri.getPath()));
 	}
 }

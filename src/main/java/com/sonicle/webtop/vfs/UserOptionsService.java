@@ -69,6 +69,7 @@ public class UserOptionsService extends BaseUserOptionsService {
 				// Main
 				jso.privateUploadMaxFileSize = us.getPrivateUploadMaxFileSize();
 				jso.publicUploadMaxFileSize = us.getPublicUploadMaxFileSize();
+				jso.showHiddenFiles = us.getShowHiddenFiles();
 				
 				new JsonResult(jso).printTo(out);
 				
@@ -78,6 +79,7 @@ public class UserOptionsService extends BaseUserOptionsService {
 				// Main
 				if(pl.map.has("privateUploadMaxFileSize")) us.setPrivateUploadMaxFileSize(pl.data.privateUploadMaxFileSize);
 				if(pl.map.has("publicUploadMaxFileSize")) us.setPublicUploadMaxFileSize(pl.data.publicUploadMaxFileSize);
+				if(pl.map.has("showHiddenFiles")) us.setShowHiddenFiles(pl.data.showHiddenFiles);
 				
 				new JsonResult().printTo(out);
 			}

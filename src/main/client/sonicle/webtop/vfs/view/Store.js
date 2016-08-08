@@ -34,6 +34,8 @@
 Ext.define('Sonicle.webtop.vfs.view.Store', {
 	extend: 'WT.sdk.ModelView',
 	requires: [
+		'Sonicle.FakeInput',
+		'Sonicle.form.field.Password',
 		'Sonicle.webtop.vfs.store.Scheme',
 		'Sonicle.webtop.vfs.model.Store'
 	],
@@ -98,22 +100,22 @@ Ext.define('Sonicle.webtop.vfs.view.Store', {
 				}],
 				fieldLabel: me.mys.res('store.fld-host.lbl')
 			}, {
+				xtype: 'sofakeinput' // Disable Chrome autofill
+			}, {
+				xtype: 'sofakeinput', // Disable Chrome autofill
+				type: 'password'
+			}, {
 				xtype: 'textfield',
 				bind: '{record.username}',
 				anchor: '80%',
 				fieldLabel: me.mys.res('store.fld-username.lbl'),
-				plugins: [{
-					ptype: 'sonoautocomplete'
-				}]
+				plugins: 'sonoautocomplete'
 			}, {
-				xtype: 'textfield',
+				xtype: 'sopasswordfield',
 				bind: '{record.password}',
-				inputType: 'password',
 				anchor: '80%',
 				fieldLabel: me.mys.res('store.fld-password.lbl'),
-				plugins: [{
-					ptype: 'sonoautocomplete'
-				}]
+				plugins: 'sonoautocomplete'
 			}, {
 				xtype: 'textfield',
 				bind: '{record.path}',

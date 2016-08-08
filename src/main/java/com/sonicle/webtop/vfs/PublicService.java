@@ -31,22 +31,34 @@
  * feasible for technical reasons, the Appropriate Legal Notices must display
  * the words "Powered by Sonicle WebTop".
  */
-package com.sonicle.webtop.vfs.bol.js;
+package com.sonicle.webtop.vfs;
 
-import com.sonicle.webtop.core.sdk.bol.js.JsUserOptionsBase;
+import com.sonicle.webtop.core.app.WT;
+import com.sonicle.webtop.core.sdk.BasePublicService;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
 
 /**
  *
  * @author malbinola
  */
-public class JsUserOptions extends JsUserOptionsBase {
-	public Integer privateUploadMaxFileSize;
-	public Integer publicUploadMaxFileSize;
-	public Boolean showHiddenFiles;
+public class PublicService extends BasePublicService {
+	private static final Logger logger = WT.getLogger(PublicService.class);
 	
-	public JsUserOptions() {}
-	
-	public JsUserOptions(String id) {
-		super(id);
+	@Override
+	public void processDefault(HttpServletRequest request, HttpServletResponse response) throws Exception {
+		
 	}
+
+	@Override
+	public void initialize() throws Exception {
+		
+	}
+
+	@Override
+	public void cleanup() throws Exception {
+		
+	}
+	
 }

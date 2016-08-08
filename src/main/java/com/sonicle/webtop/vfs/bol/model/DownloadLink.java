@@ -36,6 +36,7 @@ package com.sonicle.webtop.vfs.bol.model;
 import com.sonicle.webtop.core.sdk.WTException;
 import com.sonicle.webtop.vfs.bol.OSharingLink;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.jooq.tools.StringUtils;
 
 /**
@@ -155,5 +156,10 @@ public class DownloadLink extends SharingLink {
 		if(authMode.equals(SharingLink.AUTH_MODE_PASSWORD) && StringUtils.isBlank(password)) {
 			throw new WTException("Provide a value for password");
 		}
+	}
+	
+	public boolean isExpired(DateTime now) {
+		if(expiresOn == null) return false;
+		return now.isAfter(expiresOn.toDateTime(DateTimeZone.UTC));
 	}
 }

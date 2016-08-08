@@ -636,7 +636,7 @@ public class VfsManager extends BaseManager {
 			OSharingLink olink = dao.selectByIdType(con, linkId, OSharingLink.LINK_TYPE_DOWNLOAD);
 			if(olink == null) throw new WTException("Unable to retrieve download link [{0}]", linkId);
 			
-			checkRightsOnStoreElements(olink.getStoreId(), "CREATE"); // Rights check!
+			checkRightsOnStoreElements(olink.getStoreId(), "READ"); // Rights check!
 			
 			doDownloadLinkDelete(con, linkId);
 			DbUtils.commitQuietly(con);

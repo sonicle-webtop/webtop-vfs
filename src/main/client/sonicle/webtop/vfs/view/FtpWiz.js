@@ -131,16 +131,23 @@ Ext.define('Sonicle.webtop.vfs.view.FtpWiz', {
 					}],
 					fieldLabel: me.mys.res('ftpWiz.fld-host.lbl')
 				}, {
+					xtype: 'sofakeinput' // Disable Chrome autofill
+				}, {
+					xtype: 'sofakeinput', // Disable Chrome autofill
+					type: 'password'
+				}, {
 					xtype: 'textfield',
 					bind: '{username}',
 					width: 280,
-					fieldLabel: me.mys.res('ftpWiz.fld-username.lbl')
+					fieldLabel: me.mys.res('ftpWiz.fld-username.lbl'),
+					plugins: 'sonoautocomplete'
 				}, {
 					xtype: 'textfield',
 					bind: '{password}',
 					inputType: 'password',
 					width: 280,
-					fieldLabel: me.mys.res('ftpWiz.fld-password.lbl')
+					fieldLabel: me.mys.res('ftpWiz.fld-password.lbl'),
+					plugins: 'sonoautocomplete'
 				}, {
 					xtype: 'textfield',
 					bind: '{path}',

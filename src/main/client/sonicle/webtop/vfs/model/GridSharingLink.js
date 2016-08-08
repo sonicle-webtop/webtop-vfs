@@ -31,13 +31,28 @@
  * feasible for technical reasons, the Appropriate Legal Notices must display
  * the words "Powered by Sonicle WebTop".
  */
-Ext.define('Sonicle.webtop.vfs.model.UserOptions', {
-	extend: 'WT.sdk.model.UserOptions',
+Ext.define('Sonicle.webtop.vfs.model.GridSharingLink', {
+	extend: 'WT.ux.data.BaseModel',
 	
-	proxy: WT.optionsProxy('com.sonicle.webtop.vfs'),
+	idProperty: 'linkId',
 	fields: [
-		WTF.field('privateUploadMaxFileSize', 'int', true),
-		WTF.field('publicUploadMaxFileSize', 'int', true),
-		WTF.field('showHiddenFiles', 'boolean', true)
+		WTF.field('linkId', 'string', false),
+		//WTF.roField('domainId', 'string'),
+		WTF.roField('userId', 'string'),
+		WTF.roField('userDescription', 'string'),
+		WTF.roField('linkType', 'string'),
+		WTF.roField('storeId', 'int'),
+		WTF.roField('storeIcon', 'string'),
+		WTF.roField('storeName', 'string'),
+		WTF.roField('filePath', 'string'),
+		WTF.roField('fileName', 'string'),
+		WTF.roField('fileExt', 'string'),
+		WTF.roField('fileHash', 'string'),
+		WTF.roField('fileId', 'string'),
+		WTF.roField('parentFileId', 'string'),
+		WTF.roField('parentFilePath', 'string'),
+		WTF.roField('expireOn', 'date', {dateFormat: 'Y-m-d H:i:s'}),
+		WTF.roField('expired', 'boolean'),
+		WTF.roField('authMode', 'string')
 	]
 });

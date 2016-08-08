@@ -87,7 +87,10 @@ public class SharingLinkDAO extends BaseDAO {
 					.and(SHARING_LINKS.LINK_TYPE.equal(linkType)
 					.and(SHARING_LINKS.STORE_ID.equal(storeId)
 					.and(SHARING_LINKS.FILE_PATH.startsWith(filePathStartsWith)))))
-					
+			)
+			.orderBy(
+					SHARING_LINKS.FILE_PATH.asc(),
+					SHARING_LINKS.EXPIRES_ON.desc()
 			)
 			.fetchInto(OSharingLink.class);
 	}
@@ -133,14 +136,22 @@ public class SharingLinkDAO extends BaseDAO {
 			.execute();
 	}
 	
-	public int deleteByProfile(Connection con, UserProfile.Id profileId) throws DAOException {
+	public int deleteByDomain(Connection con, String domainId) throws DAOException {
 		DSLContext dsl = getDSL(con);
 		return dsl
-			.delete(SHARING_LINKS)
-			.where(
-					SHARING_LINKS.DOMAIN_ID.equal(profileId.getDomain())
-					.and(SHARING_LINKS.USER_ID.equal(profileId.getUser()))
-			)
-			.execute();
+				.delete(SHARING_LINKS)
+				.where(SHARING_LINKS.DOMAIN_ID.equal(domainId))
+				.execute();
+	}
+	
+	public int deleteByDomainUser(Connection con, String domainId, String userId) throws DAOException {
+		DSLContext dsl = getDSL(con);
+		return dsl
+				.delete(SHARING_LINKS)
+				.where(
+						SHARING_LINKS.DOMAIN_ID.equal(domainId)
+						.and(SHARING_LINKS.USER_ID.equal(userId))
+				)
+				.execute();
 	}
 }

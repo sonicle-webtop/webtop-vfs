@@ -40,14 +40,14 @@ package com.sonicle.webtop.vfs;
 public class VfsSettings {
 	
 	/**
-	 * [user+domain+system][default]
+	 * [user+domain+system]
 	 * [int]
 	 * Maximum file size for internal uploads
 	 */
 	public static final String UPLOAD_PRIVATE_MAXFILESIZE = "upload.private.maxfilesize";
 	
 	/**
-	 * [user+domain+system][default]
+	 * [user+domain+system]
 	 * [int]
 	 * Maximum file size for public uploads
 	 */
@@ -89,4 +89,11 @@ public class VfsSettings {
 	 * Default expiration days of download links
 	 */
 	public static final String LINK_DOWNLOAD_EXPIRATION = "link.download.expiration";
+	
+	/**
+	 * [user]
+	 * [boolean]
+	 * True to display hidden files and dotfiles (file's name start with .) in results
+	 */
+	public static final String HIDDENFILES_SHOW = "hiddenfiles.show";
 }

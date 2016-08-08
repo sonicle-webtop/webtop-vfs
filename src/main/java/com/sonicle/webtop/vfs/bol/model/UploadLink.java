@@ -35,8 +35,9 @@ package com.sonicle.webtop.vfs.bol.model;
 
 import com.sonicle.webtop.core.sdk.WTException;
 import com.sonicle.webtop.vfs.bol.OSharingLink;
+import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
-import org.jooq.tools.StringUtils;
+import org.joda.time.DateTimeZone;
 
 /**
  *
@@ -151,9 +152,15 @@ public class UploadLink extends SharingLink {
 	}
 	
 	public void validate() throws WTException {
+		if(!StringUtils.endsWith(filePath, "/")) throw new WTException("File path must target a directory");
 		if(authMode == null) throw new WTException("Provide a value for authMode");
 		if(authMode.equals(SharingLink.AUTH_MODE_PASSWORD) && StringUtils.isBlank(password)) {
 			throw new WTException("Provide a value for password");
 		}
+	}
+	
+	public boolean isExpired(DateTime now) {
+		if(expiresOn == null) return false;
+		return now.isAfter(expiresOn.toDateTime(DateTimeZone.UTC));
 	}
 }

@@ -47,7 +47,9 @@ Ext.define('Sonicle.webtop.vfs.model.GridFile', {
 		WTF.roField('size', 'int'),
 		WTF.roField('lastModified', 'date', {dateFormat: 'Y-m-d H:i:s'}),
 		WTF.roField('dlLink', 'string'),
+		WTF.roField('dlLinkExp', 'boolean'),
 		WTF.roField('ulLink', 'string'),
+		WTF.roField('ulLinkExp', 'boolean'),
 		WTF.roField('eperms', 'string')
 	],
 	

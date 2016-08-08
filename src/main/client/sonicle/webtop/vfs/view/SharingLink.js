@@ -31,69 +31,87 @@
  * feasible for technical reasons, the Appropriate Legal Notices must display
  * the words "Powered by Sonicle WebTop".
  */
-Ext.define('Sonicle.webtop.vfs.view.UserOptions', {
-	extend: 'WT.sdk.UserOptionsView',
+Ext.define('Sonicle.webtop.vfs.view.SharingLink', {
+	extend: 'WT.sdk.ModelView',
 	requires: [
-		'Sonicle.form.field.Bytes'
+		'Sonicle.FakeInput',
+		'Sonicle.form.field.Password',
+		'Sonicle.webtop.vfs.store.SharingLinkType',
+		'Sonicle.webtop.vfs.model.SharingLink'
 	],
 	
-	viewModel: {
-		formulas: {
-			showHiddenFiles: WTF.checkboxBind('record', 'showHiddenFiles')
-		}
+	dockableConfig: {
+		title: '{sharingLink.tit}',
+		iconCls: 'wtvfs-icon-sharingLink-xs',
+		width: 450,
+		height: 260
 	},
-		
+	fieldTitle: 'name',
+	modelName: 'Sonicle.webtop.vfs.model.SharingLink',
+	
 	initComponent: function() {
 		var me = this,
-				Bytes = Sonicle.Bytes;
+				vm = me.getVM();
+		
+		WTU.applyFormulas(vm, {
+			foAuthModeIsP: WTF.equalsFormula('record', 'authMode', 'P')
+		});
+		
 		me.callParent(arguments);
 		
 		me.add({
-			xtype: 'wtopttabsection',
-			title: WT.res(me.ID, 'opts.main.tit'),
-			items: [{
-				xtype: 'sobytesfield',
-				bind: '{record.privateUploadMaxFileSize}',
-				disabled: !WT.isPermitted('WTADMIN', 'ACCESS'),
-				emptyText: Bytes.format(WT.getOption('wtUploadMaxFileSize')),
-				fieldLabel: WT.res(me.ID, 'opts.main.fld-privateUploadMaxFileSize.lbl'),
-				width: 280,
-				listeners: {
-					blur: {
-						fn: me.onBlurAutoSave,
-						scope: me
-					}
-				}
+			region: 'center',
+			xtype: 'wtform',
+			modelValidation: true,
+			defaults: {
+				labelWidth: 100
+			},
+			items: [
+			WTF.lookupCombo('id', 'desc', {
+				bind: '{record.type}',
+				allowBlank: false,
+				store: Ext.create('Sonicle.webtop.vfs.store.SharingLinkType', {
+					autoLoad: true
+				}),
+				fieldLabel: me.mys.res('sharingLink.fld-type.lbl'),
+				width: 350,
+				disabled: true
+			}), {
+				xtype: 'datefield',
+				bind: '{record.expirationDate}',
+				startDay: WT.getStartDay(),
+				format: WT.getShortDateFmt(),
+				fieldLabel: me.mys.res('sharingLink.fld-expirationDate.lbl'),
+				emptyText: 'Nessuna',
+				width: 120
 			}, {
-				xtype: 'sobytesfield',
-				bind: '{record.publicUploadMaxFileSize}',
-				disabled: !WT.isPermitted('WTADMIN', 'ACCESS'),
-				emptyText: Bytes.format(WT.getOption('wtUploadMaxFileSize')),
-				fieldLabel: WT.res(me.ID, 'opts.main.fld-publicUploadMaxFileSize.lbl'),
-				width: 280,
-				listeners: {
-					blur: {
-						fn: me.onBlurAutoSave,
-						scope: me
-					}
-				}
-			}, {
-				xtype: 'checkbox',
-				bind: '{showHiddenFiles}',
-				hideEmptyLabel: false,
-				boxLabel: WT.res(me.ID, 'opts.main.fld-showHiddenFiles.lbl'),
-				listeners: {
-					change: {
-						fn: function(s) {
-							//TODO: workaround...il modello veniva salvato prima dell'aggionamento
-							Ext.defer(function() {
-								me.onBlurAutoSave(s);
-							}, 200);
-						},
-						scope: me
-					}
-				}
+				bind: '{record.authMode}',
+				allowBlank: false,
+				store: Ext.create('Sonicle.webtop.vfs.store.SharingLinkAuthMode', {
+					autoLoad: true
+				}),
+				fieldLabel: me.mys.res('sharingLink.fld-authMode.lbl'),
+				width: 350
+			}/*, {
+				xtype: 'sofakeinput', // Disable Chrome autofill
+				type: 'password'
+			}*/, {
+				xtype: 'textfield',
+				reference: 'fldpassword',
+				bind: {
+					value: '{password}',
+					disabled: '{!foAuthModeIsP}'
+				},
+				width: 200,
+				emptyText: me.mys.res('sharingLink.fld-password.lbl')	
 			}]
 		});
+		me.on('viewload', me.onViewLoad);
+	},
+	
+	onViewLoad: function(s, success) {
+		if(!success) return;
+		var me = this;
+		me.lref('fldname').focus(true);
 	}
 });

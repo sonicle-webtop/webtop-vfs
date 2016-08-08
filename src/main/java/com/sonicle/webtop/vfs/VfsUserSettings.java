@@ -68,4 +68,12 @@ public class VfsUserSettings extends BaseUserSettings {
 	public boolean setPublicUploadMaxFileSize(Integer value) {
 		return setInteger(UPLOAD_PUBLIC_MAXFILESIZE, value);
 	}
+	
+	public boolean getShowHiddenFiles() {
+		return getBoolean(HIDDENFILES_SHOW, false);
+	}
+	
+	public boolean setShowHiddenFiles(boolean value) {
+		return setBoolean(HIDDENFILES_SHOW, value);
+	}
 }

@@ -3,7 +3,6 @@
 .wtvfs-icon-service-m { background-image: url('service_32.png') !important; }
 .wtvfs-icon-service-l { background-image: url('service_48.png') !important; }
 
-
 .wtvfs-icon-addStore-xs { background-image: url('store-add_16.png') !important; }
 .wtvfs-icon-addStoreFtp-xs { background-image: url('storeFtp_16.png') !important; }
 .wtvfs-icon-addStoreDropbox-xs { background-image: url('dropbox_16.png') !important; }
@@ -18,9 +17,9 @@
 .wtvfs-icon-renameFile-xs { background-image: url('file-rename_16.png') !important; }
 .wtvfs-icon-deleteFile-xs { background-image: url('file-delete_16.png') !important; }
 .wtvfs-icon-createFileFolder-xs { background-image: url('file-createFolder_16.png') !important; }
-.wtvfs-icon-addFileDlLink-xs { background-image: url('link-download_16.png') !important; }
+.wtvfs-icon-addFileDlLink-xs { background-image: url('linkDownload_16.png') !important; }
 /*.wtvfs-icon-deleteFileDlLink-xs { background-image: url('link-delete_16.png') !important; }*/
-.wtvfs-icon-addFileUlLink-xs { background-image: url('link-upload_16.png') !important; }
+.wtvfs-icon-addFileUlLink-xs { background-image: url('linkUpload_16.png') !important; }
 /*.wtvfs-icon-deleteFileUlLink-xs { background-image: url('link-delete_16.png') !important; }*/
 
 .wtvfs-icon-store-xs { background-image: url('store_16.png') !important; }
@@ -34,10 +33,14 @@
 .wtvfs-icon-storeWebdav-xs { background-image: url('storeWebdav_16.png') !important; }
 .wtvfs-icon-storeSmb-xs { background-image: url('storeSmb_16.png') !important; }
 .wtvfs-icon-storeOther-xs { background-image: url('store_16.png') !important; }
-.wtvfs-icon-downloadLink-xs { background-image: url('link-download_16.png') !important; }
-.wtvfs-icon-uploadLink-xs { background-image: url('link-upload_16.png') !important; }
+.wtvfs-icon-downloadLink-xs { background-image: url('linkDownload_16.png') !important; }
+.wtvfs-icon-downloadLinkExp-xs { background-image: url('linkDownload-red_16.png') !important; }
+.wtvfs-icon-uploadLink-xs { background-image: url('linkUpload_16.png') !important; }
+.wtvfs-icon-uploadLinkExp-xs { background-image: url('linkUpload-red_16.png') !important; }
+.wtvfs-icon-sharingLink-xs { background-image: url('sharingLink_16.png') !important; }
 
 .vtvfs-gpfiles .x-grid-empty {text-align: center;}
+.vtvfs-gplinks-row-expired { color: #E60D35; }
 
 .so-filedrop {
 	position: absolute;
