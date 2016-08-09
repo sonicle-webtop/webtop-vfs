@@ -43,10 +43,10 @@ Ext.define('Sonicle.webtop.vfs.view.SharingLink', {
 	dockableConfig: {
 		title: '{sharingLink.tit}',
 		iconCls: 'wtvfs-icon-sharingLink-xs',
-		width: 450,
-		height: 260
+		width: 360,
+		height: 210
 	},
-	fieldTitle: 'name',
+	fieldTitle: 'fileName',
 	modelName: 'Sonicle.webtop.vfs.model.SharingLink',
 	
 	initComponent: function() {
@@ -64,7 +64,7 @@ Ext.define('Sonicle.webtop.vfs.view.SharingLink', {
 			xtype: 'wtform',
 			modelValidation: true,
 			defaults: {
-				labelWidth: 100
+				labelWidth: 130
 			},
 			items: [
 			WTF.lookupCombo('id', 'desc', {
@@ -74,44 +74,41 @@ Ext.define('Sonicle.webtop.vfs.view.SharingLink', {
 					autoLoad: true
 				}),
 				fieldLabel: me.mys.res('sharingLink.fld-type.lbl'),
-				width: 350,
+				anchor: '100%',
 				disabled: true
 			}), {
 				xtype: 'datefield',
 				bind: '{record.expirationDate}',
 				startDay: WT.getStartDay(),
 				format: WT.getShortDateFmt(),
+				triggers: {
+					clear: WTF.clearTrigger()
+				},
 				fieldLabel: me.mys.res('sharingLink.fld-expirationDate.lbl'),
-				emptyText: 'Nessuna',
-				width: 120
-			}, {
+				emptyText: WT.res('word.none.female'),
+				width: 280
+			}, 
+			WTF.lookupCombo('id', 'desc', {
 				bind: '{record.authMode}',
 				allowBlank: false,
 				store: Ext.create('Sonicle.webtop.vfs.store.SharingLinkAuthMode', {
 					autoLoad: true
 				}),
 				fieldLabel: me.mys.res('sharingLink.fld-authMode.lbl'),
-				width: 350
-			}/*, {
+				anchor: '100%'
+			}), {
 				xtype: 'sofakeinput', // Disable Chrome autofill
 				type: 'password'
-			}*/, {
-				xtype: 'textfield',
+			}, {
+				xtype: 'sopasswordfield',
 				reference: 'fldpassword',
 				bind: {
-					value: '{password}',
+					value: '{record.password}',
 					disabled: '{!foAuthModeIsP}'
 				},
-				width: 200,
-				emptyText: me.mys.res('sharingLink.fld-password.lbl')	
+				fieldLabel: me.mys.res('sharingLink.fld-password.lbl'),
+				anchor: '100%'
 			}]
 		});
-		me.on('viewload', me.onViewLoad);
-	},
-	
-	onViewLoad: function(s, success) {
-		if(!success) return;
-		var me = this;
-		me.lref('fldname').focus(true);
 	}
 });

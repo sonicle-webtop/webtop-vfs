@@ -31,18 +31,27 @@
  * feasible for technical reasons, the Appropriate Legal Notices must display
  * the words "Powered by Sonicle WebTop".
  */
-Ext.define('Sonicle.webtop.vfs.model.Store', {
+Ext.define('Sonicle.webtop.vfs.model.SharingLink', {
 	extend: 'WT.ux.data.BaseModel',
 	proxy: WTF.apiProxy('com.sonicle.webtop.vfs', 'ManageSharingLink'),
+	requires: ['Sonicle.data.validator.Presence'],
 	
-	identifier: 'negative',
-	idProperty: 'sharingLinkId',
+	identifier: 'negativestring',
+	idProperty: 'linkId',
 	fields: [
-		WTF.field('sharingLinkId', 'string', false),
+		WTF.field('linkId', 'string', false),
 		WTF.field('type', 'string', false),
 		WTF.roField('filePath', 'string'),
-		WTF.field('expirationDate', 'string', true),
+		WTF.roField('fileName', 'string'),
+		WTF.field('expirationDate', 'date', true, {dateFormat: 'Y-m-d H:i:s'}),
 		WTF.field('authMode', 'string', false),
-		WTF.field('password', 'string', true)
+		WTF.field('password', 'string', true, {
+			validators: [{
+				type: 'sopresence',
+				skip: function(rec) {
+					return rec.get('authMode') !== 'P';
+				}
+			}]
+		})
 	]
 });

@@ -35,54 +35,50 @@ package com.sonicle.webtop.vfs.bol.js;
 
 import com.sonicle.commons.PathUtils;
 import com.sonicle.commons.time.DateTimeUtils;
-import com.sonicle.webtop.vfs.Service.StoreNodeId;
 import com.sonicle.webtop.vfs.bol.model.SharingLink;
+import org.apache.commons.lang.StringUtils;
+import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
+import org.joda.time.format.DateTimeFormatter;
 
 /**
  *
  * @author malbinola
  */
-public class JsGridSharingLink {
+public class JsSharingLink {
 	public String linkId;
-	public String userId;
-	public String userDescription;
-	public String linkType;
-	public Integer storeId;
-	public String storeIcon;
-	public String storeName;
-	public String fileName;
-	public String fileExt;
-	public String filePath;
-	public String fileHash;
-	public String fileId;
-	public String parentFileId;
-	public String parentFilePath;
-	public String expireOn;
-	public Boolean expired;
+	public String type; // Read-only
+	public String filePath; // Read-only
+	public String fileName; // Read-only
+	public String expirationDate;
 	public String authMode;
+	public String password;
 	
-	public JsGridSharingLink() {}
 	
-	public JsGridSharingLink(SharingLink sl, String userDescription, String storeName, String storeIcon, StoreNodeId baseFileId, DateTimeZone profileTz) {
-		this.linkId = sl.getLinkId();
-		this.userId = sl.getUserId();
-		this.userDescription = userDescription;
-		this.linkType = sl.getType();
-		this.storeId = sl.getStoreId();
-		this.storeName = storeName;
-		this.storeIcon = storeIcon;
-		this.filePath = sl.getFilePath();
-		this.fileName = PathUtils.getFileName(sl.getFilePath());
-		this.fileExt = PathUtils.getFileExtension(sl.getFilePath());
-		this.fileHash = sl.getFileHash();
-		baseFileId.setPath(filePath);
-		this.fileId = baseFileId.toString(true);
-		this.parentFilePath = PathUtils.getFullParentPath(sl.getFilePath());
-		baseFileId.setPath(parentFilePath);
-		this.parentFileId = baseFileId.toString(true);
-		this.expireOn = DateTimeUtils.printYmdHmsWithZone(sl.getExpiresOn(), profileTz);
-		this.expired = sl.isExpired(DateTimeUtils.now());
-		this.authMode = sl.getAuthMode();
+	public JsSharingLink() {}
+	
+	public JsSharingLink(SharingLink o, DateTimeZone profileTz) {
+		this.linkId = o.getLinkId();
+		this.type = o.getType();
+		this.filePath = o.getFilePath();
+		this.fileName = PathUtils.getFileName(o.getFilePath());
+		this.expirationDate = DateTimeUtils.printYmdHmsWithZone(o.getExpiresOn(), profileTz);
+		this.authMode = o.getAuthMode();
+		this.password = o.getPassword();
+	}
+	
+	public static SharingLink createSharingLink(JsSharingLink js, DateTimeZone profileTz) {
+		DateTimeFormatter ymdHmsFmt = DateTimeUtils.createYmdHmsFormatter(profileTz);
+		
+		SharingLink bean = new SharingLink();
+		bean.setLinkId(js.linkId);
+		bean.setType(js.type);
+		if(!StringUtils.isBlank(js.expirationDate)) {
+			DateTime dt = ymdHmsFmt.parseDateTime(js.expirationDate);
+			bean.setExpiresOn(DateTimeUtils.withTimeAtEndOfDay(dt));
+		}
+		bean.setAuthMode(js.authMode);
+		bean.setPassword(js.password);
+		return bean;
 	}
 }

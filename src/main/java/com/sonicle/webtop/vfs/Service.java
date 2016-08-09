@@ -71,8 +71,8 @@ import com.sonicle.webtop.core.servlet.ServletHelper;
 import com.sonicle.webtop.vfs.bol.js.JsGridFile;
 import com.sonicle.webtop.vfs.bol.js.JsGridSharingLink;
 import com.sonicle.webtop.vfs.bol.js.JsSharing;
+import com.sonicle.webtop.vfs.bol.js.JsSharingLink;
 import com.sonicle.webtop.vfs.bol.js.JsStore;
-import com.sonicle.webtop.vfs.bol.model.DownloadLink;
 import com.sonicle.webtop.vfs.bol.model.Store;
 import com.sonicle.webtop.vfs.bol.model.SetupParamsDropbox;
 import com.sonicle.webtop.vfs.bol.model.SetupParamsFtp;
@@ -84,7 +84,7 @@ import com.sonicle.webtop.vfs.bol.model.MyStoreRoot;
 import com.sonicle.webtop.vfs.bol.model.SetupParamsFile;
 import com.sonicle.webtop.vfs.bol.model.StoreFileType;
 import com.sonicle.webtop.vfs.bol.model.SetupParamsOther;
-import com.sonicle.webtop.vfs.bol.model.UploadLink;
+import com.sonicle.webtop.vfs.bol.model.SharingLink;
 import com.sonicle.webtop.vfs.sfs.StoreFileSystem;
 import java.io.InputStream;
 import java.io.PrintWriter;
@@ -405,8 +405,8 @@ public class Service extends BaseService {
 						
 						boolean showHidden = us.getShowHiddenFiles();
 						
-						LinkedHashMap<String, DownloadLink> dls = manager.listDownloadLinks(storeId, path);
-						LinkedHashMap<String, UploadLink> uls = manager.listUploadLinks(storeId, path);
+						LinkedHashMap<String, SharingLink> dls = manager.listDownloadLinks(storeId, path);
+						LinkedHashMap<String, SharingLink> uls = manager.listUploadLinks(storeId, path);
 						
 						StoreFileSystem sfs = manager.getStoreFileSystem(storeId);
 						for(FileObject fo : manager.listStoreFiles(StoreFileType.FOLDER, storeId, path)) {
@@ -771,8 +771,8 @@ public class Service extends BaseService {
 				
 				boolean showHidden = us.getShowHiddenFiles();
 				
-				LinkedHashMap<String, DownloadLink> dls = manager.listDownloadLinks(storeId, path);
-				LinkedHashMap<String, UploadLink> uls = manager.listUploadLinks(storeId, path);
+				LinkedHashMap<String, SharingLink> dls = manager.listDownloadLinks(storeId, path);
+				LinkedHashMap<String, SharingLink> uls = manager.listUploadLinks(storeId, path);
 				
 				StoreFileSystem sfs = manager.getStoreFileSystem(storeId);
 				for(FileObject fo : manager.listStoreFiles(StoreFileType.FILE_OR_FOLDER, storeId, path)) {
@@ -890,7 +890,8 @@ public class Service extends BaseService {
 				int storeId = Integer.valueOf(nodeId.getStoreId());
 				
 				DateTimeFormatter ymdHmsFmt = DateTimeUtils.createYmdHmsFormatter(up.getTimeZone());
-				DownloadLink dl = new DownloadLink();
+				SharingLink dl = new SharingLink();
+				dl.setType(SharingLink.TYPE_DOWNLOAD);
 				dl.setStoreId(storeId);
 				dl.setFilePath(nodeId.getPath());
 				if(!StringUtils.isBlank(expirationDate)) {
@@ -910,22 +911,6 @@ public class Service extends BaseService {
 		}
 	}
 	
-	public void processManageDownloadLink(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-		try {
-			String crud = ServletUtils.getStringParameter(request, "crud", true);
-			if(crud.equals(Crud.DELETE)) {
-				String linkId = ServletUtils.getStringParameter(request, "id", true);
-				
-				manager.deleteDownloadLink(linkId);
-				new JsonResult().printTo(out);
-			}
-			
-		} catch (Exception ex) {
-			logger.error("Error in ManageDownloadLink", ex);
-			new JsonResult(false, ex.getMessage()).printTo(out);
-		}
-	}
-	
 	public void processWizardUploadLink(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		UserProfile up = getEnv().getProfile();
 		
@@ -941,7 +926,8 @@ public class Service extends BaseService {
 				int storeId = Integer.valueOf(nodeId.getStoreId());
 				
 				DateTimeFormatter ymdHmsFmt = DateTimeUtils.createYmdHmsFormatter(up.getTimeZone());
-				UploadLink ul = new UploadLink();
+				SharingLink ul = new SharingLink();
+				ul.setType(SharingLink.TYPE_UPLOAD);
 				ul.setStoreId(storeId);
 				ul.setFilePath(nodeId.getPath());
 				if(!StringUtils.isBlank(expirationDate)) {
@@ -961,30 +947,15 @@ public class Service extends BaseService {
 		}
 	}
 	
-	public void processManageUploadLink(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-		try {
-			String crud = ServletUtils.getStringParameter(request, "crud", true);
-			if(crud.equals(Crud.DELETE)) {
-				String linkId = ServletUtils.getStringParameter(request, "id", true);
-				
-				manager.deleteUploadLink(linkId);
-				new JsonResult().printTo(out);
-			}
-			
-		} catch (Exception ex) {
-			logger.error("Error in ManageUploadLink", ex);
-			new JsonResult(false, ex.getMessage()).printTo(out);
-		}
-	}
-	
-	public void processManageSharingLinks(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+	public void processManageSharingLink(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		UserProfile up = getEnv().getProfile();
 		DateTimeZone ptz = up.getTimeZone();
+		SharingLink item = null;
 		
 		try {
 			String crud = ServletUtils.getStringParameter(request, "crud", true);
 			if(crud.equals(Crud.READ)) {
-				Integer id = ServletUtils.getIntParameter(request, "id", null);
+				String id = ServletUtils.getStringParameter(request, "id", null);
 				if(id == null) {
 					List<JsGridSharingLink> items = new ArrayList<>();
 					for(StoreShareRoot root : getRootsFromCache()) {
@@ -994,7 +965,7 @@ public class Service extends BaseService {
 							baseNodeId.setShareId(folder.getShareId());
 							baseNodeId.setStoreId(store.getStoreId().toString());
 							
-							for(DownloadLink dl : manager.listDownloadLinks(folder.getStore().getStoreId(), "/").values()) {
+							for(SharingLink dl : manager.listDownloadLinks(folder.getStore().getStoreId(), "/").values()) {
 								items.add(new JsGridSharingLink(dl, "", store.getName(), storeIcon(folder.getStore()), baseNodeId, ptz));
 							}
 						}
@@ -1006,21 +977,29 @@ public class Service extends BaseService {
 							baseNodeId.setShareId(folder.getShareId());
 							baseNodeId.setStoreId(store.getStoreId().toString());
 							
-							for(UploadLink ul : manager.listUploadLinks(folder.getStore().getStoreId(), "/").values()) {
+							for(SharingLink ul : manager.listUploadLinks(folder.getStore().getStoreId(), "/").values()) {
 								items.add(new JsGridSharingLink(ul, "", store.getName(), storeIcon(folder.getStore()), baseNodeId, ptz));
 							}
 						}
 					}
 					new JsonResult("sharingLinks", items, items.size()).printTo(out);
 				} else {
-					//OActivity item = core.getActivity(id);
-					//new JsonResult(item).printTo(out);
+					item = manager.getSharingLink(id);
+					
+					new JsonResult(new JsSharingLink(item, up.getTimeZone())).printTo(out);
 				}
 				
 			} else if(crud.equals(Crud.UPDATE)) {
-				//Payload<MapItem, OActivity> pl = ServletUtils.getPayload(request, OActivity.class);
-				//core.updateActivity(pl.data);
-				//new JsonResult().printTo(out);
+				Payload<MapItem, JsSharingLink> pl = ServletUtils.getPayload(request, JsSharingLink.class);
+				
+				manager.updateSharingLink(JsSharingLink.createSharingLink(pl.data, up.getTimeZone()));
+				new JsonResult().printTo(out);
+				
+			} else if(crud.equals(Crud.DELETE)) {
+				String id = ServletUtils.getStringParameter(request, "id", true);
+				
+				manager.deleteSharingLink(id);
+				new JsonResult().printTo(out);
 			}
 			
 		} catch(Exception ex) {

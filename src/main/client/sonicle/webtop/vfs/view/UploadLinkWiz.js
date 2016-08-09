@@ -173,7 +173,7 @@ Ext.define('Sonicle.webtop.vfs.view.UploadLinkWiz', {
 						xtype: 'radio',
 						name: me.sufId('authMode'),
 						inputValue: 'N',
-						boxLabel: me.mys.res('uploadLinkWiz.fld-authMode.none')
+						boxLabel: me.mys.res('store.sharingLinkAuthMode.N')
 					}, {
 						xtype: 'fieldcontainer',
 						layout: 'hbox',
@@ -181,7 +181,7 @@ Ext.define('Sonicle.webtop.vfs.view.UploadLinkWiz', {
 							xtype: 'radio',
 							name: me.sufId('authMode'),
 							inputValue: 'P',
-							boxLabel: me.mys.res('uploadLinkWiz.fld-authMode.password')
+							boxLabel: me.mys.res('store.sharingLinkAuthMode.P')
 						}, {
 							xtype: 'sospacer',
 							vertical: false

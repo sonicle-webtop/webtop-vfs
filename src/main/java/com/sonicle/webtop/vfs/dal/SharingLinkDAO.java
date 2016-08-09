@@ -104,13 +104,25 @@ public class SharingLinkDAO extends BaseDAO {
 			.execute();
 	}
 	
-	public int deleteByIdType(Connection con, String linkId, String linkType) throws DAOException {
+	public int update(Connection con, OSharingLink item) throws DAOException {
+		DSLContext dsl = getDSL(con);
+		return dsl
+			.update(SHARING_LINKS)
+			.set(SHARING_LINKS.EXPIRES_ON, item.getExpiresOn())
+			.set(SHARING_LINKS.AUTH_MODE, item.getAuthMode())
+			.set(SHARING_LINKS.PASSWORD, item.getPassword())
+			.where(
+				SHARING_LINKS.SHARING_LINK_ID.equal(item.getSharingLinkId())
+			)
+			.execute();
+	}
+	
+	public int deleteById(Connection con, String linkId) throws DAOException {
 		DSLContext dsl = getDSL(con);
 		return dsl
 			.delete(SHARING_LINKS)
 			.where(
 					SHARING_LINKS.SHARING_LINK_ID.equal(linkId)
-					.and(SHARING_LINKS.LINK_TYPE.equal(linkType))
 			)
 			.execute();
 	}

@@ -35,9 +35,8 @@ package com.sonicle.webtop.vfs.bol.js;
 
 import com.sonicle.commons.time.DateTimeUtils;
 import com.sonicle.webtop.core.servlet.ServletHelper;
-import com.sonicle.webtop.vfs.bol.model.DownloadLink;
+import com.sonicle.webtop.vfs.bol.model.SharingLink;
 import com.sonicle.webtop.vfs.bol.model.StoreShareFolder;
-import com.sonicle.webtop.vfs.bol.model.UploadLink;
 import org.apache.commons.vfs2.FileObject;
 import org.apache.commons.vfs2.FileSystemException;
 import org.apache.commons.vfs2.FileType;
@@ -64,7 +63,7 @@ public class JsGridFile {
 	
 	public JsGridFile() {}
 	
-	public JsGridFile(StoreShareFolder folder, FileObject fo, String fileId, DownloadLink dlLink, UploadLink ulLink) {
+	public JsGridFile(StoreShareFolder folder, FileObject fo, String fileId, SharingLink dlLink, SharingLink ulLink) {
 		this.fileId = fileId;
 		this.type = getFileType(fo);
 		this.mtype = (type.equals("folder")) ? "" : ServletHelper.guessMediaType(fo.getName().getBaseName(), true);

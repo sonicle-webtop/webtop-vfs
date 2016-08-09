@@ -57,12 +57,11 @@ import com.sonicle.webtop.core.sdk.WTException;
 import com.sonicle.webtop.core.sdk.WTRuntimeException;
 import com.sonicle.webtop.vfs.bol.OSharingLink;
 import com.sonicle.webtop.vfs.bol.OStore;
-import com.sonicle.webtop.vfs.bol.model.DownloadLink;
+import com.sonicle.webtop.vfs.bol.model.SharingLink;
 import com.sonicle.webtop.vfs.bol.model.Store;
 import com.sonicle.webtop.vfs.bol.model.StoreFileType;
 import com.sonicle.webtop.vfs.bol.model.StoreShareFolder;
 import com.sonicle.webtop.vfs.bol.model.StoreShareRoot;
-import com.sonicle.webtop.vfs.bol.model.UploadLink;
 import com.sonicle.webtop.vfs.dal.SharingLinkDAO;
 import com.sonicle.webtop.vfs.dal.StoreDAO;
 import com.sonicle.webtop.vfs.sfs.DefaultSFS;
@@ -520,17 +519,13 @@ public class VfsManager extends BaseManager {
 		}
 	}
 	
-	public String generateDownloadLinkId(int storeId, String path) {
-		return generateLinkId(getTargetProfileId(), OSharingLink.LINK_TYPE_DOWNLOAD, storeId, path);
+	public String generateSharingLinkId(String type, int storeId, String path) {
+		return generateLinkId(getTargetProfileId(), type, storeId, path);
 	}
 	
-	public String generateUploadLinkId(int storeId, String path) {
-		return generateLinkId(getTargetProfileId(), OSharingLink.LINK_TYPE_UPLOAD, storeId, path);
-	}
-	
-	public LinkedHashMap<String, DownloadLink> listDownloadLinks(int storeId, String path) throws WTException {
+	public LinkedHashMap<String, SharingLink> listDownloadLinks(int storeId, String path) throws WTException {
 		SharingLinkDAO dao = SharingLinkDAO.getInstance();
-		LinkedHashMap<String, DownloadLink> items = new LinkedHashMap<>();
+		LinkedHashMap<String, SharingLink> items = new LinkedHashMap<>();
 		Connection con = null;
 		
 		try {
@@ -540,9 +535,9 @@ public class VfsManager extends BaseManager {
 			
 			logger.debug("path starts with {}", path);
 			
-			List<OSharingLink> links = dao.selectByProfileTypeStorePath(con, getTargetProfileId(), OSharingLink.LINK_TYPE_DOWNLOAD, storeId, path);
+			List<OSharingLink> links = dao.selectByProfileTypeStorePath(con, getTargetProfileId(), SharingLink.TYPE_DOWNLOAD, storeId, path);
 			for(OSharingLink link : links) {
-				final DownloadLink dl = new DownloadLink(link);
+				final SharingLink dl = new SharingLink(link);
 				items.put(dl.getFileHash(), dl);
 			}
 			return items;
@@ -555,9 +550,9 @@ public class VfsManager extends BaseManager {
 		}
 	}
 	
-	public LinkedHashMap<String, UploadLink> listUploadLinks(int storeId, String path) throws WTException {
+	public LinkedHashMap<String, SharingLink> listUploadLinks(int storeId, String path) throws WTException {
 		SharingLinkDAO dao = SharingLinkDAO.getInstance();
-		LinkedHashMap<String, UploadLink> items = new LinkedHashMap<>();
+		LinkedHashMap<String, SharingLink> items = new LinkedHashMap<>();
 		Connection con = null;
 		
 		try {
@@ -565,9 +560,9 @@ public class VfsManager extends BaseManager {
 			ensureUser(); // Rights check!
 			con = WT.getConnection(SERVICE_ID, false);
 			
-			List<OSharingLink> uls = dao.selectByProfileTypeStorePath(con, getTargetProfileId(), OSharingLink.LINK_TYPE_UPLOAD, storeId, path);
+			List<OSharingLink> uls = dao.selectByProfileTypeStorePath(con, getTargetProfileId(), SharingLink.TYPE_UPLOAD, storeId, path);
 			for(OSharingLink link : uls) {
-				final UploadLink ul = new UploadLink(link);
+				final SharingLink ul = new SharingLink(link);
 				items.put(ul.getFileHash(), ul);
 			}
 			return items;
@@ -580,18 +575,18 @@ public class VfsManager extends BaseManager {
 		}
 	}
 	
-	public DownloadLink getDownloadLink(String linkId) throws WTException {
+	public SharingLink getSharingLink(String linkId) throws WTException {
 		SharingLinkDAO dao = SharingLinkDAO.getInstance();
 		Connection con = null;
 		
 		try {
 			con = WT.getConnection(SERVICE_ID, false);
-			OSharingLink olink = dao.selectByIdType(con, linkId, OSharingLink.LINK_TYPE_DOWNLOAD);
-			if(olink == null) throw new WTException("Unable to retrieve download link [{0}]", linkId);
+			OSharingLink olink = dao.selectById(con, linkId);
+			if(olink == null) throw new WTException("Unable to retrieve sharing link [{0}]", linkId);
 			
 			checkRightsOnStoreElements(olink.getStoreId(), "READ"); // Rights check!
 			
-			return new DownloadLink(olink);
+			return new SharingLink(olink);
 			
 		} catch(SQLException | DAOException ex) {
 			DbUtils.rollbackQuietly(con);
@@ -604,14 +599,15 @@ public class VfsManager extends BaseManager {
 		}
 	}
 	
-	public DownloadLink addDownloadLink(DownloadLink link) throws WTException {
+	public SharingLink addDownloadLink(SharingLink link) throws WTException {
 		Connection con = null;
 		
 		try {
 			checkRightsOnStoreElements(link.getStoreId(), "CREATE"); // Rights check!
 			
 			con = WT.getConnection(SERVICE_ID, false);
-			link = new DownloadLink(doDownloadLinkInsert(con, link));
+			link.setType(SharingLink.TYPE_DOWNLOAD);
+			link = new SharingLink(doSharingLinkUpdate(true, con, link));
 			DbUtils.commitQuietly(con);
 			writeLog("DOWNLOADLINK_INSERT", link.getLinkId());
 			return link;
@@ -627,64 +623,15 @@ public class VfsManager extends BaseManager {
 		}
 	}
 	
-	public void deleteDownloadLink(String linkId) throws WTException {
-		SharingLinkDAO dao = SharingLinkDAO.getInstance();
-		Connection con = null;
-		
-		try {
-			con = WT.getConnection(SERVICE_ID, false);
-			OSharingLink olink = dao.selectByIdType(con, linkId, OSharingLink.LINK_TYPE_DOWNLOAD);
-			if(olink == null) throw new WTException("Unable to retrieve download link [{0}]", linkId);
-			
-			checkRightsOnStoreElements(olink.getStoreId(), "READ"); // Rights check!
-			
-			doDownloadLinkDelete(con, linkId);
-			DbUtils.commitQuietly(con);
-			writeLog("DOWNLOADLINK_DELETE", linkId);
-			
-		} catch(SQLException | DAOException ex) {
-			DbUtils.rollbackQuietly(con);
-			throw new WTException(ex, "DB error");
-		} catch(Exception ex) {
-			DbUtils.rollbackQuietly(con);
-			throw ex;
-		} finally {
-			DbUtils.closeQuietly(con);
-		}
-	}
-	
-	public DownloadLink getUploadLink(String linkId) throws WTException {
-		SharingLinkDAO dao = SharingLinkDAO.getInstance();
-		Connection con = null;
-		
-		try {
-			con = WT.getConnection(SERVICE_ID, false);
-			OSharingLink olink = dao.selectByIdType(con, linkId, OSharingLink.LINK_TYPE_UPLOAD);
-			if(olink == null) throw new WTException("Unable to retrieve upload link [{0}]", linkId);
-			
-			checkRightsOnStoreElements(olink.getStoreId(), "READ"); // Rights check!
-			
-			return new DownloadLink(olink);
-			
-		} catch(SQLException | DAOException ex) {
-			DbUtils.rollbackQuietly(con);
-			throw new WTException(ex, "DB error");
-		} catch(Exception ex) {
-			DbUtils.rollbackQuietly(con);
-			throw ex;
-		} finally {
-			DbUtils.closeQuietly(con);
-		}
-	}
-	
-	public UploadLink addUploadLink(UploadLink link) throws WTException {
+	public SharingLink addUploadLink(SharingLink link) throws WTException {
 		Connection con = null;
 		
 		try {
 			checkRightsOnStoreElements(link.getStoreId(), "CREATE"); // Rights check!
 			
 			con = WT.getConnection(SERVICE_ID, false);
-			link = new UploadLink(doUploadLinkInsert(con, link));
+			link.setType(SharingLink.TYPE_UPLOAD);
+			link = new SharingLink(doSharingLinkUpdate(true, con, link));
 			DbUtils.commitQuietly(con);
 			writeLog("UPLOADLINK_INSERT", link.getLinkId());
 			return link;
@@ -700,20 +647,46 @@ public class VfsManager extends BaseManager {
 		}
 	}
 	
-	public void deleteUploadLink(String linkId) throws WTException {
+	public void updateSharingLink(SharingLink link) throws Exception {
 		SharingLinkDAO dao = SharingLinkDAO.getInstance();
 		Connection con = null;
 		
 		try {
 			con = WT.getConnection(SERVICE_ID, false);
-			OSharingLink olink = dao.selectByIdType(con, linkId, OSharingLink.LINK_TYPE_UPLOAD);
-			if(olink == null) throw new WTException("Unable to retrieve upload link [{0}]", linkId);
+			OSharingLink olink = dao.selectById(con, link.getLinkId());
+			if(olink == null) throw new WTException("Unable to retrieve sharing link [{0}]", link.getLinkId());
 			
-			checkRightsOnStoreElements(olink.getStoreId(), "CREATE"); // Rights check!
+			checkRightsOnStoreElements(olink.getStoreId(), "READ"); // Rights check!
 			
-			doUploadLinkDelete(con, linkId);
+			doSharingLinkUpdate(false, con, link);
 			DbUtils.commitQuietly(con);
-			writeLog("UPLOADLINK_DELETE", linkId);
+			writeLog("SHARINGLINK_UPDATE", link.getLinkId());
+			
+		} catch(SQLException | DAOException ex) {
+			DbUtils.rollbackQuietly(con);
+			throw new WTException(ex, "DB error");
+		} catch(Exception ex) {
+			DbUtils.rollbackQuietly(con);
+			throw ex;
+		} finally {
+			DbUtils.closeQuietly(con);
+		}
+	}
+	
+	public void deleteSharingLink(String linkId) throws WTException {
+		SharingLinkDAO dao = SharingLinkDAO.getInstance();
+		Connection con = null;
+		
+		try {
+			con = WT.getConnection(SERVICE_ID, false);
+			OSharingLink olink = dao.selectById(con, linkId);
+			if(olink == null) throw new WTException("Unable to retrieve sharing link [{0}]", linkId);
+			
+			checkRightsOnStoreElements(olink.getStoreId(), "READ"); // Rights check!
+			
+			doSharingLinkDelete(con, linkId);
+			DbUtils.commitQuietly(con);
+			writeLog("SHARINGLINK_DELETE", linkId);
 			
 		} catch(SQLException | DAOException ex) {
 			DbUtils.rollbackQuietly(con);
@@ -1001,47 +974,47 @@ public class VfsManager extends BaseManager {
 		return DigestUtils.md5Hex(new CompositeId(profileId.getDomainId(), profileId.getUserId(), linkType, storeId, path).toString());
 	}
 	
-	private OSharingLink doDownloadLinkInsert(Connection con, DownloadLink dl) throws WTException {
+	private OSharingLink doSharingLinkUpdate(boolean insert, Connection con, SharingLink sl) throws WTException {
 		SharingLinkDAO dao = SharingLinkDAO.getInstance();
 		UserProfile.Id pid = getTargetProfileId();
 		
-		dl.validate();
-		OSharingLink o = new OSharingLink(dl);
-		o.setSharingLinkId(generateLinkId(pid, OSharingLink.LINK_TYPE_DOWNLOAD, o.getStoreId(), o.getFilePath()));
+		sl.validate();
+		
+		OSharingLink o = new OSharingLink(sl);
+		if(o.getDomainId() == null) o.setDomainId(pid.getDomainId());
+		if(o.getUserId() == null) o.setUserId(pid.getUserId());
+		
+		if(insert) {
+			o.setSharingLinkId(generateLinkId(pid, sl.getType(), o.getStoreId(), o.getFilePath()));
+			o.setFileHash(generateStoreFileHash(o.getStoreId(), o.getFilePath()));
+			o.setCreatedOn(DateTimeUtils.now());
+			dao.insert(con, o);
+		} else {
+			dao.update(con, o);
+		}
+		return o;
+	}
+	
+	/*
+	private OSharingLink doSharingLinkInsert(Connection con, SharingLink sl) throws WTException {
+		SharingLinkDAO dao = SharingLinkDAO.getInstance();
+		UserProfile.Id pid = getTargetProfileId();
+		
+		sl.validate();
+		OSharingLink o = new OSharingLink(sl);
+		o.setSharingLinkId(generateLinkId(pid, sl.getType(), o.getStoreId(), o.getFilePath()));
 		o.setDomainId(pid.getDomainId());
 		o.setUserId(pid.getUserId());
-		o.setLinkType(OSharingLink.LINK_TYPE_DOWNLOAD);
 		o.setFileHash(generateStoreFileHash(o.getStoreId(), o.getFilePath()));
 		o.setCreatedOn(DateTimeUtils.now());
         dao.insert(con, o);
         return o;
 	}
+	*/
 	
-	private void doDownloadLinkDelete(Connection con, String linkId) throws WTException {
+	private void doSharingLinkDelete(Connection con, String linkId) throws WTException {
 		SharingLinkDAO dao = SharingLinkDAO.getInstance();
-		dao.deleteByIdType(con, linkId, OSharingLink.LINK_TYPE_DOWNLOAD);
-		//TODO: cancellare collegati
-	}
-	
-	private OSharingLink doUploadLinkInsert(Connection con, UploadLink ul) throws WTException {
-		SharingLinkDAO dao = SharingLinkDAO.getInstance();
-		UserProfile.Id pid = getTargetProfileId();
-		
-		ul.validate();
-		OSharingLink o = new OSharingLink(ul);
-		o.setSharingLinkId(generateLinkId(pid, OSharingLink.LINK_TYPE_UPLOAD, o.getStoreId(), o.getFilePath()));
-		o.setDomainId(pid.getDomainId());
-		o.setUserId(pid.getUserId());
-		o.setLinkType(OSharingLink.LINK_TYPE_UPLOAD);
-		o.setFileHash(generateStoreFileHash(o.getStoreId(), o.getFilePath()));
-		o.setCreatedOn(DateTimeUtils.now());
-        dao.insert(con, o);
-        return o;
-	}
-	
-	private void doUploadLinkDelete(Connection con, String linkId) throws WTException {
-		SharingLinkDAO dao = SharingLinkDAO.getInstance();
-		dao.deleteByIdType(con, linkId, OSharingLink.LINK_TYPE_UPLOAD);
+		dao.deleteById(con, linkId);
 		//TODO: cancellare collegati
 	}
 }

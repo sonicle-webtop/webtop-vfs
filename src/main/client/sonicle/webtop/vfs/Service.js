@@ -48,7 +48,8 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		'Sonicle.webtop.vfs.view.SharingLinks',
 		
 		'Sonicle.plugin.FileDrop',
-		'Sonicle.webtop.vfs.ux.UploadToolbar'
+		'Sonicle.webtop.vfs.ux.UploadToolbar',
+		'Sonicle.webtop.vfs.model.SharingLink'
 	],
 	mixins: [
 		//'WT.mixin.FoldersTree'
@@ -442,7 +443,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 			handler: function() {
 				me.showSharingLinks({
 					listeners: {
-						linkdelete: function(s, type, linkId, paFileId) {
+						linkupdate: function(s, type, linkId, paFileId) {
 							var trsto = me.trStores().getStore(),
 									node = trsto.getNodeById(paFileId);
 							if(node) trsto.load({node: node});
@@ -542,6 +543,13 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				if(node) me.deleteFileLinkUI('D', node);
 			}
 		});
+		me.addAction('sendFileNodeDlLink', {
+			text: me.res('act-sendFileDlLink.lbl'),
+			handler: function() {
+				var node = me.getCurrentFileNode();
+				if(node) me.sendFileLinkUI('D', node);
+			}
+		});
 		me.addAction('addFileNodeUlLink', {
 			text: me.res('act-addFileUlLink.lbl'),
 			iconCls: me.cssIconCls('addFileUlLink', 'xs'),
@@ -558,13 +566,13 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				if(sel) me.deleteFileLinkUI('U', sel);
 			}
 		});
-		
-		
-		
-		
-		
-		
-		
+		me.addAction('sendFileNodeUlLink', {
+			text: me.res('act-sendFileUlLink.lbl'),
+			handler: function() {
+				var node = me.getCurrentFileNode();
+				if(node) me.sendFileLinkUI('U', node);
+			}
+		});
 		me.addAction('goUp', {
 			text: null,
 			handler: function() {
@@ -609,6 +617,12 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				if(sel) me.deleteFileLinkUI('D', sel);
 			}
 		});
+		me.addAction('sendFileDlLink', {
+			handler: function() {
+				var sel = me.getSelectedFile();
+				if(sel) me.sendFileLinkUI('D', sel);
+			}
+		});
 		me.addAction('addFileUlLink', {
 			handler: function() {
 				var sel = me.getSelectedFile();
@@ -619,6 +633,12 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 			handler: function() {
 				var sel = me.getSelectedFile();
 				if(sel) me.deleteFileLinkUI('U', sel);
+			}
+		});
+		me.addAction('sendFileUlLink', {
+			handler: function() {
+				var sel = me.getSelectedFile();
+				if(sel) me.sendFileLinkUI('U', sel);
 			}
 		});
 	},
@@ -870,9 +890,9 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		var me = this,
 				linkId = (type === 'D') ? sel.getFDlLink() : sel.getFUlLink(),
 				rec2;
-		WT.confirm(me.res('link.confirm.delete'), function(bid) {
+		WT.confirm(me.res('sharingLink.confirm.delete'), function(bid) {
 			if(bid === 'yes') {
-				me.deleteLink(type, linkId, {
+				me.deleteLink(linkId, {
 					callback: function(success) {
 						if(success) {
 							if(sel.isNode) {
@@ -894,8 +914,8 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		});
 	},
 	
-	sendLinkUI: function(type, sel) {
-		
+	sendFileLinkUI: function(type, sel) {
+		WT.info('TODO');
 	},
 	
 	editShare: function(id) {
@@ -912,6 +932,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 	},
 	
 	editStore: function(storeId, opts) {
+		opts = opts || {};
 		var me = this,
 				vct = WT.createView(me.ID, 'view.Store');
 		
@@ -1020,16 +1041,28 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		vct.show();
 	},
 	
-	deleteLink: function(type, linkId, opts) {
+	editLink: function(linkId, opts) {
 		opts = opts || {};
-		var me = this, act;
+		var me = this,
+				vct = WT.createView(me.ID, 'view.SharingLink');
 		
-		if(type === 'D') {
-			act = 'ManageDownloadLink';
-		} else if(type === 'U') {
-			act = 'ManageUploadLink';
-		}
-		WT.ajaxReq(me.ID, act, {
+		vct.getView().on('viewsave', function(s, success, model) {
+			Ext.callback(opts.callback, opts.scope || me, [success, model]);
+		});
+		vct.show(false, function() {
+			vct.getView().begin('edit', {
+				data: {
+					linkId: linkId
+				}
+			});
+		});
+	},
+	
+	deleteLink: function(linkId, opts) {
+		opts = opts || {};
+		var me = this;
+		
+		WT.ajaxReq(me.ID, 'ManageSharingLink', {
 			params: {
 				crud: 'delete',
 				id: linkId
@@ -1202,9 +1235,11 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				'-',
 				me.getAction('addFileNodeDlLink'),
 				me.getAction('deleteFileNodeDlLink'),
+				me.getAction('sendFileNodeDlLink'),
 				'-',
 				me.getAction('addFileNodeUlLink'),
-				me.getAction('deleteFileNodeUlLink')
+				me.getAction('deleteFileNodeUlLink'),
+				me.getAction('sendFileNodeUlLink')
 			],
 			listeners: {
 				beforeshow: function(s) {
@@ -1213,10 +1248,10 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 					me.updateDisabled('createFileNode');
 					me.updateDisabled('addFileNodeDlLink');
 					me.updateDisabled('deleteFileNodeDlLink');
-					//me.updateDisabled('sendFolderDlLink');
+					me.updateDisabled('sendFileNodeDlLink');
 					me.updateDisabled('addFileNodeUlLink');
 					me.updateDisabled('deleteFileNodeUlLink');
-					//me.updateDisabled('sendFolderUlLink');
+					me.updateDisabled('sendFileNodeUlLink');
 				}
 			}
 		}));
@@ -1242,9 +1277,11 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				'-',
 				me.getAction('addFileDlLink'),
 				me.getAction('deleteFileDlLink'),
+				me.getAction('sendFileDlLink'),
 				'-',
 				me.getAction('addFileUlLink'),
-				me.getAction('deleteFileUlLink')
+				me.getAction('deleteFileUlLink'),
+				me.getAction('sendFileUlLink')
 			],
 			listeners: {
 				beforeshow: function(s) {
@@ -1253,10 +1290,10 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 					me.updateDisabled('renameFile');
 					me.updateDisabled('addFileDlLink');
 					me.updateDisabled('deleteFileDlLink');
-					//me.updateDisabled('sendDownloadLink');
+					me.updateDisabled('sendFileDlLink');
 					me.updateDisabled('addFileUlLink');
 					me.updateDisabled('deleteFileUlLink');
-					//me.updateDisabled('sendUploadLink');
+					me.updateDisabled('sendFileUlLink');
 				}
 			}
 		}));
@@ -1492,6 +1529,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 					return true;
 				}
 			case 'deleteFileNodeDlLink':
+			case 'sendFileNodeDlLink':
 				sel = me.getCurrentFileNode();
 				if(sel) {
 					return Ext.isEmpty(sel.getFDlLink());
@@ -1506,6 +1544,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 					return true;
 				}
 			case 'deleteFileNodeUlLink':
+			case 'sendFileNodeUlLink':
 				sel = me.getCurrentFileNode();
 				if(sel) {
 					return Ext.isEmpty(sel.getFUlLink());
@@ -1548,6 +1587,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 					return true;
 				}
 			case 'deleteFileDlLink':
+			case 'sendFileDlLink':
 				sel = me.getSelectedFiles();
 				if(sel.length === 1) {
 					return Ext.isEmpty(sel[0].getFDlLink());
@@ -1563,6 +1603,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 					return true;
 				}
 			case 'deleteFileUlLink':
+			case 'sendFileUlLink':
 				sel = me.getSelectedFiles();
 				if(sel.length === 1) {
 					if(!sel[0].getEPerms().CREATE) return true;

@@ -33,8 +33,7 @@
  */
 package com.sonicle.webtop.vfs.bol;
 
-import com.sonicle.webtop.vfs.bol.model.DownloadLink;
-import com.sonicle.webtop.vfs.bol.model.UploadLink;
+import com.sonicle.webtop.vfs.bol.model.SharingLink;
 import com.sonicle.webtop.vfs.jooq.tables.pojos.SharingLinks;
 
 /**
@@ -42,30 +41,15 @@ import com.sonicle.webtop.vfs.jooq.tables.pojos.SharingLinks;
  * @author malbinola
  */
 public class OSharingLink extends SharingLinks {
-	public static final String LINK_TYPE_UPLOAD = "U";
-	public static final String LINK_TYPE_DOWNLOAD = "D";
 	
 	public OSharingLink() {}
 	
-	public OSharingLink(DownloadLink o) {
+	public OSharingLink(SharingLink o) {
 		if(o == null) return;
 		setSharingLinkId(o.getLinkId());
 		setDomainId(o.getDomainId());
 		setUserId(o.getUserId());
-		setStoreId(o.getStoreId());
-		setFilePath(o.getFilePath());
-		setFileHash(o.getFileHash());
-		setCreatedOn(o.getCreatedOn());
-		setExpiresOn(o.getExpiresOn());
-		setAuthMode(o.getAuthMode());
-		setPassword(o.getPassword());
-	}
-	
-	public OSharingLink(UploadLink o) {
-		if(o == null) return;
-		setSharingLinkId(o.getLinkId());
-		setDomainId(o.getDomainId());
-		setUserId(o.getUserId());
+		setLinkType(o.getType());
 		setStoreId(o.getStoreId());
 		setFilePath(o.getFilePath());
 		setFileHash(o.getFileHash());

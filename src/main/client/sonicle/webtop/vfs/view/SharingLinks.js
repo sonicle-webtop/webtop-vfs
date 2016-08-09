@@ -48,21 +48,6 @@ Ext.define('Sonicle.webtop.vfs.view.SharingLinks', {
 	
 	initComponent: function() {
 		var me = this;
-		/*
-		Ext.apply(me, {
-			tbar: [
-				me.addAction('remove', {
-					text: WT.res('act-remove.lbl'),
-					iconCls: 'wt-icon-remove-xs',
-					disabled: true,
-					handler: function() {
-						var sm = me.lref('gp').getSelectionModel();
-						me.deleteLinkUI(sm.getSelection()[0]);
-					}
-				})
-			]
-		});
-		*/
 		me.callParent(arguments);
 		
 		me.add({
@@ -73,7 +58,7 @@ Ext.define('Sonicle.webtop.vfs.view.SharingLinks', {
 			store: {
 				autoLoad: true,
 				model: 'Sonicle.webtop.vfs.model.GridSharingLink',
-				proxy: WTF.apiProxy(me.mys.ID, 'ManageSharingLinks', 'sharingLinks')
+				proxy: WTF.apiProxy(me.mys.ID, 'ManageSharingLink', 'sharingLinks')
 			},
 			viewConfig: {
 				getRowClass: function (rec) {
@@ -118,8 +103,8 @@ Ext.define('Sonicle.webtop.vfs.view.SharingLinks', {
 				header: me.mys.res('sharingLinks.gp.fileName.lbl'),
 				flex: 1
 			}, {
-				dataIndex: 'fileParentPath',
-				header: me.mys.res('sharingLinks.gp.filePath.lbl'),
+				dataIndex: 'parentFilePath',
+				header: me.mys.res('sharingLinks.gp.parentPath.lbl'),
 				flex: 1
 			}, {
 				xtype: 'datecolumn',
@@ -152,7 +137,12 @@ Ext.define('Sonicle.webtop.vfs.view.SharingLinks', {
 						me.lref('gp').getStore().load();
 					}
 				})
-			]
+			],
+			listeners: {
+				rowdblclick: function(s, rec) {
+					me.editLinkUI(rec);
+				}
+			}
 		});
 		
 		me.getViewModel().bind({
@@ -162,17 +152,29 @@ Ext.define('Sonicle.webtop.vfs.view.SharingLinks', {
 		});
 	},
 	
-	deleteLinkUI: function(sel) {
+	editLinkUI: function(rec) {
 		var me = this,
-				type = sel.get('linkType'),
-				linkId = sel.get('linkId');
-		WT.confirm(me.mys.res('link.confirm.delete'), function(bid) {
+				linkId = rec.get('linkId');
+		me.mys.editLink(linkId, {
+			callback: function(success) {
+				if(success) {
+					me.lref('gp').getStore().load();
+					me.fireEvent('linkupdate', me, rec.get('linkType'), linkId, rec.get('parentPath'));
+				}
+			}
+		});
+	},
+	
+	deleteLinkUI: function(rec) {
+		var me = this,
+				linkId = rec.get('linkId');
+		WT.confirm(me.mys.res('sharingLink.confirm.delete'), function(bid) {
 			if(bid === 'yes') {
-				me.mys.deleteLink(type, linkId, {
+				me.mys.deleteLink(linkId, {
 					callback: function(success) {
 						if(success) {
-							me.lref('gp').getStore().remove(sel);
-							me.fireEvent('linkdelete', me, type, linkId, sel.get('parentPath'));
+							me.lref('gp').getStore().remove(rec);
+							me.fireEvent('linkupdate', me, rec.get('linkType'), linkId, rec.get('parentPath'));
 						}
 					}
 				});
