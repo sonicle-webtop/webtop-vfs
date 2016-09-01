@@ -35,6 +35,7 @@ Ext.define('Sonicle.webtop.vfs.view.OtherWiz', {
 	extend: 'WT.sdk.WizardView',
 	requires: [
 		'WT.ux.panel.Form',
+		'Sonicle.FakeInput',
 		'Sonicle.webtop.vfs.store.OtherScheme'
 	],
 	
