@@ -31,69 +31,35 @@
  * feasible for technical reasons, the Appropriate Legal Notices must display
  * the words "Powered by Sonicle WebTop".
  */
-Ext.define('Sonicle.webtop.vfs.view.UserOptions', {
-	extend: 'WT.sdk.UserOptionsView',
+Ext.define('Sonicle.webtop.vfs.PublicService', {
+	extend: 'WT.sdk.PublicService',
 	requires: [
-		'Sonicle.form.field.Bytes'
+		'Sonicle.webtop.vfs.view.pub.Authorize'
 	],
 	
-	viewModel: {
-		formulas: {
-			showHiddenFiles: WTF.checkboxBind('record', 'showHiddenFiles')
+	init: function() {
+		var me = this;
+		
+		me.setMainComponent(Ext.create({
+				xtype: 'panel',
+				region: 'center',
+				layout: 'center',
+				header: false,
+				items: [Ext.create('Sonicle.webtop.vfs.view.pub.Authorize', {
+					mys: me
+				})]
+			}));
+		
+		if(me.getVar('context') === 'authorize') {
+			
+			
 		}
-	},
 		
-	initComponent: function() {
-		var me = this,
-				Bytes = Sonicle.Bytes;
-		me.callParent(arguments);
-		
-		me.add({
-			xtype: 'wtopttabsection',
-			title: WT.res(me.ID, 'opts.main.tit'),
-			items: [{
-				xtype: 'sobytesfield',
-				bind: '{record.privateUploadMaxFileSize}',
-				disabled: !WT.isPermitted('WTADMIN', 'ACCESS'),
-				emptyText: Bytes.format(WT.getVar('wtUploadMaxFileSize')),
-				fieldLabel: WT.res(me.ID, 'opts.main.fld-privateUploadMaxFileSize.lbl'),
-				width: 280,
-				listeners: {
-					blur: {
-						fn: me.onBlurAutoSave,
-						scope: me
-					}
-				}
-			}, {
-				xtype: 'sobytesfield',
-				bind: '{record.publicUploadMaxFileSize}',
-				disabled: !WT.isPermitted('WTADMIN', 'ACCESS'),
-				emptyText: Bytes.format(WT.getVar('wtUploadMaxFileSize')),
-				fieldLabel: WT.res(me.ID, 'opts.main.fld-publicUploadMaxFileSize.lbl'),
-				width: 280,
-				listeners: {
-					blur: {
-						fn: me.onBlurAutoSave,
-						scope: me
-					}
-				}
-			}, {
-				xtype: 'checkbox',
-				bind: '{showHiddenFiles}',
-				hideEmptyLabel: false,
-				boxLabel: WT.res(me.ID, 'opts.main.fld-showHiddenFiles.lbl'),
-				listeners: {
-					change: {
-						fn: function(s) {
-							//TODO: workaround...il modello veniva salvato prima dell'aggionamento
-							Ext.defer(function() {
-								me.onBlurAutoSave(s);
-							}, 200);
-						},
-						scope: me
-					}
-				}
-			}]
-		});
+		/*
+		this.setMainComponent(Ext.create({
+			xtype: 'panel',
+			title: 'ciaooooooo'
+		}));
+		*/
 	}
 });

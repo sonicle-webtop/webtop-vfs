@@ -15,9 +15,8 @@
 		<controllerClassName>VfsController</controllerClassName>
 		<managerClassName>VfsManager</managerClassName>
 		<serviceClassName>Service</serviceClassName>
-		<!--<publicServiceClassName>PublicService</publicServiceClassName>-->
+		<publicServiceClassName>PublicService</publicServiceClassName>
 		
-		<clientOptionsModelJsClassName>model.ClientOptions</clientOptionsModelJsClassName>
 		<userOptions>
 			<serviceClassName>UserOptionsService</serviceClassName>
 			<viewJsClassName>view.UserOptions</viewJsClassName>

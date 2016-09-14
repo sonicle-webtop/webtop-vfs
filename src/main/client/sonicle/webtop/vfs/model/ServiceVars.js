@@ -31,69 +31,13 @@
  * feasible for technical reasons, the Appropriate Legal Notices must display
  * the words "Powered by Sonicle WebTop".
  */
-Ext.define('Sonicle.webtop.vfs.view.UserOptions', {
-	extend: 'WT.sdk.UserOptionsView',
-	requires: [
-		'Sonicle.form.field.Bytes'
-	],
+Ext.define('Sonicle.webtop.vfs.model.ServiceVars', {
+	extend: 'WT.sdk.model.ServiceVars',
 	
-	viewModel: {
-		formulas: {
-			showHiddenFiles: WTF.checkboxBind('record', 'showHiddenFiles')
-		}
-	},
-		
-	initComponent: function() {
-		var me = this,
-				Bytes = Sonicle.Bytes;
-		me.callParent(arguments);
-		
-		me.add({
-			xtype: 'wtopttabsection',
-			title: WT.res(me.ID, 'opts.main.tit'),
-			items: [{
-				xtype: 'sobytesfield',
-				bind: '{record.privateUploadMaxFileSize}',
-				disabled: !WT.isPermitted('WTADMIN', 'ACCESS'),
-				emptyText: Bytes.format(WT.getVar('wtUploadMaxFileSize')),
-				fieldLabel: WT.res(me.ID, 'opts.main.fld-privateUploadMaxFileSize.lbl'),
-				width: 280,
-				listeners: {
-					blur: {
-						fn: me.onBlurAutoSave,
-						scope: me
-					}
-				}
-			}, {
-				xtype: 'sobytesfield',
-				bind: '{record.publicUploadMaxFileSize}',
-				disabled: !WT.isPermitted('WTADMIN', 'ACCESS'),
-				emptyText: Bytes.format(WT.getVar('wtUploadMaxFileSize')),
-				fieldLabel: WT.res(me.ID, 'opts.main.fld-publicUploadMaxFileSize.lbl'),
-				width: 280,
-				listeners: {
-					blur: {
-						fn: me.onBlurAutoSave,
-						scope: me
-					}
-				}
-			}, {
-				xtype: 'checkbox',
-				bind: '{showHiddenFiles}',
-				hideEmptyLabel: false,
-				boxLabel: WT.res(me.ID, 'opts.main.fld-showHiddenFiles.lbl'),
-				listeners: {
-					change: {
-						fn: function(s) {
-							//TODO: workaround...il modello veniva salvato prima dell'aggionamento
-							Ext.defer(function() {
-								me.onBlurAutoSave(s);
-							}, 200);
-						},
-						scope: me
-					}
-				}
-			}]
-		});
-	}
+	fields: [
+		WTF.field('privateUploadMaxFileSize', 'int', true),
+		WTF.field('publicUploadMaxFileSize', 'int', true),
+		WTF.field('uploadLinkExpiration', 'int', true),
+		WTF.field('downloadLinkExpiration', 'int', true)
+	]
 });

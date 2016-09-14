@@ -6,7 +6,7 @@
  * the terms of the GNU Affero General Public License version 3 as published by
  * the Free Software Foundation with the addition of the following permission
  * added to Section 15 as permitted in Section 7(a): FOR ANY PART OF THE COVERED
- * WORK IN WHICH THE COPYRIGHT IS OWNED BY SONICLE, SONICLE DISCLAIMS THE
+ * WORK IN WHICH THE COPYRIGHT IS OWNED BY SONICsonicLE, SONICLE DISCLAIMS THE
  * WARRANTY OF NON INFRINGEMENT OF THIRD PARTY RIGHTS.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -136,8 +136,8 @@ public class Service extends BaseService {
 	}
 	
 	@Override
-	public ClientOptions returnClientOptions() {
-		ClientOptions co = new ClientOptions();
+	public ServiceVars returnServiceVars() {
+		ServiceVars co = new ServiceVars();
 		Integer maxUpload = WT.getCoreServiceSettings(SERVICE_ID).getUploadMaxFileSize();
 		co.put("privateUploadMaxFileSize", LangUtils.coalesce(us.getPrivateUploadMaxFileSize(), maxUpload));
 		co.put("publicUploadMaxFileSize", LangUtils.coalesce(us.getPublicUploadMaxFileSize(), maxUpload));
@@ -515,15 +515,15 @@ public class Service extends BaseService {
 				params.password = password;
 				params.path = path;
 				params.buildName();
-				wts.setProperty(PROPERTY, params);
+				wts.setProperty(SERVICE_ID, PROPERTY, params);
 				//TODO: controllo connessione
 				
 				new JsonResult(params).printTo(out);
 				
 			} else if(crud.equals("s2")) {
 				String name = ServletUtils.getStringParameter(request, "name", true);
-				if(!wts.hasProperty(PROPERTY)) throw new WTException();
-				SetupParamsFtp params = (SetupParamsFtp) wts.getProperty(PROPERTY);
+				if(!wts.hasProperty(SERVICE_ID, PROPERTY)) throw new WTException();
+				SetupParamsFtp params = (SetupParamsFtp) wts.getProperty(SERVICE_ID, PROPERTY);
 				
 				Store store = new Store();
 				store.setProfileId(new UserProfile.Id(params.profileId));
@@ -531,7 +531,7 @@ public class Service extends BaseService {
 				store.setUri(params.generateURI());
 				manager.addStore(store);
 				
-				wts.clearProperty(PROPERTY);
+				wts.clearProperty(SERVICE_ID, PROPERTY);
 				updateFoldersCache();
 				
 				new JsonResult().printTo(out);
@@ -559,14 +559,14 @@ public class Service extends BaseService {
 				SetupParamsDropbox params = new SetupParamsDropbox();
 				params.profileId = profileId;
 				params.authUrl = DropboxApiUtils.getAuthorizationUrl(APP_NAME, DROPBOX_USER_LOCALE, DROPBOX_APP_KEY, DROPBOX_APP_SECRET);
-				wts.setProperty(PROPERTY, params);
+				wts.setProperty(SERVICE_ID, PROPERTY, params);
 				
 				new JsonResult(params).printTo(out);
 				
 			} else if(crud.equals("s2")) {
 				String code = ServletUtils.getStringParameter(request, "code", true);
-				if(!wts.hasProperty(PROPERTY)) throw new WTException();
-				SetupParamsDropbox params = (SetupParamsDropbox) wts.getProperty(PROPERTY);
+				if(!wts.hasProperty(SERVICE_ID, PROPERTY)) throw new WTException();
+				SetupParamsDropbox params = (SetupParamsDropbox) wts.getProperty(SERVICE_ID, PROPERTY);
 				
 				DbxAppInfo appInfo = DropboxApiUtils.createAppInfo(DROPBOX_APP_KEY, DROPBOX_APP_SECRET);
 				DbxRequestConfig reqConfig = DropboxApiUtils.createRequestConfig(APP_NAME, DROPBOX_USER_LOCALE);
@@ -581,8 +581,8 @@ public class Service extends BaseService {
 				
 			} else if(crud.equals("s3")) {
 				String name = ServletUtils.getStringParameter(request, "name", true);
-				if(!wts.hasProperty(PROPERTY)) throw new WTException();
-				SetupParamsDropbox params = (SetupParamsDropbox) wts.getProperty(PROPERTY);
+				if(!wts.hasProperty(SERVICE_ID, PROPERTY)) throw new WTException();
+				SetupParamsDropbox params = (SetupParamsDropbox) wts.getProperty(SERVICE_ID, PROPERTY);
 				
 				Store store = new Store();
 				store.setProfileId(new UserProfile.Id(params.profileId));
@@ -591,7 +591,7 @@ public class Service extends BaseService {
 				store.setParameters(LangUtils.serialize(params, SetupParamsDropbox.class));
 				manager.addStore(store);
 				
-				wts.clearProperty(PROPERTY);
+				wts.clearProperty(SERVICE_ID, PROPERTY);
 				updateFoldersCache();
 				
 				new JsonResult().printTo(out);
@@ -619,14 +619,14 @@ public class Service extends BaseService {
 				SetupParamsGoogleDrive params = new SetupParamsGoogleDrive();
 				params.profileId = profileId;
 				params.authUrl = GoogleDriveApiUtils.getAuthorizationUrl(appInfo);
-				wts.setProperty(PROPERTY, params);
+				wts.setProperty(SERVICE_ID, PROPERTY, params);
 				
 				new JsonResult(params).printTo(out);
 				
 			} else if(crud.equals("s2")) {
 				String code = ServletUtils.getStringParameter(request, "code", true);
-				if(!wts.hasProperty(PROPERTY)) throw new WTException();
-				SetupParamsGoogleDrive params = (SetupParamsGoogleDrive) wts.getProperty(PROPERTY);
+				if(!wts.hasProperty(SERVICE_ID, PROPERTY)) throw new WTException();
+				SetupParamsGoogleDrive params = (SetupParamsGoogleDrive) wts.getProperty(SERVICE_ID, PROPERTY);
 				
 				GoogleDriveAppInfo appInfo = new GoogleDriveAppInfo(APP_NAME, GDRIVE_CLIENT_ID, GDRIVE_CLIENT_SECRET);
 				GoogleCredential cred = GoogleDriveApiUtils.exchangeAuthorizationCode(code, appInfo);
@@ -641,8 +641,8 @@ public class Service extends BaseService {
 				
 			} else if(crud.equals("s3")) {
 				String name = ServletUtils.getStringParameter(request, "name", true);
-				if(!wts.hasProperty(PROPERTY)) throw new WTException();
-				SetupParamsGoogleDrive params = (SetupParamsGoogleDrive) wts.getProperty(PROPERTY);
+				if(!wts.hasProperty(SERVICE_ID, PROPERTY)) throw new WTException();
+				SetupParamsGoogleDrive params = (SetupParamsGoogleDrive) wts.getProperty(SERVICE_ID, PROPERTY);
 				
 				Store store = new Store();
 				store.setProfileId(new UserProfile.Id(params.profileId));
@@ -651,7 +651,7 @@ public class Service extends BaseService {
 				store.setParameters(LangUtils.serialize(params, SetupParamsGoogleDrive.class));
 				manager.addStore(store);
 				
-				wts.clearProperty(PROPERTY);
+				wts.clearProperty(SERVICE_ID, PROPERTY);
 				updateFoldersCache();
 				
 				new JsonResult().printTo(out);
@@ -677,14 +677,14 @@ public class Service extends BaseService {
 				params.profileId = profileId;
 				params.path = path;
 				params.buildName();
-				wts.setProperty(PROPERTY, params);
+				wts.setProperty(SERVICE_ID, PROPERTY, params);
 				
 				new JsonResult(params).printTo(out);
 				
 			} else if(crud.equals("s2")) {
 				String name = ServletUtils.getStringParameter(request, "name", true);
-				if(!wts.hasProperty(PROPERTY)) throw new WTException();
-				SetupParamsFile params = (SetupParamsFile) wts.getProperty(PROPERTY);
+				if(!wts.hasProperty(SERVICE_ID, PROPERTY)) throw new WTException();
+				SetupParamsFile params = (SetupParamsFile) wts.getProperty(SERVICE_ID, PROPERTY);
 				
 				Store store = new Store();
 				store.setProfileId(new UserProfile.Id(params.profileId));
@@ -692,7 +692,7 @@ public class Service extends BaseService {
 				store.setUri(params.generateURI());
 				manager.addStore(store);
 				
-				wts.clearProperty(PROPERTY);
+				wts.clearProperty(SERVICE_ID, PROPERTY);
 				updateFoldersCache();
 				
 				new JsonResult().printTo(out);
@@ -728,15 +728,15 @@ public class Service extends BaseService {
 				params.password = password;
 				params.path = path;
 				params.buildName();
-				wts.setProperty(PROPERTY, params);
+				wts.setProperty(SERVICE_ID, PROPERTY, params);
 				//TODO: controllo connessione
 				
 				new JsonResult(params).printTo(out);
 				
 			} else if(crud.equals("s2")) {
 				String name = ServletUtils.getStringParameter(request, "name", true);
-				if(!wts.hasProperty(PROPERTY)) throw new WTException();
-				SetupParamsOther params = (SetupParamsOther) wts.getProperty(PROPERTY);
+				if(!wts.hasProperty(SERVICE_ID, PROPERTY)) throw new WTException();
+				SetupParamsOther params = (SetupParamsOther) wts.getProperty(SERVICE_ID, PROPERTY);
 				
 				Store store = new Store();
 				store.setProfileId(new UserProfile.Id(params.profileId));
@@ -744,7 +744,7 @@ public class Service extends BaseService {
 				store.setUri(params.generateURI());
 				manager.addStore(store);
 				
-				wts.clearProperty(PROPERTY);
+				wts.clearProperty(SERVICE_ID, PROPERTY);
 				updateFoldersCache();
 				
 				new JsonResult().printTo(out);

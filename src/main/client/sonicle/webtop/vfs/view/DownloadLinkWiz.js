@@ -66,7 +66,7 @@ Ext.define('Sonicle.webtop.vfs.view.DownloadLinkWiz', {
 		
 		if(Ext.isEmpty(ic.fileId)) Ext.Error.raise('Provide a value for fileId');
 		vm.set('fileId', ic.fileId);
-		vm.set('expirationDate', Sonicle.Date.add(new Date(), {days: me.mys.getOption('downloadLinkExpiration')}));
+		vm.set('expirationDate', Sonicle.Date.add(new Date(), {days: me.mys.getVar('downloadLinkExpiration')}));
 		
 		WTU.applyFormulas(vm, {
 			foExpire: WTF.radioGroupBind('', 'expire', me.sufId('expire')),

@@ -31,13 +31,14 @@
  * feasible for technical reasons, the Appropriate Legal Notices must display
  * the words "Powered by Sonicle WebTop".
  */
-Ext.define('Sonicle.webtop.vfs.model.ClientOptions', {
-	extend: 'WT.sdk.model.ClientOptions',
+Ext.define('Sonicle.webtop.vfs.model.PublicServiceVars', {
+	extend: 'WT.sdk.model.PublicServiceVars',
 	
 	fields: [
-		WTF.field('privateUploadMaxFileSize', 'int', true),
-		WTF.field('publicUploadMaxFileSize', 'int', true),
-		WTF.field('uploadLinkExpiration', 'int', true),
-		WTF.field('downloadLinkExpiration', 'int', true)
+		//WTF.field('privateUploadMaxFileSize', 'int', true),
+		//WTF.field('publicUploadMaxFileSize', 'int', true),
+		//WTF.field('uploadLinkExpiration', 'int', true),
+		//WTF.field('downloadLinkExpiration', 'int', true)
+		WTF.roField('linkId', 'string')
 	]
 });

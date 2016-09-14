@@ -33,10 +33,31 @@
  */
 package com.sonicle.webtop.vfs;
 
+import com.sonicle.commons.LangUtils;
+import com.sonicle.commons.time.DateTimeUtils;
+import com.sonicle.commons.web.DispositionType;
+import com.sonicle.commons.web.ServletUtils;
+import com.sonicle.commons.web.json.JsonResult;
+import com.sonicle.webtop.core.app.RunContext;
 import com.sonicle.webtop.core.app.WT;
+import com.sonicle.webtop.core.app.WebTopSession;
+import com.sonicle.webtop.core.bol.js.JsWTSPublic;
 import com.sonicle.webtop.core.sdk.BasePublicService;
+import com.sonicle.webtop.core.sdk.UserProfile;
+import com.sonicle.webtop.core.sdk.WTException;
+import com.sonicle.webtop.core.servlet.ServletHelper;
+import com.sonicle.webtop.vfs.bol.model.SharingLink;
+import java.io.PrintWriter;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Locale;
+import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.vfs2.FileObject;
+import org.apache.shiro.subject.Subject;
 import org.slf4j.Logger;
 
 /**
@@ -45,20 +66,123 @@ import org.slf4j.Logger;
  */
 public class PublicService extends BasePublicService {
 	private static final Logger logger = WT.getLogger(PublicService.class);
+	private static final String WTSPROP_AUTHED_LINKS = "AUTHEDLINKS";
+	
+	private final Object lock1 = new Object();
+	private VfsManager manager;
 	
 	@Override
-	public void processDefault(HttpServletRequest request, HttpServletResponse response) throws Exception {
-		
-	}
-
-	@Override
 	public void initialize() throws Exception {
-		
+		manager = new VfsManager(true);
 	}
 
 	@Override
 	public void cleanup() throws Exception {
-		
+		manager = null;
 	}
 	
+	private HashSet<String> getAuthedLinks() {
+		WebTopSession wts = RunContext.getWebTopSession();
+		synchronized(lock1) {
+			if(!wts.hasProperty(SERVICE_ID, WTSPROP_AUTHED_LINKS)) {
+				return (HashSet<String>)wts.setProperty(SERVICE_ID, WTSPROP_AUTHED_LINKS, new HashSet<String>());
+			} else {
+				return (HashSet<String>)wts.getProperty(SERVICE_ID, WTSPROP_AUTHED_LINKS);
+			}
+		}
+	}
+	
+	private void addServiceVar(JsWTSPublic jswts, String key, Object value) {
+		jswts.servicesVars.get(1).put(key, value);
+	}
+	
+	@Override
+	public void processDefaultAction(HttpServletRequest request, HttpServletResponse response, PrintWriter out) throws Exception {
+		PublicPath path = parsePathInfo(request.getPathInfo());
+		WebTopSession wts = RunContext.getWebTopSession();
+		
+		if(path.context.equals("file")) {
+			Integer raw = ServletUtils.getIntParameter(request, "raw", 0);
+			if(raw == 1) {
+				processDownloadFile(request, response, path.relative);
+			} else {
+				Map vars = new HashMap();
+				
+				// Startup variables
+				JsWTSPublic jswts = new JsWTSPublic();
+				wts.fillStartup(jswts, SERVICE_ID);
+				addServiceVar(jswts, "linkId", path.relative);
+				vars.put("WTS", LangUtils.unescapeUnicodeBackslashes(jswts.toJson()));
+				writePage(ServletUtils.getBaseURL(request), vars, wts.getLocale(), out);
+				ServletUtils.setCacheControlPrivate(response);
+				ServletUtils.setHtmlContentType(response);
+			}
+			
+		} else {
+			throw new WTException("Invalid context [{0}]", path.context);
+		}
+	}
+	
+	public void processCheckLinkPassword(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		
+		try {
+			String linkId = ServletUtils.getStringParameter(request, "linkId", true);
+			String password = ServletUtils.getStringParameter(request, "password", true);
+			
+			SharingLink link = manager.getSharingLink(linkId);
+			if(link == null) throw new WTException("Link not found [{0}]", linkId);
+			
+			boolean check = true;
+			if(link.getAuthMode().equals(SharingLink.AUTH_MODE_PASSWORD)) {
+				check = StringUtils.equals(password, link.getPassword());
+			}
+			
+			if(check) {
+				getAuthedLinks().add(linkId);
+				new JsonResult().printTo(out);
+			} else {
+				new JsonResult(false, null).printTo(out);
+			}
+			
+		} catch(Exception ex) {
+			logger.error("Error in action CheckLinkPassword", ex);
+			new JsonResult(false, "Error").printTo(out);
+		}
+	}
+	
+	private boolean authCheck(String linkId) {
+		return getAuthedLinks().contains(linkId);
+	}
+	
+	private void processDownloadFile(HttpServletRequest request, HttpServletResponse response, String linkId) {
+		
+		try {
+			SharingLink link = manager.getSharingLink(linkId);
+			if(link == null) throw new WTException("Link not found [{0}]", linkId);
+			
+			if(link.isExpired(DateTimeUtils.now())) throw new WTException("expired");
+			if(link.getType().equals(SharingLink.TYPE_UPLOAD)) throw new WTException("upload");
+			if(link.getAuthMode().equals(SharingLink.AUTH_MODE_PASSWORD)) {
+				if(!authCheck(link.getLinkId())) throw new WTException("not authchecked");
+			}
+			
+			FileObject fo = null;
+			try {
+				fo = manager.getStoreFile(link.getStoreId(), link.getFilePath());
+				if(!fo.isFile()) throw new WTException("Requested file is not a real file");
+				
+				String filename = fo.getName().getBaseName();
+				String mediaType = ServletHelper.guessMediaType(filename, true);
+				IOUtils.copy(fo.getContent().getInputStream(), response.getOutputStream());
+				ServletUtils.setFileStreamHeaders(response, mediaType, DispositionType.ATTACHMENT, filename);
+				ServletUtils.setContentLengthHeader(response, fo.getContent().getSize());
+			} finally {
+				IOUtils.closeQuietly(fo);
+			}
+			
+		} catch(Exception ex) {
+			logger.error("Error in action DownloadFile", ex);
+			ServletUtils.writeErrorHandlingJs(response, ex.getMessage());
+		}
+	}
 }

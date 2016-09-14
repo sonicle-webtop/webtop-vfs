@@ -110,9 +110,17 @@ public class VfsManager extends BaseManager {
 	
 	private final HashMap<String, StoreFileSystem> storeFileSystems = new HashMap<>();
 	
+	public VfsManager(boolean skipInit) throws WTException {
+		this(RunContext.getProfileId(), false);
+	}
+	
 	public VfsManager(UserProfile.Id targetProfileId) throws WTException {
+		this(targetProfileId, false);
+	}
+	
+	public VfsManager(UserProfile.Id targetProfileId, boolean skipInit) throws WTException {
 		super(targetProfileId);
-		initFileSystems();
+		if(skipInit) initFileSystems();
 	}
 	
 	private StoreFileSystem createFileSystem(Store store) throws URISyntaxException {
@@ -199,9 +207,9 @@ public class VfsManager extends BaseManager {
 		}
 	}
 	
-	private StoreFileSystem getStoreFileSystemFromCache(String key) {
+	private StoreFileSystem getStoreFileSystemFromCache(int storeId) {
 		synchronized(storeFileSystems) {
-			return storeFileSystems.get(key);
+			return storeFileSystems.get(String.valueOf(storeId));
 		}
 	}
 	
@@ -398,7 +406,7 @@ public class VfsManager extends BaseManager {
 	}
 	
 	public StoreFileSystem getStoreFileSystem(int storeId) throws WTException {
-		return getStoreFileSystemFromCache(String.valueOf(storeId));
+		return getStoreFileSystemFromCache(storeId);
 	}
 	
 	public String generateStoreFileHash(int storeId, String path) {
@@ -896,7 +904,7 @@ public class VfsManager extends BaseManager {
 	}
 	
 	private FileObject getTargetFileObject(int storeId, String path) throws FileSystemException, WTException {
-		StoreFileSystem sfs = getStoreFileSystemFromCache(String.valueOf(storeId));
+		StoreFileSystem sfs = getStoreFileSystemFromCache(storeId);
 		if(sfs == null) throw new WTException("Unable to get store fileSystem");
 		
 		FileObject tfo = null;

@@ -66,7 +66,7 @@ Ext.define('Sonicle.webtop.vfs.view.UploadLinkWiz', {
 		
 		if(Ext.isEmpty(ic.fileId)) Ext.Error.raise('Provide a value for fileId');
 		vm.set('fileId', ic.fileId);
-		vm.set('expirationDate', Sonicle.Date.add(new Date(), {days: me.mys.getOption('uploadLinkExpiration')}));
+		vm.set('expirationDate', Sonicle.Date.add(new Date(), {days: me.mys.getVar('uploadLinkExpiration')}));
 		
 		WTU.applyFormulas(vm, {
 			foExpire: WTF.radioGroupBind('', 'expire', me.sufId('expire')),

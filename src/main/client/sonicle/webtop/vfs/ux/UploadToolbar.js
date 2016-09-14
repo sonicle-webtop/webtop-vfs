@@ -56,7 +56,7 @@ Ext.define('Sonicle.webtop.vfs.ux.UploadToolbar', {
 	initComponent: function() {
 		var me = this,
 				SoByt = Sonicle.Bytes,
-				maxUpSize = me.mys.getOption('privateUploadMaxFileSize'),
+				maxUpSize = me.mys.getVar('privateUploadMaxFileSize'),
 				de = me.dropElement;
 		me.callParent(arguments);
 		me.add([{

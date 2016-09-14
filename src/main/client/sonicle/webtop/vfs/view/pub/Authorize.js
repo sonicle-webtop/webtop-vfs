@@ -31,68 +31,78 @@
  * feasible for technical reasons, the Appropriate Legal Notices must display
  * the words "Powered by Sonicle WebTop".
  */
-Ext.define('Sonicle.webtop.vfs.view.UserOptions', {
-	extend: 'WT.sdk.UserOptionsView',
+Ext.define('Sonicle.webtop.vfs.view.pub.Authorize', {
+	extend: 'WT.ux.panel.Panel',
 	requires: [
-		'Sonicle.form.field.Bytes'
+		'Sonicle.FakeInput',
+		'Sonicle.form.Label',
+		'Sonicle.form.Spacer',
+		'Sonicle.form.field.Password'
 	],
 	
-	viewModel: {
-		formulas: {
-			showHiddenFiles: WTF.checkboxBind('record', 'showHiddenFiles')
-		}
-	},
-		
+	layout: 'border',
+	referenceHolder: true,
+	width: 380,
+	height: 150,
+	
 	initComponent: function() {
-		var me = this,
-				Bytes = Sonicle.Bytes;
+		var me = this;
 		me.callParent(arguments);
 		
 		me.add({
-			xtype: 'wtopttabsection',
-			title: WT.res(me.ID, 'opts.main.tit'),
+			region: 'center',
+			xtype: 'wtform',
+			defaults: {
+				labelWidth: 90
+			},
 			items: [{
-				xtype: 'sobytesfield',
-				bind: '{record.privateUploadMaxFileSize}',
-				disabled: !WT.isPermitted('WTADMIN', 'ACCESS'),
-				emptyText: Bytes.format(WT.getVar('wtUploadMaxFileSize')),
-				fieldLabel: WT.res(me.ID, 'opts.main.fld-privateUploadMaxFileSize.lbl'),
-				width: 280,
-				listeners: {
-					blur: {
-						fn: me.onBlurAutoSave,
-						scope: me
-					}
-				}
+				xtype: 'solabel',
+				appearance: 'title',
+				html: me.mys.res('pub.authorize.tit')
 			}, {
-				xtype: 'sobytesfield',
-				bind: '{record.publicUploadMaxFileSize}',
-				disabled: !WT.isPermitted('WTADMIN', 'ACCESS'),
-				emptyText: Bytes.format(WT.getVar('wtUploadMaxFileSize')),
-				fieldLabel: WT.res(me.ID, 'opts.main.fld-publicUploadMaxFileSize.lbl'),
-				width: 280,
-				listeners: {
-					blur: {
-						fn: me.onBlurAutoSave,
-						scope: me
-					}
-				}
+				xtype: 'displayfield',
+				hideEmptyLabel: true,
+				value: me.mys.res('pub.authorize.sub.tit')
 			}, {
-				xtype: 'checkbox',
-				bind: '{showHiddenFiles}',
-				hideEmptyLabel: false,
-				boxLabel: WT.res(me.ID, 'opts.main.fld-showHiddenFiles.lbl'),
-				listeners: {
-					change: {
-						fn: function(s) {
-							//TODO: workaround...il modello veniva salvato prima dell'aggionamento
-							Ext.defer(function() {
-								me.onBlurAutoSave(s);
-							}, 200);
-						},
-						scope: me
+				xtype: 'sospacer'
+			}, {
+				xtype: 'sofakeinput', // Disable Chrome autofill
+				type: 'password'
+			}, {
+				xtype: 'sopasswordfield',
+				reference: 'fldpassword',
+				allowBlank: false,
+				fieldLabel: me.mys.res('pub.authorize.fld-password.lbl'),
+				anchor: '-20'
+			}, {
+				xtype: 'sospacer'
+			}, {
+				xtype: 'container',
+				layout: {
+					type: 'hbox',
+					pack: 'end'
+				},
+				items: [{
+					xtype: 'button',
+					text: WT.res('act-confirm.lbl'),
+					handler: function() {
+						var pass = me.lref('fldpassword');
+						if(pass.isValid()) {
+							WT.ajaxReq(me.mys.ID, 'CheckLinkPassword', {
+								params: {
+									linkId: me.mys.getVar('linkId'),
+									password: pass.getValue()
+								},
+								callback: function(success, json) {
+									if(success) {
+										WT.info('ooooookkkkkk');
+									} else WT.error('password errata');
+								}
+							});
+						}
 					}
-				}
+				}],
+				anchor: '-20'
 			}]
 		});
 	}
