@@ -43,21 +43,19 @@ import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.app.WebTopSession;
 import com.sonicle.webtop.core.bol.js.JsWTSPublic;
 import com.sonicle.webtop.core.sdk.BasePublicService;
-import com.sonicle.webtop.core.sdk.UserProfile;
 import com.sonicle.webtop.core.sdk.WTException;
 import com.sonicle.webtop.core.servlet.ServletHelper;
 import com.sonicle.webtop.vfs.bol.model.SharingLink;
 import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Locale;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.vfs2.FileObject;
-import org.apache.shiro.subject.Subject;
+import org.joda.time.DateTime;
 import org.slf4j.Logger;
 
 /**
@@ -97,14 +95,26 @@ public class PublicService extends BasePublicService {
 	}
 	
 	@Override
-	public void processDefaultAction(HttpServletRequest request, HttpServletResponse response, PrintWriter out) throws Exception {
+	public void processDefaultAction(HttpServletRequest request, HttpServletResponse response) throws Exception {
 		PublicPath path = parsePathInfo(request.getPathInfo());
 		WebTopSession wts = RunContext.getWebTopSession();
 		
 		if(path.context.equals("file")) {
 			Integer raw = ServletUtils.getIntParameter(request, "raw", 0);
-			if(raw == 1) {
-				processDownloadFile(request, response, path.relative);
+			
+			SharingLink link = manager.getSharingLink(path.relative);
+			
+			if(link == null) {
+				//TODO: pagina errore link rimosso...
+				throw new WTException("Link not found [{0}]", path.relative);
+				
+			} else if(link.isExpired(DateTimeUtils.now())) {
+				//TODO: pagina errore link scaduto...
+				throw new WTException("Link not expired [{0}]", path.relative);
+				
+			} else if(isLinkAuthorized(link) && raw == 1) {
+				processDownloadFile(request, response, link);
+				
 			} else {
 				Map vars = new HashMap();
 				
@@ -113,7 +123,7 @@ public class PublicService extends BasePublicService {
 				wts.fillStartup(jswts, SERVICE_ID);
 				addServiceVar(jswts, "linkId", path.relative);
 				vars.put("WTS", LangUtils.unescapeUnicodeBackslashes(jswts.toJson()));
-				writePage(ServletUtils.getBaseURL(request), vars, wts.getLocale(), out);
+				writePage(ServletUtils.getBaseURL(request), vars, wts.getLocale(), response);
 				ServletUtils.setCacheControlPrivate(response);
 				ServletUtils.setHtmlContentType(response);
 			}
@@ -123,7 +133,7 @@ public class PublicService extends BasePublicService {
 		}
 	}
 	
-	public void processCheckLinkPassword(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+	public void processAuthorizeLink(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		
 		try {
 			String linkId = ServletUtils.getStringParameter(request, "linkId", true);
@@ -150,16 +160,21 @@ public class PublicService extends BasePublicService {
 		}
 	}
 	
+	private boolean isLinkAuthorized(SharingLink link) {
+		if(link.getAuthMode().equals(SharingLink.AUTH_MODE_PASSWORD)) {
+			return getAuthedLinks().contains(link.getLinkId());
+		} else {
+			return true;
+		}
+	}
+	
 	private boolean authCheck(String linkId) {
 		return getAuthedLinks().contains(linkId);
 	}
 	
-	private void processDownloadFile(HttpServletRequest request, HttpServletResponse response, String linkId) {
+	private void processDownloadFile(HttpServletRequest request, HttpServletResponse response, SharingLink link) {
 		
 		try {
-			SharingLink link = manager.getSharingLink(linkId);
-			if(link == null) throw new WTException("Link not found [{0}]", linkId);
-			
 			if(link.isExpired(DateTimeUtils.now())) throw new WTException("expired");
 			if(link.getType().equals(SharingLink.TYPE_UPLOAD)) throw new WTException("upload");
 			if(link.getAuthMode().equals(SharingLink.AUTH_MODE_PASSWORD)) {

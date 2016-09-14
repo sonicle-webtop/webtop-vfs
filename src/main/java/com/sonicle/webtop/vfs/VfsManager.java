@@ -123,6 +123,43 @@ public class VfsManager extends BaseManager {
 		if(skipInit) initFileSystems();
 	}
 	
+	private void initFileSystems() throws WTException {
+		synchronized(storeFileSystems) {
+			
+			List<Store> myStores = listStores();
+			for(Store store : myStores) {
+				addStoreFileSystemToCache(store);
+				/*
+				StoreFileSystem sfs = null;
+				try {
+					sfs = createFileSystem(store);
+				} catch(URISyntaxException ex) {
+					throw new WTException(ex, "Unable to parse URI");
+				}
+				storeFileSystems.put(String.valueOf(store.getStoreId()), sfs);
+				*/
+			}
+			
+			List<StoreShareRoot> roots = listIncomingStoreRoots();
+			for(StoreShareRoot root : roots) {
+				HashMap<Integer, StoreShareFolder> folders = listIncomingStoreFolders(root.getShareId());
+				for(StoreShareFolder folder : folders.values()) {
+					addStoreFileSystemToCache(folder.getStore());
+					
+					/*
+					StoreFileSystem sfs = null;
+					try {
+						sfs = createFileSystem(folder.getStore());
+					} catch(URISyntaxException ex) {
+						throw new WTException(ex, "Unable to parse URI");
+					}
+					storeFileSystems.put(String.valueOf(folder.getStore().getStoreId()), sfs);
+					*/
+				}
+			}
+		}
+	}
+	
 	private StoreFileSystem createFileSystem(Store store) throws URISyntaxException {
 		String uri = null;
 		
@@ -159,36 +196,6 @@ public class VfsManager extends BaseManager {
 		}
 	}
 	
-	private void initFileSystems() throws WTException {
-		synchronized(storeFileSystems) {
-			
-			List<Store> myStores = listStores();
-			for(Store store : myStores) {
-				StoreFileSystem sfs = null;
-				try {
-					sfs = createFileSystem(store);
-				} catch(URISyntaxException ex) {
-					throw new WTException(ex, "Unable to parse URI");
-				}
-				storeFileSystems.put(String.valueOf(store.getStoreId()), sfs);
-			}
-			
-			List<StoreShareRoot> roots = listIncomingStoreRoots();
-			for(StoreShareRoot root : roots) {
-				HashMap<Integer, StoreShareFolder> folders = listIncomingStoreFolders(root.getShareId());
-				for(StoreShareFolder folder : folders.values()) {
-					StoreFileSystem sfs = null;
-					try {
-						sfs = createFileSystem(folder.getStore());
-					} catch(URISyntaxException ex) {
-						throw new WTException(ex, "Unable to parse URI");
-					}
-					storeFileSystems.put(String.valueOf(folder.getStore().getStoreId()), sfs);
-				}
-			}
-		}
-	}
-	
 	private void addStoreFileSystemToCache(Store store) throws WTException {
 		synchronized(storeFileSystems) {
 			StoreFileSystem sfs = null;
@@ -207,9 +214,15 @@ public class VfsManager extends BaseManager {
 		}
 	}
 	
-	private StoreFileSystem getStoreFileSystemFromCache(int storeId) {
+	private StoreFileSystem getStoreFileSystemFromCache(int storeId) throws WTException {
+		String key = String.valueOf(storeId);
 		synchronized(storeFileSystems) {
-			return storeFileSystems.get(String.valueOf(storeId));
+			if(!storeFileSystems.containsKey(key)) {
+				Store store = getStore(storeId);
+				if(store == null) throw new WTException("Store not found [{0}]", storeId);
+				addStoreFileSystemToCache(store);
+			}
+			return storeFileSystems.get(key);
 		}
 	}
 	

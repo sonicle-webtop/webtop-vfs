@@ -88,7 +88,7 @@ Ext.define('Sonicle.webtop.vfs.view.pub.Authorize', {
 					handler: function() {
 						var pass = me.lref('fldpassword');
 						if(pass.isValid()) {
-							WT.ajaxReq(me.mys.ID, 'CheckLinkPassword', {
+							WT.ajaxReq(me.mys.ID, 'AuthorizeLink', {
 								params: {
 									linkId: me.mys.getVar('linkId'),
 									password: pass.getValue()
