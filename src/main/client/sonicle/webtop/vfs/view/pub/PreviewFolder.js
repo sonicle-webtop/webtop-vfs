@@ -31,17 +31,20 @@
  * feasible for technical reasons, the Appropriate Legal Notices must display
  * the words "Powered by Sonicle WebTop".
  */
-Ext.define('Sonicle.webtop.vfs.view.pub.Authorize', {
+Ext.define('Sonicle.webtop.vfs.view.pub.PreviewFolder', {
 	extend: 'WT.ux.panel.Panel',
 	requires: [
-		'Sonicle.FakeInput',
-		'Sonicle.form.Label',
-		'Sonicle.form.Spacer',
-		'Sonicle.form.field.Password'
+		'Sonicle.grid.column.Icon',
+		'Sonicle.grid.column.Bytes',
+		'Sonicle.webtop.vfs.model.pub.GridFile'
+		
+		//'Sonicle.FakeInput',
+		//'Sonicle.form.Label',
+		//'Sonicle.form.Spacer',
+		//'Sonicle.form.field.Password'
 	],
 	
-	layout: 'center',
-	header: false,
+	layout: 'border',
 	referenceHolder: true,
 	
 	mys: null,
@@ -52,63 +55,65 @@ Ext.define('Sonicle.webtop.vfs.view.pub.Authorize', {
 		
 		me.add({
 			region: 'center',
-			xtype: 'wtform',
-			width: 380,
-			height: 150,
-			defaults: {
-				labelWidth: 90
+			xtype: 'grid',
+			reference: 'gpfiles',
+			store: {
+				model: 'Sonicle.webtop.vfs.model.pub.GridFile',
+				proxy: WTF.proxy(me.mys.ID, 'PreviewFiles', 'files', {
+					extraParams: {
+						linkId: me.mys.getVar('linkId'),
+						fileId: null
+					}
+				})
 			},
-			items: [{
-				xtype: 'solabel',
-				appearance: 'title',
-				html: me.mys.res('pub.authorize.tit')
-			}, {
-				xtype: 'displayfield',
-				hideEmptyLabel: true,
-				value: me.mys.res('pub.authorize.sub.tit')
-			}, {
-				xtype: 'sospacer'
-			}, {
-				xtype: 'sofakeinput', // Disable Chrome autofill
-				type: 'password'
-			}, {
-				xtype: 'sopasswordfield',
-				reference: 'fldpassword',
-				allowBlank: false,
-				fieldLabel: me.mys.res('pub.authorize.fld-password.lbl'),
-				anchor: '-20'
-			}, {
-				xtype: 'sospacer'
-			}, {
-				xtype: 'container',
-				layout: {
-					type: 'hbox',
-					pack: 'end'
+			viewConfig: {
+				deferEmptyText: false,
+				emptyText: me.mys.res('gpfiles.emptyText')
+			},
+			selModel: {
+				type: 'rowmodel'
+				//mode : 'MULTI'
+			},
+			columns: [{
+				xtype: 'soiconcolumn',
+				dataIndex: 'type',
+				header: WTF.headerWithGlyphIcon('fa fa-file-o'),
+				getIconCls: function(v,rec) {
+					return (v === 'folder') ? 'wt-ftype-folder-xs' : WTF.fileTypeCssIconCls(rec.get('ext'), 'xs');
 				},
-				items: [{
-					xtype: 'button',
-					text: WT.res('act-confirm.lbl'),
-					handler: function() {
-						var pass = me.lref('fldpassword');
-						if(pass.isValid()) {
-							WT.ajaxReq(me.mys.ID, 'AuthorizeLink', {
-								params: {
-									linkId: me.mys.getVar('linkId'),
-									password: pass.getValue()
-								},
-								callback: function(success, json) {
-									if(success) {
-										WT.reload();
-									} else {
-										WT.error('password errata');
-									}
-								}
-							});
+				iconSize: WTU.imgSizeToPx('xs'),
+				width: 40
+			}, {
+				xtype: 'solinkcolumn',
+				dataIndex: 'name',
+				header: me.mys.res('gpfiles.name.lbl'),
+				flex: 1,
+				listeners: {
+					linkclick: function(s,idx,rec) {
+						if(rec.get('type') === 'folder') {
+							//me.setCurFile(rec.get('fileId'));
+							//me.reloadGridFiles();
 						}
 					}
-				}],
-				anchor: '-20'
+				},
+				maxWidth: 500
+			}, {
+				xtype: 'sobytescolumn',
+				dataIndex: 'size',
+				header: me.mys.res('gpfiles.size.lbl'),
+				width: 110
+			}, {
+				dataIndex: 'lastModified',
+				header: me.mys.res('gpfiles.lastModified.lbl'),
+				xtype: 'datecolumn',
+				format: 'D, d M Y H:i:s',
+				width: 140
+			}]/*,
+			tbar: [{
+				iconCls: me.mys.cssIconCls('goUp', 'xs'),
+				tooltip: me.mys.res('act-goUp.tip')
 			}]
+		*/
 		});
 	}
 });

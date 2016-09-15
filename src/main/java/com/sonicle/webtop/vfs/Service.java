@@ -899,8 +899,7 @@ public class Service extends BaseService {
 				
 				String publicBaseUrl = getPublicBaseUrl(request);
 				JsWizardData data = new JsWizardData();
-				data.put("link", VfsManager.buildPublicLinkUrl(false, publicBaseUrl, PublicService.CONTEXT_FILE, dl));
-				data.put("directLink", VfsManager.buildPublicLinkUrl(true, publicBaseUrl, PublicService.CONTEXT_FILE, dl));
+				data.put("links", VfsManager.generatePublicLinks(dl, publicBaseUrl));
 				new JsonResult(data).printTo(out);
 			}
 			
@@ -937,7 +936,10 @@ public class Service extends BaseService {
 				ul.setPassword(password);
 				ul = manager.addUploadLink(ul);
 				
-				new JsonResult(new JsWizardData(ul)).printTo(out);
+				String publicBaseUrl = getPublicBaseUrl(request);
+				JsWizardData data = new JsWizardData();
+				data.put("links", VfsManager.generatePublicLinks(ul, publicBaseUrl));
+				new JsonResult(data).printTo(out);
 			}
 			
 		} catch (Exception ex) {

@@ -47,6 +47,8 @@ import com.sonicle.webtop.core.sdk.BasePublicService;
 import com.sonicle.webtop.core.sdk.WTException;
 import com.sonicle.webtop.core.servlet.ServletHelper;
 import com.sonicle.webtop.vfs.bol.model.SharingLink;
+import freemarker.template.TemplateException;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -65,7 +67,7 @@ import org.slf4j.Logger;
 public class PublicService extends BasePublicService {
 	private static final Logger logger = WT.getLogger(PublicService.class);
 	private static final String WTSPROP_AUTHED_LINKS = "AUTHEDLINKS";
-	public static final String CONTEXT_FILE = "file";
+	public static final String PUBPATH_CONTEXT_FILE = "f";
 	
 	private final Object lock1 = new Object();
 	private VfsManager manager;
@@ -120,48 +122,60 @@ public class PublicService extends BasePublicService {
 		PublicPath path = new PublicPath(request.getPathInfo());
 		WebTopSession wts = RunContext.getWebTopSession();
 		
-		if(path.getContext().equals(CONTEXT_FILE)) {
+		if(path.getContext().equals(PUBPATH_CONTEXT_FILE)) {
 			FilePath filePath = new FilePath(path.getRemainingPath());
-			Integer raw = ServletUtils.getIntParameter(request, "raw", 0);
 			
 			SharingLink link = null;
 			if(!StringUtils.isBlank(filePath.getLinkId())) {
 				link = manager.getSharingLink(filePath.getLinkId());
 			}
 			
-			if(link == null) {
+			if(link == null) { // Link not found
 				//TODO: pagina errore link rimosso...
 				throw new WTException("Link not found [{0}]", filePath.getLinkId());
 				
-			} else if(link.isExpired(DateTimeUtils.now())) {
+			} else if(link.isExpired(DateTimeUtils.now())) { // Link expired
 				//TODO: pagina errore link scaduto...
 				throw new WTException("Link not expired [{0}]", filePath.getLinkId());
 				
-			} else if(isLinkAuthorized(link) && raw == 1) {
-				String baseServletUrl = PathUtils.concatPathParts(ServletUtils.getBaseURL(request), request.getServletPath(), path.getPublicName());
-				String url = VfsManager.buildPublicLinkGetUrl(baseServletUrl, path.getContext(), link);
-				ServletUtils.setLocationHeader(response, url);
-				response.setStatus(HttpServletResponse.SC_FOUND);
-				
-			} else if(isLinkAuthorized(link) && filePath.isGet()) {
-				writeStoreFile(response, link);
+			} else if(!isLinkAuthorized(link)) { // Link not authorized
+				writePage(request, response, wts, "Authorize", filePath);
+			}
+			
+			if(PathUtils.isFolder(link.getFilePath())) {
+				writePage(request, response, wts, "PreviewFolder", filePath);
 				
 			} else {
-				Map vars = new HashMap();
-				
-				// Startup variables
-				JsWTSPublic jswts = new JsWTSPublic();
-				wts.fillStartup(jswts, SERVICE_ID);
-				addServiceVar(jswts, "linkId", filePath.getLinkId());
-				vars.put("WTS", LangUtils.unescapeUnicodeBackslashes(jswts.toJson()));
-				writePage(ServletUtils.getBaseURL(request), vars, wts.getLocale(), response);
-				ServletUtils.setCacheControlPrivate(response);
-				ServletUtils.setHtmlContentType(response);
+				Integer raw = ServletUtils.getIntParameter(request, "raw", 0);
+				if(raw == 1) { // Link points directly to raw data (no preview)
+					String baseServletUrl = PathUtils.concatPathParts(ServletUtils.getBaseURL(request), request.getServletPath(), path.getPublicName());
+					String url = VfsManager.buildPublicLinkGetUrl(link, baseServletUrl, path.getContext());
+					ServletUtils.setLocationHeader(response, url);
+					response.setStatus(HttpServletResponse.SC_FOUND);
+					
+				} else if(filePath.isGet()) { // Real binary stream
+					writeStoreFile(response, link);
+
+				} else {
+					throw new WTException("Bad request");
+				}
 			}
 			
 		} else {
 			throw new WTException("Invalid context [{0}]", path.getContext());
 		}
+	}
+	
+	private void writePage(HttpServletRequest request, HttpServletResponse response, WebTopSession wts, String view, FilePath filePath) throws IOException, TemplateException {
+		Map vars = new HashMap();
+		JsWTSPublic jswts = new JsWTSPublic();
+		wts.fillStartup(jswts, SERVICE_ID);
+		addServiceVar(jswts, "view", view);
+		addServiceVar(jswts, "linkId", filePath.getLinkId());
+		vars.put("WTS", LangUtils.unescapeUnicodeBackslashes(jswts.toJson()));
+		writePage(ServletUtils.getBaseURL(request), vars, wts.getLocale(), response);
+		ServletUtils.setCacheControlPrivate(response);
+		ServletUtils.setHtmlContentType(response);
 	}
 	
 	public void processAuthorizeLink(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
@@ -173,16 +187,20 @@ public class PublicService extends BasePublicService {
 			SharingLink link = manager.getSharingLink(linkId);
 			if(link == null) throw new WTException("Link not found [{0}]", linkId);
 			
-			boolean check = true;
-			if(link.getAuthMode().equals(SharingLink.AUTH_MODE_PASSWORD)) {
-				check = StringUtils.equals(password, link.getPassword());
-			}
-			
-			if(check) {
-				getAuthedLinks().add(linkId);
+			if(isLinkAuthorized(link)) {
 				new JsonResult().printTo(out);
 			} else {
-				new JsonResult(false, null).printTo(out);
+				boolean check = true;
+				if(link.getAuthMode().equals(SharingLink.AUTH_MODE_PASSWORD)) {
+					check = StringUtils.equals(password, link.getPassword());
+				}
+
+				if(check) {
+					getAuthedLinks().add(linkId);
+					new JsonResult().printTo(out);
+				} else {
+					new JsonResult(false, null).printTo(out);
+				}
 			}
 			
 		} catch(Exception ex) {

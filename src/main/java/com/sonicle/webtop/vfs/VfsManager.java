@@ -1039,27 +1039,38 @@ public class VfsManager extends BaseManager {
 		//TODO: cancellare collegati
 	}
 	
+	public static String[] generatePublicLinks(SharingLink link, String publicBaseUrl) {
+		if(PathUtils.isFolder(link.getFilePath())) {
+			String url = buildPublicLinkUrl(link, publicBaseUrl, PublicService.PUBPATH_CONTEXT_FILE, false);
+			return new String[]{url, null};
+		} else {
+			String url = buildPublicLinkUrl(link, publicBaseUrl, PublicService.PUBPATH_CONTEXT_FILE, false);
+			String durl = buildPublicLinkUrl(link, publicBaseUrl, PublicService.PUBPATH_CONTEXT_FILE, true);
+			return new String[]{url, durl};
+		}
+	}
+	
 	/**
 	 * Builds an URL suitable for links that point to shared file.
-	 * @param raw True to add a special parameter
+	 * @param link Shared link
 	 * @param publicBaseUrl The base URL up to the public servlet path (eg. http://localhost/webtop/public/cloud)
 	 * @param context Public service's context
-	 * @param link Shared link
+	 * @param direct True to point directly to binary file (not suitable for folders)
 	 * @return Generated URL
 	 */
-	public static String buildPublicLinkUrl(boolean raw, String publicBaseUrl, String context, SharingLink link) {
-		String s = context + "/" + link.getLinkId() + (raw ? "?raw=1" : "");
+	public static String buildPublicLinkUrl(SharingLink link, String publicBaseUrl, String context, boolean direct) {
+		String s = context + "/" + link.getLinkId() + (direct ? "?raw=1" : "");
 		return PathUtils.concatPaths(publicBaseUrl, s);
 	}
 	
 	/**
 	 * Builds an URL suitable for redirecting to public file download stream.
 	 * @param publicBaseUrl The base URL up to the public servlet path (eg. http://localhost/webtop/public/cloud)
-	 * @param context Public service's context
 	 * @param link Shared link
+	 * @param context Public service's context
 	 * @return Generated URL
 	 */
-	public static String buildPublicLinkGetUrl(String publicBaseUrl, String context, SharingLink link) {
+	public static String buildPublicLinkGetUrl(SharingLink link, String publicBaseUrl, String context) {
 		String s = context + "/" + link.getLinkId() + "/get/" + PathUtils.getFileName(link.getFilePath());
 		return PathUtils.concatPaths(publicBaseUrl, s);
 	}

@@ -31,17 +31,17 @@
  * feasible for technical reasons, the Appropriate Legal Notices must display
  * the words "Powered by Sonicle WebTop".
  */
-Ext.define('Sonicle.webtop.vfs.PublicService', {
-	extend: 'WT.sdk.PublicService',
-	requires: [
-		//'Sonicle.webtop.vfs.view.pub.Authorize'
-	],
+Ext.define('Sonicle.webtop.vfs.model.pub.GridFile', {
+	extend: 'WT.ux.data.BaseModel',
 	
-	init: function() {
-		var me = this;
-		me.setMainComponent(Ext.create('Sonicle.webtop.vfs.view.pub.'+me.getVar('view'), {
-			region: 'center',
-			mys: me
-		}));
-	}
+	idProperty: 'fileId',
+	fields: [
+		WTF.roField('fileId', 'string'),
+		WTF.roField('type', 'string'),
+		WTF.roField('mtype', 'string'),
+		WTF.roField('name', 'string'),
+		//WTF.roField('ext', 'string'),
+		WTF.roField('size', 'int'),
+		WTF.roField('lastModified', 'date', {dateFormat: 'Y-m-d H:i:s'})
+	]
 });
