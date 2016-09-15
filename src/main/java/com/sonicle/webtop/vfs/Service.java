@@ -61,11 +61,9 @@ import com.sonicle.webtop.core.bol.js.JsWizardData;
 import com.sonicle.webtop.core.bol.model.SharePermsRoot;
 import com.sonicle.webtop.core.bol.model.Sharing;
 import com.sonicle.webtop.core.sdk.BaseService;
-import com.sonicle.webtop.core.sdk.ServiceMessage;
 import com.sonicle.webtop.core.sdk.UploadException;
 import com.sonicle.webtop.core.sdk.UserProfile;
 import com.sonicle.webtop.core.sdk.WTException;
-import com.sonicle.webtop.core.sdk.interfaces.IServiceUploadListener;
 import com.sonicle.webtop.core.sdk.interfaces.IServiceUploadStreamListener;
 import com.sonicle.webtop.core.servlet.ServletHelper;
 import com.sonicle.webtop.vfs.bol.js.JsGridFile;
@@ -74,16 +72,13 @@ import com.sonicle.webtop.vfs.bol.js.JsSharing;
 import com.sonicle.webtop.vfs.bol.js.JsSharingLink;
 import com.sonicle.webtop.vfs.bol.js.JsStore;
 import com.sonicle.webtop.vfs.bol.model.Store;
-import com.sonicle.webtop.vfs.bol.model.SetupParamsDropbox;
-import com.sonicle.webtop.vfs.bol.model.SetupParamsFtp;
-import com.sonicle.webtop.vfs.bol.model.SetupParamsGoogleDrive;
 import com.sonicle.webtop.vfs.bol.model.StoreShareFolder;
 import com.sonicle.webtop.vfs.bol.model.StoreShareRoot;
 import com.sonicle.webtop.vfs.bol.model.MyStoreFolder;
 import com.sonicle.webtop.vfs.bol.model.MyStoreRoot;
-import com.sonicle.webtop.vfs.bol.model.SetupParamsFile;
+import com.sonicle.webtop.vfs.bol.model.ParamsDropbox;
+import com.sonicle.webtop.vfs.bol.model.ParamsGoogleDrive;
 import com.sonicle.webtop.vfs.bol.model.StoreFileType;
-import com.sonicle.webtop.vfs.bol.model.SetupParamsOther;
 import com.sonicle.webtop.vfs.bol.model.SharingLink;
 import com.sonicle.webtop.vfs.sfs.StoreFileSystem;
 import java.io.InputStream;
@@ -506,7 +501,7 @@ public class Service extends BaseService {
 				String password = ServletUtils.getStringParameter(request, "password", null);
 				String path = ServletUtils.getStringParameter(request, "path", null);
 				
-				SetupParamsFtp params = new SetupParamsFtp();
+				SetupDataFtp params = new SetupDataFtp();
 				params.profileId = profileId;
 				params.scheme = scheme;
 				params.host = host;
@@ -523,7 +518,7 @@ public class Service extends BaseService {
 			} else if(crud.equals("s2")) {
 				String name = ServletUtils.getStringParameter(request, "name", true);
 				if(!wts.hasProperty(SERVICE_ID, PROPERTY)) throw new WTException();
-				SetupParamsFtp params = (SetupParamsFtp) wts.getProperty(SERVICE_ID, PROPERTY);
+				SetupDataFtp params = (SetupDataFtp) wts.getProperty(SERVICE_ID, PROPERTY);
 				
 				Store store = new Store();
 				store.setProfileId(new UserProfile.Id(params.profileId));
@@ -556,7 +551,7 @@ public class Service extends BaseService {
 			if(crud.equals("s1")) {
 				String profileId = ServletUtils.getStringParameter(request, "profileId", true);
 				
-				SetupParamsDropbox params = new SetupParamsDropbox();
+				SetupDataDropbox params = new SetupDataDropbox();
 				params.profileId = profileId;
 				params.authUrl = DropboxApiUtils.getAuthorizationUrl(APP_NAME, DROPBOX_USER_LOCALE, DROPBOX_APP_KEY, DROPBOX_APP_SECRET);
 				wts.setProperty(SERVICE_ID, PROPERTY, params);
@@ -566,7 +561,7 @@ public class Service extends BaseService {
 			} else if(crud.equals("s2")) {
 				String code = ServletUtils.getStringParameter(request, "code", true);
 				if(!wts.hasProperty(SERVICE_ID, PROPERTY)) throw new WTException();
-				SetupParamsDropbox params = (SetupParamsDropbox) wts.getProperty(SERVICE_ID, PROPERTY);
+				SetupDataDropbox params = (SetupDataDropbox) wts.getProperty(SERVICE_ID, PROPERTY);
 				
 				DbxAppInfo appInfo = DropboxApiUtils.createAppInfo(DROPBOX_APP_KEY, DROPBOX_APP_SECRET);
 				DbxRequestConfig reqConfig = DropboxApiUtils.createRequestConfig(APP_NAME, DROPBOX_USER_LOCALE);
@@ -582,13 +577,13 @@ public class Service extends BaseService {
 			} else if(crud.equals("s3")) {
 				String name = ServletUtils.getStringParameter(request, "name", true);
 				if(!wts.hasProperty(SERVICE_ID, PROPERTY)) throw new WTException();
-				SetupParamsDropbox params = (SetupParamsDropbox) wts.getProperty(SERVICE_ID, PROPERTY);
+				SetupDataDropbox params = (SetupDataDropbox) wts.getProperty(SERVICE_ID, PROPERTY);
 				
 				Store store = new Store();
 				store.setProfileId(new UserProfile.Id(params.profileId));
 				store.setName(StringUtils.defaultIfBlank(name, params.name));
 				store.setUri(params.generateURI());
-				store.setParameters(LangUtils.serialize(params, SetupParamsDropbox.class));
+				store.setParameters(LangUtils.serialize(params.buildParameters(), ParamsDropbox.class));
 				manager.addStore(store);
 				
 				wts.clearProperty(SERVICE_ID, PROPERTY);
@@ -616,7 +611,7 @@ public class Service extends BaseService {
 				String profileId = ServletUtils.getStringParameter(request, "profileId", true);
 				
 				GoogleDriveAppInfo appInfo = new GoogleDriveAppInfo(APP_NAME, GDRIVE_CLIENT_ID, GDRIVE_CLIENT_SECRET);
-				SetupParamsGoogleDrive params = new SetupParamsGoogleDrive();
+				SetupDataGoogleDrive params = new SetupDataGoogleDrive();
 				params.profileId = profileId;
 				params.authUrl = GoogleDriveApiUtils.getAuthorizationUrl(appInfo);
 				wts.setProperty(SERVICE_ID, PROPERTY, params);
@@ -626,7 +621,7 @@ public class Service extends BaseService {
 			} else if(crud.equals("s2")) {
 				String code = ServletUtils.getStringParameter(request, "code", true);
 				if(!wts.hasProperty(SERVICE_ID, PROPERTY)) throw new WTException();
-				SetupParamsGoogleDrive params = (SetupParamsGoogleDrive) wts.getProperty(SERVICE_ID, PROPERTY);
+				SetupDataGoogleDrive params = (SetupDataGoogleDrive) wts.getProperty(SERVICE_ID, PROPERTY);
 				
 				GoogleDriveAppInfo appInfo = new GoogleDriveAppInfo(APP_NAME, GDRIVE_CLIENT_ID, GDRIVE_CLIENT_SECRET);
 				GoogleCredential cred = GoogleDriveApiUtils.exchangeAuthorizationCode(code, appInfo);
@@ -642,13 +637,13 @@ public class Service extends BaseService {
 			} else if(crud.equals("s3")) {
 				String name = ServletUtils.getStringParameter(request, "name", true);
 				if(!wts.hasProperty(SERVICE_ID, PROPERTY)) throw new WTException();
-				SetupParamsGoogleDrive params = (SetupParamsGoogleDrive) wts.getProperty(SERVICE_ID, PROPERTY);
+				SetupDataGoogleDrive params = (SetupDataGoogleDrive) wts.getProperty(SERVICE_ID, PROPERTY);
 				
 				Store store = new Store();
 				store.setProfileId(new UserProfile.Id(params.profileId));
 				store.setName(StringUtils.defaultIfBlank(name, params.name));
 				store.setUri(params.generateURI());
-				store.setParameters(LangUtils.serialize(params, SetupParamsGoogleDrive.class));
+				store.setParameters(LangUtils.serialize(params.buildParameters(), ParamsGoogleDrive.class));
 				manager.addStore(store);
 				
 				wts.clearProperty(SERVICE_ID, PROPERTY);
@@ -673,7 +668,7 @@ public class Service extends BaseService {
 				String profileId = ServletUtils.getStringParameter(request, "profileId", true);
 				String path = ServletUtils.getStringParameter(request, "path", null);
 				
-				SetupParamsFile params = new SetupParamsFile();
+				SetupDataFile params = new SetupDataFile();
 				params.profileId = profileId;
 				params.path = path;
 				params.buildName();
@@ -684,7 +679,7 @@ public class Service extends BaseService {
 			} else if(crud.equals("s2")) {
 				String name = ServletUtils.getStringParameter(request, "name", true);
 				if(!wts.hasProperty(SERVICE_ID, PROPERTY)) throw new WTException();
-				SetupParamsFile params = (SetupParamsFile) wts.getProperty(SERVICE_ID, PROPERTY);
+				SetupDataFile params = (SetupDataFile) wts.getProperty(SERVICE_ID, PROPERTY);
 				
 				Store store = new Store();
 				store.setProfileId(new UserProfile.Id(params.profileId));
@@ -719,7 +714,7 @@ public class Service extends BaseService {
 				String password = ServletUtils.getStringParameter(request, "password", null);
 				String path = ServletUtils.getStringParameter(request, "path", null);
 				
-				SetupParamsOther params = new SetupParamsOther();
+				SetupDataOther params = new SetupDataOther();
 				params.profileId = profileId;
 				params.scheme = scheme;
 				params.host = host;
@@ -736,7 +731,7 @@ public class Service extends BaseService {
 			} else if(crud.equals("s2")) {
 				String name = ServletUtils.getStringParameter(request, "name", true);
 				if(!wts.hasProperty(SERVICE_ID, PROPERTY)) throw new WTException();
-				SetupParamsOther params = (SetupParamsOther) wts.getProperty(SERVICE_ID, PROPERTY);
+				SetupDataOther params = (SetupDataOther) wts.getProperty(SERVICE_ID, PROPERTY);
 				
 				Store store = new Store();
 				store.setProfileId(new UserProfile.Id(params.profileId));
@@ -902,7 +897,11 @@ public class Service extends BaseService {
 				dl.setPassword(password);
 				dl = manager.addDownloadLink(dl);
 				
-				new JsonResult(new JsWizardData(dl)).printTo(out);
+				String publicBaseUrl = getPublicBaseUrl(request);
+				JsWizardData data = new JsWizardData();
+				data.put("link", VfsManager.buildPublicLinkUrl(false, publicBaseUrl, PublicService.CONTEXT_FILE, dl));
+				data.put("directLink", VfsManager.buildPublicLinkUrl(true, publicBaseUrl, PublicService.CONTEXT_FILE, dl));
+				new JsonResult(data).printTo(out);
 			}
 			
 		} catch (Exception ex) {
@@ -1036,5 +1035,9 @@ public class Service extends BaseService {
 	
 	private boolean isFileHidden(FileObject fo) throws FileSystemException {
 		return fo.isHidden() || StringUtils.startsWith(fo.getName().getBaseName(), ".");
+	}
+	
+	private String getPublicBaseUrl(HttpServletRequest request) {
+		return PathUtils.concatPathParts(ServletUtils.getBaseURL(request), "public", getPublicName());
 	}
 }

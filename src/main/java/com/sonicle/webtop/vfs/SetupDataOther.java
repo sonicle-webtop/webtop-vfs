@@ -31,8 +31,9 @@
  * feasible for technical reasons, the Appropriate Legal Notices must display
  * the words "Powered by Sonicle WebTop".
  */
-package com.sonicle.webtop.vfs.bol.model;
+package com.sonicle.webtop.vfs;
 
+import com.sonicle.webtop.vfs.bol.model.Store;
 import java.net.URISyntaxException;
 import java.text.MessageFormat;
 import org.apache.commons.lang3.StringUtils;
@@ -41,7 +42,7 @@ import org.apache.commons.lang3.StringUtils;
  *
  * @author malbinola
  */
-public class SetupParamsOther extends SetupParams {
+public class SetupDataOther extends SetupData {
 	public String scheme = null;
 	public String host = null;
 	public Integer port = null;
@@ -49,7 +50,7 @@ public class SetupParamsOther extends SetupParams {
 	public String password = null;
 	public String path = null;
 	
-	public SetupParamsOther() {}
+	public SetupDataOther() {}
 
 	@Override
 	public String generateURI() throws URISyntaxException {

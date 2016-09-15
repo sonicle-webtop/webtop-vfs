@@ -248,8 +248,8 @@ Ext.define('Sonicle.webtop.vfs.view.DownloadLinkWiz', {
 				},
 				callback: function(success, json) {
 					if(success) {
-						vm.set('result', json.data.result);
-						vm.set('link', json.data.result.linkId);
+						vm.set('result', json.data);
+						vm.set('link', json.data.directLink);
 						me.onNavigate(np);
 					} else {
 						WT.error(json.message);

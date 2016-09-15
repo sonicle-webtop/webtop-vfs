@@ -1038,4 +1038,29 @@ public class VfsManager extends BaseManager {
 		dao.deleteById(con, linkId);
 		//TODO: cancellare collegati
 	}
+	
+	/**
+	 * Builds an URL suitable for links that point to shared file.
+	 * @param raw True to add a special parameter
+	 * @param publicBaseUrl The base URL up to the public servlet path (eg. http://localhost/webtop/public/cloud)
+	 * @param context Public service's context
+	 * @param link Shared link
+	 * @return Generated URL
+	 */
+	public static String buildPublicLinkUrl(boolean raw, String publicBaseUrl, String context, SharingLink link) {
+		String s = context + "/" + link.getLinkId() + (raw ? "?raw=1" : "");
+		return PathUtils.concatPaths(publicBaseUrl, s);
+	}
+	
+	/**
+	 * Builds an URL suitable for redirecting to public file download stream.
+	 * @param publicBaseUrl The base URL up to the public servlet path (eg. http://localhost/webtop/public/cloud)
+	 * @param context Public service's context
+	 * @param link Shared link
+	 * @return Generated URL
+	 */
+	public static String buildPublicLinkGetUrl(String publicBaseUrl, String context, SharingLink link) {
+		String s = context + "/" + link.getLinkId() + "/get/" + PathUtils.getFileName(link.getFilePath());
+		return PathUtils.concatPaths(publicBaseUrl, s);
+	}
 }

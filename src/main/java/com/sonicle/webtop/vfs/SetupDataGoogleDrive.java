@@ -31,18 +31,55 @@
  * feasible for technical reasons, the Appropriate Legal Notices must display
  * the words "Powered by Sonicle WebTop".
  */
-package com.sonicle.webtop.vfs.bol.model;
+package com.sonicle.webtop.vfs;
 
+import com.sonicle.commons.web.json.JsonResult;
+import com.sonicle.webtop.vfs.bol.model.ParamsGoogleDrive;
+import com.sonicle.webtop.vfs.bol.model.Store;
 import java.net.URISyntaxException;
+import java.text.MessageFormat;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  *
  * @author malbinola
  */
-public abstract class SetupParams {
-	public String profileId = null;
-	public String name = null;
+public class SetupDataGoogleDrive extends SetupData {
+	public String accountEmail = null;
+	public String accountName = null;
+	public String authUrl = null;
+	public String refreshToken = null;
+	public String accessToken = null;
 	
-	public abstract String generateURI() throws URISyntaxException;
-	public abstract void buildName();
+	public SetupDataGoogleDrive() {}
+
+	@Override
+	public String generateURI() throws URISyntaxException {
+		String[] tokens = StringUtils.split(accountEmail, "@");
+		return Store.buildURI("googledrive", tokens[1], null, tokens[0], accessToken, null);
+	}
+	
+	@Override
+	public void buildName() {
+		name =  MessageFormat.format("{0} ({1})", accountName, accountEmail);
+	}
+	
+	public static SetupDataGoogleDrive fromJson(String value) {
+		if(value == null) return null;
+		return JsonResult.gson.fromJson(value, SetupDataGoogleDrive.class);
+	}
+	
+	public static String toJson(SetupDataGoogleDrive value) {
+		if(value == null) return null;
+		return JsonResult.gson.toJson(value, SetupDataGoogleDrive.class);
+	}
+	
+	public ParamsGoogleDrive buildParameters() {
+		ParamsGoogleDrive params = new ParamsGoogleDrive();
+		params.accountEmail = accountEmail;
+		params.accountName = accountName;
+		params.authUrl = authUrl;
+		params.accessToken = accessToken;
+		return params;
+	}
 }

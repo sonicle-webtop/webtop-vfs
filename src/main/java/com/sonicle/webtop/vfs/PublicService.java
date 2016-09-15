@@ -34,6 +34,7 @@
 package com.sonicle.webtop.vfs;
 
 import com.sonicle.commons.LangUtils;
+import com.sonicle.commons.PathUtils;
 import com.sonicle.commons.time.DateTimeUtils;
 import com.sonicle.commons.web.DispositionType;
 import com.sonicle.commons.web.ServletUtils;
@@ -55,7 +56,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.vfs2.FileObject;
-import org.joda.time.DateTime;
 import org.slf4j.Logger;
 
 /**
@@ -65,6 +65,7 @@ import org.slf4j.Logger;
 public class PublicService extends BasePublicService {
 	private static final Logger logger = WT.getLogger(PublicService.class);
 	private static final String WTSPROP_AUTHED_LINKS = "AUTHEDLINKS";
+	public static final String CONTEXT_FILE = "file";
 	
 	private final Object lock1 = new Object();
 	private VfsManager manager;
@@ -94,26 +95,56 @@ public class PublicService extends BasePublicService {
 		jswts.servicesVars.get(1).put(key, value);
 	}
 	
+	private String extractLinkId(String relativePath) {
+		String tokens[] = StringUtils.split(relativePath, "/", 2);
+		return tokens.length == 0 ? null : tokens[0];
+	}
+	
+	public static class FilePath extends PathTokens {
+			
+		public FilePath(String remainingPath) {
+			super(StringUtils.split(remainingPath, "/", 3));
+		}
+		
+		public String getLinkId() {
+			return getTokenAt(0);
+		}
+		
+		public boolean isGet() {
+			return StringUtils.equals(getTokenAt(1), "get");
+		}
+	}
+	
 	@Override
 	public void processDefaultAction(HttpServletRequest request, HttpServletResponse response) throws Exception {
-		PublicPath path = parsePathInfo(request.getPathInfo());
+		PublicPath path = new PublicPath(request.getPathInfo());
 		WebTopSession wts = RunContext.getWebTopSession();
 		
-		if(path.context.equals("file")) {
+		if(path.getContext().equals(CONTEXT_FILE)) {
+			FilePath filePath = new FilePath(path.getRemainingPath());
 			Integer raw = ServletUtils.getIntParameter(request, "raw", 0);
 			
-			SharingLink link = manager.getSharingLink(path.relative);
+			SharingLink link = null;
+			if(!StringUtils.isBlank(filePath.getLinkId())) {
+				link = manager.getSharingLink(filePath.getLinkId());
+			}
 			
 			if(link == null) {
 				//TODO: pagina errore link rimosso...
-				throw new WTException("Link not found [{0}]", path.relative);
+				throw new WTException("Link not found [{0}]", filePath.getLinkId());
 				
 			} else if(link.isExpired(DateTimeUtils.now())) {
 				//TODO: pagina errore link scaduto...
-				throw new WTException("Link not expired [{0}]", path.relative);
+				throw new WTException("Link not expired [{0}]", filePath.getLinkId());
 				
 			} else if(isLinkAuthorized(link) && raw == 1) {
-				processDownloadFile(request, response, link);
+				String baseServletUrl = PathUtils.concatPathParts(ServletUtils.getBaseURL(request), request.getServletPath(), path.getPublicName());
+				String url = VfsManager.buildPublicLinkGetUrl(baseServletUrl, path.getContext(), link);
+				ServletUtils.setLocationHeader(response, url);
+				response.setStatus(HttpServletResponse.SC_FOUND);
+				
+			} else if(isLinkAuthorized(link) && filePath.isGet()) {
+				writeStoreFile(response, link);
 				
 			} else {
 				Map vars = new HashMap();
@@ -121,7 +152,7 @@ public class PublicService extends BasePublicService {
 				// Startup variables
 				JsWTSPublic jswts = new JsWTSPublic();
 				wts.fillStartup(jswts, SERVICE_ID);
-				addServiceVar(jswts, "linkId", path.relative);
+				addServiceVar(jswts, "linkId", filePath.getLinkId());
 				vars.put("WTS", LangUtils.unescapeUnicodeBackslashes(jswts.toJson()));
 				writePage(ServletUtils.getBaseURL(request), vars, wts.getLocale(), response);
 				ServletUtils.setCacheControlPrivate(response);
@@ -129,7 +160,7 @@ public class PublicService extends BasePublicService {
 			}
 			
 		} else {
-			throw new WTException("Invalid context [{0}]", path.context);
+			throw new WTException("Invalid context [{0}]", path.getContext());
 		}
 	}
 	
@@ -168,19 +199,9 @@ public class PublicService extends BasePublicService {
 		}
 	}
 	
-	private boolean authCheck(String linkId) {
-		return getAuthedLinks().contains(linkId);
-	}
-	
-	private void processDownloadFile(HttpServletRequest request, HttpServletResponse response, SharingLink link) {
+	private void writeStoreFile(HttpServletResponse response, SharingLink link) {
 		
 		try {
-			if(link.isExpired(DateTimeUtils.now())) throw new WTException("expired");
-			if(link.getType().equals(SharingLink.TYPE_UPLOAD)) throw new WTException("upload");
-			if(link.getAuthMode().equals(SharingLink.AUTH_MODE_PASSWORD)) {
-				if(!authCheck(link.getLinkId())) throw new WTException("not authchecked");
-			}
-			
 			FileObject fo = null;
 			try {
 				fo = manager.getStoreFile(link.getStoreId(), link.getFilePath());

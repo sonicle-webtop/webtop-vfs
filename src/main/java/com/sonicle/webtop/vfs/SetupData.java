@@ -31,33 +31,18 @@
  * feasible for technical reasons, the Appropriate Legal Notices must display
  * the words "Powered by Sonicle WebTop".
  */
-package com.sonicle.webtop.vfs.bol.model;
+package com.sonicle.webtop.vfs;
 
 import java.net.URISyntaxException;
-import java.text.MessageFormat;
-import org.apache.commons.lang3.StringUtils;
 
 /**
  *
  * @author malbinola
  */
-public class SetupParamsFtp extends SetupParams {
-	public String scheme = null;
-	public String host = null;
-	public Integer port = null;
-	public String username = null;
-	public String password = null;
-	public String path = null;
+public abstract class SetupData {
+	public String profileId = null;
+	public String name = null;
 	
-	public SetupParamsFtp() {}
-
-	@Override
-	public String generateURI() throws URISyntaxException {
-		return Store.buildURI(scheme, host, port, username, password, path);
-	}
-	
-	@Override
-	public void buildName() {
-		name = MessageFormat.format("{0} ({1})", host, StringUtils.defaultIfEmpty(username, "anonymous"));
-	}
+	public abstract String generateURI() throws URISyntaxException;
+	public abstract void buildName();
 }

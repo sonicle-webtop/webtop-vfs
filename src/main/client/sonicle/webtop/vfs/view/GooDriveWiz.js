@@ -34,6 +34,7 @@
 Ext.define('Sonicle.webtop.vfs.view.GooDriveWiz', {
 	extend: 'WT.sdk.WizardView',
 	requires: [
+		'Sonicle.form.field.Link',
 		'WT.ux.panel.Form'
 	],
 	

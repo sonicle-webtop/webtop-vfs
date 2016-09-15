@@ -33,26 +33,15 @@
  */
 package com.sonicle.webtop.vfs.bol.model;
 
-import java.net.URISyntaxException;
-import org.apache.commons.io.FilenameUtils;
-
 /**
  *
  * @author malbinola
  */
-public class SetupParamsFile extends SetupParams {
-	public String path = null;
+public class ParamsDropbox {
+	public String accountId = null;
+	public String accountName = null;
+	public String authUrl = null;
+	public String accessToken = null;
 	
-	public SetupParamsFile() {}
-
-	@Override
-	public String generateURI() throws URISyntaxException {
-		return Store.buildURI("file", null, null, null, null, path);
-	}
-	
-	@Override
-	public void buildName() {
-		//TODO
-		name = FilenameUtils.getBaseName(path);
-	}
+	public ParamsDropbox() {}
 }

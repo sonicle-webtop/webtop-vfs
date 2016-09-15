@@ -95,8 +95,10 @@ Ext.define('Sonicle.webtop.vfs.view.pub.Authorize', {
 								},
 								callback: function(success, json) {
 									if(success) {
-										WT.info('ooooookkkkkk');
-									} else WT.error('password errata');
+										WT.reload();
+									} else {
+										WT.error('password errata');
+									}
 								}
 							});
 						}

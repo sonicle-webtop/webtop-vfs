@@ -33,39 +33,16 @@
  */
 package com.sonicle.webtop.vfs.bol.model;
 
-import com.sonicle.commons.web.json.JsonResult;
-import java.net.URISyntaxException;
-import java.text.MessageFormat;
-
 /**
  *
  * @author malbinola
  */
-public class SetupParamsDropbox extends SetupParams {
-	public String accountId = null;
+public class ParamsGoogleDrive {
+	public String accountEmail = null;
 	public String accountName = null;
 	public String authUrl = null;
+	public String refreshToken = null;
 	public String accessToken = null;
 	
-	public SetupParamsDropbox() {}
-
-	@Override
-	public String generateURI() throws URISyntaxException {
-		return Store.buildURI("dropbox", "dropbox.com", null, accountId, accessToken, null);
-	}
-	
-	@Override
-	public void buildName() {
-		name = MessageFormat.format("{0}", accountName);
-	}
-	
-	public static SetupParamsDropbox fromJson(String value) {
-		if(value == null) return null;
-		return JsonResult.gson.fromJson(value, SetupParamsDropbox.class);
-	}
-	
-	public static String toJson(SetupParamsDropbox value) {
-		if(value == null) return null;
-		return JsonResult.gson.toJson(value, SetupParamsDropbox.class);
-	}
+	public ParamsGoogleDrive() {}
 }
