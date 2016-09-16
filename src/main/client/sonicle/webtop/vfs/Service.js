@@ -35,8 +35,8 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 	extend: 'WT.sdk.Service',
 	requires: [
 		'Sonicle.Bytes',
-		'Sonicle.grid.column.Icon',
 		'Sonicle.grid.column.Bytes',
+		'Sonicle.grid.column.Icon',
 		'Sonicle.grid.column.Link',
 		'Sonicle.toolbar.Breadcrumb',
 		'Sonicle.upload.Button',

@@ -46,10 +46,14 @@ import com.sonicle.webtop.core.bol.js.JsWTSPublic;
 import com.sonicle.webtop.core.sdk.BasePublicService;
 import com.sonicle.webtop.core.sdk.WTException;
 import com.sonicle.webtop.core.servlet.ServletHelper;
+import com.sonicle.webtop.vfs.bol.js.JsPubGridFile;
 import com.sonicle.webtop.vfs.bol.model.SharingLink;
+import com.sonicle.webtop.vfs.bol.model.StoreFileType;
+import com.sonicle.webtop.vfs.sfs.StoreFileSystem;
 import freemarker.template.TemplateException;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -115,6 +119,10 @@ public class PublicService extends BasePublicService {
 		public boolean isGet() {
 			return StringUtils.equals(getTokenAt(1), "get");
 		}
+		
+		public String getOutFileName() {
+			return getTokenAt(2);
+		}
 	}
 	
 	@Override
@@ -139,22 +147,37 @@ public class PublicService extends BasePublicService {
 				throw new WTException("Link not expired [{0}]", filePath.getLinkId());
 				
 			} else if(!isLinkAuthorized(link)) { // Link not authorized
-				writePage(request, response, wts, "Authorize", filePath);
+				writePage(request, response, wts, "Authorize", link, filePath);
 			}
 			
 			if(PathUtils.isFolder(link.getFilePath())) {
-				writePage(request, response, wts, "PreviewFolder", filePath);
+				Integer dl = ServletUtils.getIntParameter(request, "dl", 0);
+				if(dl == 1) { // Download file request
+					String fileId = ServletUtils.getStringParameter(request, "fileId", true);
+					String baseServletUrl = PathUtils.concatPathParts(ServletUtils.getBaseURL(request), request.getServletPath(), path.getPublicName());
+					String outName = PathUtils.isFolder(fileId) ? PathUtils.getFileName(fileId) + ".zip" : PathUtils.getFileName(fileId);
+					String url = buildPublicLinkPathGetUrl(baseServletUrl, path.getContext(), link, outName, fileId);
+					ServletUtils.setLocationHeader(response, url);
+					response.setStatus(HttpServletResponse.SC_FOUND);
+					
+				} else if(filePath.isGet()) { // Real binary stream
+					String p = ServletUtils.getStringParameter(request, "p", true);
+					writeStoreFile(response, link.getStoreId(), PathUtils.concatPaths(link.getFilePath(), p), filePath.getOutFileName());
+
+				} else {
+					writePage(request, response, wts, "PreviewFolder", link, filePath);
+				}
 				
 			} else {
 				Integer raw = ServletUtils.getIntParameter(request, "raw", 0);
 				if(raw == 1) { // Link points directly to raw data (no preview)
 					String baseServletUrl = PathUtils.concatPathParts(ServletUtils.getBaseURL(request), request.getServletPath(), path.getPublicName());
-					String url = VfsManager.buildPublicLinkGetUrl(link, baseServletUrl, path.getContext());
+					String url = VfsManager.buildPublicLinkGetUrl(baseServletUrl, path.getContext(), link);
 					ServletUtils.setLocationHeader(response, url);
 					response.setStatus(HttpServletResponse.SC_FOUND);
 					
 				} else if(filePath.isGet()) { // Real binary stream
-					writeStoreFile(response, link);
+					writeStoreFile(response, link.getStoreId(), link.getFilePath(), filePath.getOutFileName());
 
 				} else {
 					throw new WTException("Bad request");
@@ -166,12 +189,13 @@ public class PublicService extends BasePublicService {
 		}
 	}
 	
-	private void writePage(HttpServletRequest request, HttpServletResponse response, WebTopSession wts, String view, FilePath filePath) throws IOException, TemplateException {
+	private void writePage(HttpServletRequest request, HttpServletResponse response, WebTopSession wts, String view, SharingLink link, FilePath filePath) throws IOException, TemplateException {
 		Map vars = new HashMap();
 		JsWTSPublic jswts = new JsWTSPublic();
 		wts.fillStartup(jswts, SERVICE_ID);
 		addServiceVar(jswts, "view", view);
-		addServiceVar(jswts, "linkId", filePath.getLinkId());
+		addServiceVar(jswts, "linkId", link.getLinkId());
+		addServiceVar(jswts, "linkName", PathUtils.getFileName(link.getFilePath()));
 		vars.put("WTS", LangUtils.unescapeUnicodeBackslashes(jswts.toJson()));
 		writePage(ServletUtils.getBaseURL(request), vars, wts.getLocale(), response);
 		ServletUtils.setCacheControlPrivate(response);
@@ -204,7 +228,38 @@ public class PublicService extends BasePublicService {
 			}
 			
 		} catch(Exception ex) {
-			logger.error("Error in action CheckLinkPassword", ex);
+			logger.error("Error in CheckLinkPassword", ex);
+			new JsonResult(false, "Error").printTo(out);
+		}
+	}
+	
+	public void processPreviewFiles(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		ArrayList<JsPubGridFile> items = new ArrayList<>();
+		
+		try {
+			String linkId = ServletUtils.getStringParameter(request, "linkId", true);
+			String fileId = ServletUtils.getStringParameter(request, "fileId", true);
+			
+			SharingLink link = manager.getSharingLink(linkId);
+			if(link == null) throw new WTException("Link not found [{0}]", linkId);
+			if(!isLinkAuthorized(link)) throw new WTException("Link not authorized [{0}]", linkId);
+			
+			String path = PathUtils.concatPaths(link.getFilePath(), fileId);
+			if(!PathUtils.isFolder(path)) throw new WTException("Invalid file [{0}]", path);
+			
+			StoreFileSystem sfs = manager.getStoreFileSystem(link.getStoreId());
+			for(FileObject fo : manager.listStoreFiles(StoreFileType.FILE_OR_FOLDER, link.getStoreId(), path)) {
+				if(VfsManager.isFileHidden(fo)) continue;
+				// Relativize path and force trailing separator if file is a folder
+				String filePath = fo.isFolder() ? PathUtils.ensureTrailingSeparator(sfs.getRelativePath(fo), false) : sfs.getRelativePath(fo);
+				// Relativize path to link (suitable only for folders...see before)
+				filePath = link.relativizePath(filePath);
+				items.add(new JsPubGridFile(filePath, fo));
+			}
+			new JsonResult("files", items).printTo(out);
+			
+		} catch(Exception ex) {
+			logger.error("Error in PreviewFiles", ex);
 			new JsonResult(false, "Error").printTo(out);
 		}
 	}
@@ -217,26 +272,31 @@ public class PublicService extends BasePublicService {
 		}
 	}
 	
-	private void writeStoreFile(HttpServletResponse response, SharingLink link) {
+	private void writeStoreFile(HttpServletResponse response, int storeId, String filePath, String outFileName) {
 		
 		try {
 			FileObject fo = null;
 			try {
-				fo = manager.getStoreFile(link.getStoreId(), link.getFilePath());
+				fo = manager.getStoreFile(storeId, filePath);
 				if(!fo.isFile()) throw new WTException("Requested file is not a real file");
 				
 				String filename = fo.getName().getBaseName();
 				String mediaType = ServletHelper.guessMediaType(filename, true);
 				IOUtils.copy(fo.getContent().getInputStream(), response.getOutputStream());
-				ServletUtils.setFileStreamHeaders(response, mediaType, DispositionType.ATTACHMENT, filename);
+				ServletUtils.setFileStreamHeaders(response, mediaType, DispositionType.ATTACHMENT, outFileName);
 				ServletUtils.setContentLengthHeader(response, fo.getContent().getSize());
 			} finally {
 				IOUtils.closeQuietly(fo);
 			}
 			
 		} catch(Exception ex) {
-			logger.error("Error in action DownloadFile", ex);
+			logger.error("Error in DownloadFile", ex);
 			ServletUtils.writeErrorHandlingJs(response, ex.getMessage());
 		}
+	}
+	
+	private String buildPublicLinkPathGetUrl(String publicBaseUrl, String context, SharingLink link, String outFileName, String path) {
+		String s = context + "/" + link.getLinkId() + "/get/" + outFileName + "?p=" + path;
+		return PathUtils.concatPaths(publicBaseUrl, s);
 	}
 }

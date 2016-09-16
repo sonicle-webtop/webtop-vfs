@@ -405,7 +405,7 @@ public class Service extends BaseService {
 						
 						StoreFileSystem sfs = manager.getStoreFileSystem(storeId);
 						for(FileObject fo : manager.listStoreFiles(StoreFileType.FOLDER, storeId, path)) {
-							if(!showHidden && isFileHidden(fo)) continue;
+							if(!showHidden && VfsManager.isFileHidden(fo)) continue;
 							// Relativize path and force trailing separator (it's a folder)
 							final String filePath = PathUtils.ensureTrailingSeparator(sfs.getRelativePath(fo), false);
 							//final String fileId = new StoreNodeId(nodeId.getShareId(), nodeId.getStoreId(), filePath).toString();
@@ -771,7 +771,7 @@ public class Service extends BaseService {
 				
 				StoreFileSystem sfs = manager.getStoreFileSystem(storeId);
 				for(FileObject fo : manager.listStoreFiles(StoreFileType.FILE_OR_FOLDER, storeId, path)) {
-					if(!showHidden && isFileHidden(fo)) continue;
+					if(!showHidden && VfsManager.isFileHidden(fo)) continue;
 					// Relativize path and force trailing separator if file is a folder
 					final String filePath = fo.isFolder() ? PathUtils.ensureTrailingSeparator(sfs.getRelativePath(fo), false) : sfs.getRelativePath(fo);
 					final String fileId = new StoreNodeId(parentNodeId.getShareId(), parentNodeId.getStoreId(), filePath).toString();
@@ -899,7 +899,7 @@ public class Service extends BaseService {
 				
 				String publicBaseUrl = getPublicBaseUrl(request);
 				JsWizardData data = new JsWizardData();
-				data.put("links", VfsManager.generatePublicLinks(dl, publicBaseUrl));
+				data.put("links", VfsManager.generatePublicLinks(publicBaseUrl, dl));
 				new JsonResult(data).printTo(out);
 			}
 			
@@ -938,7 +938,7 @@ public class Service extends BaseService {
 				
 				String publicBaseUrl = getPublicBaseUrl(request);
 				JsWizardData data = new JsWizardData();
-				data.put("links", VfsManager.generatePublicLinks(ul, publicBaseUrl));
+				data.put("links", VfsManager.generatePublicLinks(publicBaseUrl, ul));
 				new JsonResult(data).printTo(out);
 			}
 			
@@ -1033,10 +1033,6 @@ public class Service extends BaseService {
 		}
 		
 		return sb.toString();
-	}
-	
-	private boolean isFileHidden(FileObject fo) throws FileSystemException {
-		return fo.isHidden() || StringUtils.startsWith(fo.getName().getBaseName(), ".");
 	}
 	
 	private String getPublicBaseUrl(HttpServletRequest request) {

@@ -87,11 +87,11 @@ import java.util.List;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.vfs2.FileObject;
 import org.apache.commons.vfs2.FileSystemException;
 import org.apache.commons.vfs2.Selectors;
 import org.apache.commons.vfs2.provider.UriParser;
-import org.jooq.tools.StringUtils;
 import org.slf4j.Logger;
 
 /**
@@ -1039,26 +1039,30 @@ public class VfsManager extends BaseManager {
 		//TODO: cancellare collegati
 	}
 	
-	public static String[] generatePublicLinks(SharingLink link, String publicBaseUrl) {
+	public static boolean isFileHidden(FileObject fo) throws FileSystemException {
+		return fo.isHidden() || StringUtils.startsWith(fo.getName().getBaseName(), ".");
+	}
+	
+	public static String[] generatePublicLinks(String publicBaseUrl, SharingLink link) {
 		if(PathUtils.isFolder(link.getFilePath())) {
-			String url = buildPublicLinkUrl(link, publicBaseUrl, PublicService.PUBPATH_CONTEXT_FILE, false);
+			String url = buildPublicLinkUrl(publicBaseUrl, PublicService.PUBPATH_CONTEXT_FILE, link, false);
 			return new String[]{url, null};
 		} else {
-			String url = buildPublicLinkUrl(link, publicBaseUrl, PublicService.PUBPATH_CONTEXT_FILE, false);
-			String durl = buildPublicLinkUrl(link, publicBaseUrl, PublicService.PUBPATH_CONTEXT_FILE, true);
+			String url = buildPublicLinkUrl(publicBaseUrl, PublicService.PUBPATH_CONTEXT_FILE, link, false);
+			String durl = buildPublicLinkUrl(publicBaseUrl, PublicService.PUBPATH_CONTEXT_FILE, link, true);
 			return new String[]{url, durl};
 		}
 	}
 	
 	/**
 	 * Builds an URL suitable for links that point to shared file.
-	 * @param link Shared link
 	 * @param publicBaseUrl The base URL up to the public servlet path (eg. http://localhost/webtop/public/cloud)
 	 * @param context Public service's context
+	 * @param link Shared link
 	 * @param direct True to point directly to binary file (not suitable for folders)
 	 * @return Generated URL
 	 */
-	public static String buildPublicLinkUrl(SharingLink link, String publicBaseUrl, String context, boolean direct) {
+	public static String buildPublicLinkUrl(String publicBaseUrl, String context, SharingLink link, boolean direct) {
 		String s = context + "/" + link.getLinkId() + (direct ? "?raw=1" : "");
 		return PathUtils.concatPaths(publicBaseUrl, s);
 	}
@@ -1066,11 +1070,11 @@ public class VfsManager extends BaseManager {
 	/**
 	 * Builds an URL suitable for redirecting to public file download stream.
 	 * @param publicBaseUrl The base URL up to the public servlet path (eg. http://localhost/webtop/public/cloud)
-	 * @param link Shared link
 	 * @param context Public service's context
+	 * @param link Shared link
 	 * @return Generated URL
 	 */
-	public static String buildPublicLinkGetUrl(SharingLink link, String publicBaseUrl, String context) {
+	public static String buildPublicLinkGetUrl(String publicBaseUrl, String context, SharingLink link) {
 		String s = context + "/" + link.getLinkId() + "/get/" + PathUtils.getFileName(link.getFilePath());
 		return PathUtils.concatPaths(publicBaseUrl, s);
 	}

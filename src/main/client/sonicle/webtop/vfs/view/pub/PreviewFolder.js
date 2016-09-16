@@ -34,8 +34,10 @@
 Ext.define('Sonicle.webtop.vfs.view.pub.PreviewFolder', {
 	extend: 'WT.ux.panel.Panel',
 	requires: [
-		'Sonicle.grid.column.Icon',
 		'Sonicle.grid.column.Bytes',
+		'Sonicle.grid.column.Icon',
+		'Sonicle.grid.column.Link',
+		'Sonicle.toolbar.PathBreadcrumb',
 		'Sonicle.webtop.vfs.model.pub.GridFile'
 		
 		//'Sonicle.FakeInput',
@@ -44,7 +46,7 @@ Ext.define('Sonicle.webtop.vfs.view.pub.PreviewFolder', {
 		//'Sonicle.form.field.Password'
 	],
 	
-	layout: 'border',
+	layout: 'center',
 	referenceHolder: true,
 	
 	mys: null,
@@ -54,66 +56,143 @@ Ext.define('Sonicle.webtop.vfs.view.pub.PreviewFolder', {
 		me.callParent(arguments);
 		
 		me.add({
-			region: 'center',
-			xtype: 'grid',
-			reference: 'gpfiles',
-			store: {
-				model: 'Sonicle.webtop.vfs.model.pub.GridFile',
-				proxy: WTF.proxy(me.mys.ID, 'PreviewFiles', 'files', {
-					extraParams: {
-						linkId: me.mys.getVar('linkId'),
-						fileId: null
-					}
-				})
-			},
-			viewConfig: {
-				deferEmptyText: false,
-				emptyText: me.mys.res('gpfiles.emptyText')
-			},
-			selModel: {
-				type: 'rowmodel'
-				//mode : 'MULTI'
-			},
-			columns: [{
-				xtype: 'soiconcolumn',
-				dataIndex: 'type',
-				header: WTF.headerWithGlyphIcon('fa fa-file-o'),
-				getIconCls: function(v,rec) {
-					return (v === 'folder') ? 'wt-ftype-folder-xs' : WTF.fileTypeCssIconCls(rec.get('ext'), 'xs');
-				},
-				iconSize: WTU.imgSizeToPx('xs'),
-				width: 40
-			}, {
-				xtype: 'solinkcolumn',
-				dataIndex: 'name',
-				header: me.mys.res('gpfiles.name.lbl'),
-				flex: 1,
-				listeners: {
-					linkclick: function(s,idx,rec) {
-						if(rec.get('type') === 'folder') {
-							//me.setCurFile(rec.get('fileId'));
-							//me.reloadGridFiles();
+			xtype: 'panel',
+			layout: 'border',
+			border: false,
+			width: '100%',
+			maxWidth: 900,
+			height: '100%',
+			maxHeight: 500,
+			title: me.mys.getVar('linkName'),
+			iconCls: me.mys.cssIconCls('downloadLink', 'xs'),
+			items: [{
+				region: 'center',
+				xtype: 'grid',
+				reference: 'gpfiles',
+				border: true,
+				store: {
+					model: 'Sonicle.webtop.vfs.model.pub.GridFile',
+					proxy: WTF.proxy(me.mys.ID, 'PreviewFiles', 'files', {
+						extraParams: {
+							linkId: me.mys.getVar('linkId'),
+							fileId: null
+						}
+					}),
+					listeners: {
+						load: function(s,recs,success) {
+							if(success) {
+								var ep = s.getProxy().getExtraParams();
+								me.lref('bcpath').setPath(ep.fileId);
+							}
 						}
 					}
 				},
-				maxWidth: 500
-			}, {
-				xtype: 'sobytescolumn',
-				dataIndex: 'size',
-				header: me.mys.res('gpfiles.size.lbl'),
-				width: 110
-			}, {
-				dataIndex: 'lastModified',
-				header: me.mys.res('gpfiles.lastModified.lbl'),
-				xtype: 'datecolumn',
-				format: 'D, d M Y H:i:s',
-				width: 140
-			}]/*,
-			tbar: [{
-				iconCls: me.mys.cssIconCls('goUp', 'xs'),
-				tooltip: me.mys.res('act-goUp.tip')
+				viewConfig: {
+					deferEmptyText: false,
+					emptyText: me.mys.res('gpfiles.emptyText')
+				},
+				selModel: {
+					type: 'rowmodel'
+					//mode : 'MULTI'
+				},
+				columns: [{
+					xtype: 'soiconcolumn',
+					dataIndex: 'type',
+					header: WTF.headerWithGlyphIcon('fa fa-file-o'),
+					getIconCls: function(v,rec) {
+						return (v === 'folder') ? 'wt-ftype-folder-xs' : WTF.fileTypeCssIconCls(rec.get('ext'), 'xs');
+					},
+					iconSize: WTU.imgSizeToPx('xs'),
+					width: 40
+				}, {
+					xtype: 'solinkcolumn',
+					dataIndex: 'name',
+					header: me.mys.res('gpfiles.name.lbl'),
+					flex: 1,
+					listeners: {
+						linkclick: function(s,idx,rec) {
+							if(rec.get('type') === 'folder') {
+								me.reloadFiles(rec.get('fileId'));
+							}
+						}
+					},
+					maxWidth: 500
+				}, {
+					xtype: 'sobytescolumn',
+					dataIndex: 'size',
+					header: me.mys.res('gpfiles.size.lbl'),
+					width: 110
+				}, {
+					dataIndex: 'lastModified',
+					header: me.mys.res('gpfiles.lastModified.lbl'),
+					xtype: 'datecolumn',
+					format: 'D, d M Y H:i:s',
+					width: 200
+				}, {
+					xtype: 'actioncolumn',
+					header: me.mys.res('pub.previewfolder.gpfiles.actions.lbl'),
+					flex: 1,
+					items: [{
+						iconCls: me.mys.cssIconCls('downloadFile', 'xs'),
+						tooltip: me.mys.res('act-downloadFile.lbl'),
+						handler: function(s, rIndex) {
+							var rec = s.getStore().getAt(rIndex), qsp;
+							me.openDlUrl(rec.get('fileId'));
+						}
+					}]
+				}],
+				tbar: [{
+					xtype: 'button',
+					iconCls: me.mys.cssIconCls('goUp', 'xs'),
+					tooltip: me.mys.res('act-goUp.tip'),
+					handler: function() {
+						var ppath = me.lref('bcpath').getParentPath();
+						if(ppath) me.reloadFiles(ppath);
+					}
+				}, {
+					xtype: 'sopathbreadcrumb',
+					reference: 'bcpath',
+					overflowHandler: 'scroller',
+					rootFolderIconCls: 'wt-ftype-folderroot-xs',
+					folderIconCls: 'wt-ftype-folder-xs',
+					path: '/',
+					listeners: {
+						pathclick: function(s, path) {
+							me.reloadFiles(path);
+						}
+					},
+					flex: 1
+				}]
+			}],
+			tbar: [
+				'->', {
+				xtype: 'button',
+				text: me.mys.res('pub.previewfolder.act-downloadAll.lbl'),
+				iconCls: me.mys.cssIconCls('downloadFile', 'xs'),
+				handler: function() {
+					me.openDlUrl('/');
+				}
 			}]
-		*/
 		});
+		
+		me.on('afterrender', function() {
+			me.reloadFiles('/');
+		});
+	},
+	
+	reloadFiles: function(path) {
+		var me = this,
+				gp = me.lref('gpfiles'),
+				sto = gp.getStore(),
+				ep = sto.getProxy().getExtraParams();
+		
+		if(ep.fileId !== path) {
+			WTU.loadWithExtraParams(sto, {fileId: path});
+		}
+	},
+	
+	openDlUrl: function(fileId) {
+		var url = Ext.String.urlAppend(window.location.href, Ext.Object.toQueryString({fileId: fileId, dl:1}));
+		Sonicle.URLMgr.open(url);
 	}
 });

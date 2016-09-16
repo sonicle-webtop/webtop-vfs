@@ -33,6 +33,7 @@
  */
 package com.sonicle.webtop.vfs.bol.model;
 
+import com.sonicle.commons.PathUtils;
 import com.sonicle.webtop.core.sdk.WTException;
 import com.sonicle.webtop.vfs.bol.OSharingLink;
 import org.apache.commons.lang3.StringUtils;
@@ -179,5 +180,9 @@ public class SharingLink {
 		} else {
 			password = null;
 		}
+	}
+	
+	public String relativizePath(String path) {
+		return PathUtils.ensureBeginningSeparator(StringUtils.removeStart(path, getFilePath()));
 	}
 }
