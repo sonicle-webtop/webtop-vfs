@@ -75,7 +75,7 @@ import org.slf4j.Logger;
 public class PublicService extends BasePublicService {
 	private static final Logger logger = WT.getLogger(PublicService.class);
 	private static final String WTSPROP_AUTHED_LINKS = "AUTHEDLINKS";
-	public static final String PUBPATH_CONTEXT_LINK = "l";
+	public static final String PUBPATH_CONTEXT_LINK = "link";
 	
 	private final Object lock1 = new Object();
 	private VfsManager manager;
