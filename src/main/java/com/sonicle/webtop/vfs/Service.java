@@ -896,7 +896,7 @@ public class Service extends BaseService {
 				
 				String publicBaseUrl = getPublicBaseUrl(request);
 				JsWizardData data = new JsWizardData();
-				data.put("links", VfsManager.generatePublicLinks(publicBaseUrl, dl));
+				data.put("urls", VfsManager.generateLinkPublicURLs(publicBaseUrl, dl));
 				new JsonResult(data).printTo(out);
 			}
 			
@@ -935,7 +935,7 @@ public class Service extends BaseService {
 				
 				String publicBaseUrl = getPublicBaseUrl(request);
 				JsWizardData data = new JsWizardData();
-				data.put("links", VfsManager.generatePublicLinks(publicBaseUrl, ul));
+				data.put("urls", VfsManager.generateLinkPublicURLs(publicBaseUrl, ul));
 				new JsonResult(data).printTo(out);
 			}
 			
@@ -985,8 +985,8 @@ public class Service extends BaseService {
 					item = manager.getSharingLink(id);
 					
 					String publicBaseUrl = getPublicBaseUrl(request);
-					String[] links = VfsManager.generatePublicLinks(publicBaseUrl, item);
-					new JsonResult(new JsSharingLink(item, links, up.getTimeZone())).printTo(out);
+					String[] urls = VfsManager.generateLinkPublicURLs(publicBaseUrl, item);
+					new JsonResult(new JsSharingLink(item, urls, up.getTimeZone())).printTo(out);
 				}
 				
 			} else if(crud.equals(Crud.UPDATE)) {

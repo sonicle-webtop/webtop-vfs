@@ -1121,19 +1121,19 @@ public class VfsManager extends BaseManager {
 		}
 	}
 	
-	public static String[] generatePublicLinks(String publicBaseUrl, SharingLink link) {
+	public static String[] generateLinkPublicURLs(String publicBaseUrl, SharingLink link) {
 		if(link.getType().equals(SharingLink.TYPE_DOWNLOAD)) {
 			String url = null, durl = null;
 			if(PathUtils.isFolder(link.getFilePath())) {
-				url = buildPublicLinkUrl(publicBaseUrl, PublicService.PUBPATH_CONTEXT_LINK, link, false);
+				url = buildLinkPublicUrl(publicBaseUrl, PublicService.PUBPATH_CONTEXT_LINK, link, false);
 				//TODO: implementare nel pubblico la gestione link diretti per le cartelle
 			} else {
 				//TODO: implementare nel pubblico l'anteprima dei file
-				durl = buildPublicLinkUrl(publicBaseUrl, PublicService.PUBPATH_CONTEXT_LINK, link, true);
+				durl = buildLinkPublicUrl(publicBaseUrl, PublicService.PUBPATH_CONTEXT_LINK, link, true);
 			}
 			return new String[]{url, durl};
 		} else {
-			String url = buildPublicLinkUrl(publicBaseUrl, PublicService.PUBPATH_CONTEXT_LINK, link, false);
+			String url = buildLinkPublicUrl(publicBaseUrl, PublicService.PUBPATH_CONTEXT_LINK, link, false);
 			return new String[]{url, null};
 		}
 	}
@@ -1146,7 +1146,7 @@ public class VfsManager extends BaseManager {
 	 * @param direct True to point directly to binary file (not suitable for folders)
 	 * @return Generated URL
 	 */
-	public static String buildPublicLinkUrl(String publicBaseUrl, String context, SharingLink link, boolean direct) {
+	public static String buildLinkPublicUrl(String publicBaseUrl, String context, SharingLink link, boolean direct) {
 		String s = context + "/" + link.getLinkId() + (direct ? "?raw=1" : "");
 		return PathUtils.concatPaths(publicBaseUrl, s);
 	}
@@ -1158,7 +1158,7 @@ public class VfsManager extends BaseManager {
 	 * @param link Shared link
 	 * @return Generated URL
 	 */
-	public static String buildPublicLinkGetUrl(String publicBaseUrl, String context, SharingLink link) {
+	public static String buildLinkPublicGetUrl(String publicBaseUrl, String context, SharingLink link) {
 		String s = context + "/" + link.getLinkId() + "/get/" + PathUtils.getFileName(link.getFilePath());
 		return PathUtils.concatPaths(publicBaseUrl, s);
 	}

@@ -182,7 +182,7 @@ public class PublicService extends BasePublicService {
 						Integer raw = ServletUtils.getIntParameter(request, "raw", 0);
 						if(raw == 1) { // Link points directly to raw data (no preview)
 							String baseServletUrl = PathUtils.concatPathParts(ServletUtils.getBaseURL(request), request.getServletPath(), path.getPublicName());
-							String url = VfsManager.buildPublicLinkGetUrl(baseServletUrl, path.getContext(), link);
+							String url = VfsManager.buildLinkPublicGetUrl(baseServletUrl, path.getContext(), link);
 							ServletUtils.setLocationHeader(response, url);
 							response.setStatus(HttpServletResponse.SC_FOUND);
 

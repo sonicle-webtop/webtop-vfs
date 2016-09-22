@@ -41,7 +41,7 @@ Ext.define('Sonicle.webtop.vfs.view.DownloadLinkWiz', {
 	dockableConfig: {
 		title: '{downloadLinkWiz.tit}',
 		iconCls: 'wtvfs-icon-downloadLink-xs',
-		width: 400,
+		width: 420,
 		height: 220
 	},
 	useTrail: true,
@@ -54,7 +54,8 @@ Ext.define('Sonicle.webtop.vfs.view.DownloadLinkWiz', {
 			expirationDate: null,
 			authMode: 'P',
 			password: null,
-			link: null,
+			url: null,
+			rawUrl: null,
 			result: null
 		}
 	},
@@ -71,7 +72,9 @@ Ext.define('Sonicle.webtop.vfs.view.DownloadLinkWiz', {
 		WTU.applyFormulas(vm, {
 			foExpire: WTF.radioGroupBind('', 'expire', me.sufId('expire')),
 			foAuthMode: WTF.radioGroupBind('', 'authMode', me.sufId('authMode')),
-			foAuthModeIsP: WTF.equalsFormula('', 'authMode', 'P')
+			foAuthModeIsP: WTF.equalsFormula('', 'authMode', 'P'),
+			foIsUrlEmpty: WTF.isEmptyFormula('', 'url'),
+			foIsRawUrlEmpty: WTF.isEmptyFormula('', 'rawUrl')
 		});
 		
 		me.callParent(arguments);
@@ -212,11 +215,31 @@ Ext.define('Sonicle.webtop.vfs.view.DownloadLinkWiz', {
 				html: me.mys.res('downloadLinkWiz.s3.txt')
 			}, {
 				xtype: 'wtform',
+				defaults: {
+					labelWidth: 80
+				},
 				items: [{
-					xtype: 'solinkfield',
-					bind: '{link}',
-					disableNavigation: true,
-					hideLabel: true
+					xtype: 'textfield',
+					bind: {
+						value: '{url}',
+						hidden: '{foIsUrlEmpty}'
+					},
+					editable: false,
+					selectOnFocus: true,
+					hidden: true,
+					fieldLabel: me.mys.res('downloadLinkWiz.fld-url.lbl'),
+					anchor: '100%'
+				}, {
+					xtype: 'textfield',
+					bind: {
+						value: '{rawUrl}',
+						hidden: '{foIsRawUrlEmpty}'
+					},
+					editable: false,
+					selectOnFocus: true,
+					hidden: true,
+					fieldLabel: me.mys.res('downloadLinkWiz.fld-rawUrl.lbl'),
+					anchor: '100%'
 				}]
 			}]
 		}];
@@ -249,7 +272,8 @@ Ext.define('Sonicle.webtop.vfs.view.DownloadLinkWiz', {
 				callback: function(success, json) {
 					if(success) {
 						vm.set('result', json.data);
-						vm.set('link', json.data.links[1]);
+						vm.set('url', json.data.urls[0]);
+						vm.set('rawUrl', json.data.urls[1]);
 						me.onNavigate(np);
 					} else {
 						WT.error(json.message);
