@@ -41,6 +41,8 @@ Ext.define('Sonicle.webtop.vfs.model.SharingLink', {
 	fields: [
 		WTF.field('linkId', 'string', false),
 		WTF.field('type', 'string', false),
+		WTF.roField('publicUrl', 'string'),
+		WTF.roField('rawPublicUrl', 'string'),
 		WTF.roField('filePath', 'string'),
 		WTF.roField('fileName', 'string'),
 		WTF.field('expirationDate', 'date', true, {dateFormat: 'Y-m-d H:i:s'}),

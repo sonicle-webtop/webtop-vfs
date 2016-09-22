@@ -213,9 +213,9 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 			xtype: 'container',
 			layout: 'border',
 			referenceHolder: true,
-			viewModel: {
+			/*viewModel: {
 				formulas: {
-					/*selectedTask: {
+					selectedTask: {
 						bind: {bindTo: '{gptasks.selection}'},
 						get: function (val) {
 							return val;
@@ -233,15 +233,14 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 							return !Ext.isDate(val) ? WT.res('word.none.male') : Ext.Date.format(val, WT.getShortDateTimeFmt());
 						}
 					}
-					*/
 				}
-			},
+			},*/
 			items: [{
 				region: 'center',
 				xtype: 'grid',
 				id: gpId,
 				reference: 'gpfiles',
-				cls: 'vtvfs-gpfiles',
+				cls: 'wtvfs-gpfiles',
 				stateful: true,
 				stateId: me.buildStateId('gpfiles'),
 				store: {
@@ -363,9 +362,11 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 					disabled: true
 				},
 				plugins: [{
-					ptype: 'sofiledrop'
+					ptype: 'sofiledrop',
+					text: WT.res('sofiledrop.text')
 				}],
 				listeners: {
+					/*
 					selectionchange: function() {
 						//me.updateCxmGridFile();
 					},
@@ -373,6 +374,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 						//var er = me.toPermsObj(rec.get('_erights'));
 						//me.showTask(er.UPDATE, rec.get('taskId'));
 					},
+					*/
 					containercontextmenu: function(s, e) {
 						WT.showContextMenu(e, me.getRef('cxmGridFile0'));
 					},
@@ -385,7 +387,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 						});
 					}
 				}
-			}, {
+			}/*, {
 				region: 'east',
 				xtype: 'wtform',
 				stateful: true,
@@ -400,7 +402,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 					anchor: '100%'
 				},
 				items: []
-			}]
+			}*/]
 		}));
 	},
 	

@@ -31,36 +31,12 @@
  * feasible for technical reasons, the Appropriate Legal Notices must display
  * the words "Powered by Sonicle WebTop".
  */
-package com.sonicle.webtop.vfs.bol;
-
-import com.sonicle.webtop.core.sdk.UserProfile;
-import com.sonicle.webtop.vfs.bol.model.SharingLink;
-import com.sonicle.webtop.vfs.jooq.tables.pojos.SharingLinks;
-
-/**
- *
- * @author malbinola
- */
-public class OSharingLink extends SharingLinks {
+Ext.define('Sonicle.webtop.vfs.view.pub.Error', {
+	extend: 'Sonicle.webtop.core.view.pub.Error',
 	
-	public OSharingLink() {}
-	
-	public OSharingLink(SharingLink o) {
-		if(o == null) return;
-		setSharingLinkId(o.getLinkId());
-		setDomainId(o.getDomainId());
-		setUserId(o.getUserId());
-		setLinkType(o.getType());
-		setStoreId(o.getStoreId());
-		setFilePath(o.getFilePath());
-		setFileHash(o.getFileHash());
-		setCreatedOn(o.getCreatedOn());
-		setExpiresOn(o.getExpiresOn());
-		setAuthMode(o.getAuthMode());
-		setPassword(o.getPassword());
+	initComponent: function() {
+		var me = this;
+		me.message = me.mys.res('pub.error.' + me.mys.getVar('reskey'));
+		me.callParent(arguments);
 	}
-	
-	public UserProfile.Id getProfileId() {
-		return new UserProfile.Id(getDomainId(), getUserId());
-	}
-}
+});

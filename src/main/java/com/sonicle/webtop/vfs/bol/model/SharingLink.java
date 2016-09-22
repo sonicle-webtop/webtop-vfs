@@ -34,6 +34,7 @@
 package com.sonicle.webtop.vfs.bol.model;
 
 import com.sonicle.commons.PathUtils;
+import com.sonicle.webtop.core.sdk.UserProfile;
 import com.sonicle.webtop.core.sdk.WTException;
 import com.sonicle.webtop.vfs.bol.OSharingLink;
 import org.apache.commons.lang3.StringUtils;
@@ -170,6 +171,15 @@ public class SharingLink {
 	public boolean isExpired(DateTime now) {
 		if(expiresOn == null) return false;
 		return now.isAfter(expiresOn.toDateTime(DateTimeZone.UTC));
+	}
+	
+	public UserProfile.Id getProfileId() {
+		return new UserProfile.Id(getDomainId(), getUserId());
+	}
+	
+	public void setProfileId(UserProfile.Id pid) {
+		setDomainId(pid.getDomain());
+		setUserId(pid.getUser());
 	}
 	
 	public void validate() throws WTException {

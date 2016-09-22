@@ -33,19 +33,35 @@
  */
 package com.sonicle.webtop.vfs;
 
+import com.sonicle.commons.PathUtils;
+import com.sonicle.commons.web.json.MapItem;
+import com.sonicle.webtop.core.app.WT;
+import freemarker.template.TemplateException;
+import java.io.IOException;
+import java.util.Locale;
+
 /**
  *
  * @author malbinola
  */
-public class VfsLocale {
-	public static final String SERVICE_NAME = "service.name";
-	public static final String SERVICE_DESCRIPTION = "service.description";
-	public static final String STORES_MY = "stores.my";
-	public static final String STORES_MYDOCUMENTS = "stores.mydocuments";
+public class TplHelper {
+	private static final String SERVICE_ID = "com.sonicle.webtop.vfs";
 	
-	public static final String TPL_EMAIL_SHARINGLINKUSAGE_BODY_HEADER_DL = "tpl.email.sharinglinkUsage.body.header.download";
-	public static final String TPL_EMAIL_SHARINGLINKUSAGE_BODY_HEADER_UL = "tpl.email.sharinglinkUsage.body.header.upload";
-	public static final String TPL_EMAIL_SHARINGLINKUSAGE_BODY_SHAREDLINK = "tpl.email.sharinglinkUsage.body.sharedLink";
-	public static final String TPL_EMAIL_SHARINGLINKUSAGE_BODY_FILE = "tpl.email.sharinglinkUsage.body.file";
-	public static final String TPL_EMAIL_SHARINGLINKUSAGE_BODY_REMOTEUSER = "tpl.email.sharinglinkUsage.body.remoteUser";
+	public static String buildLinkUsageBodyTpl(Locale locale, String linkId, String linkName, String filePath, String remoteIp, String userAgent) throws IOException, TemplateException {
+		MapItem i18n = new MapItem();
+		i18n.put("sharedLink", WT.lookupResource(SERVICE_ID, locale, VfsLocale.TPL_EMAIL_SHARINGLINKUSAGE_BODY_SHAREDLINK));
+		i18n.put("file", WT.lookupResource(SERVICE_ID, locale, VfsLocale.TPL_EMAIL_SHARINGLINKUSAGE_BODY_FILE));
+		i18n.put("remoteUser", WT.lookupResource(SERVICE_ID, locale, VfsLocale.TPL_EMAIL_SHARINGLINKUSAGE_BODY_REMOTEUSER));
+		
+		MapItem map = new MapItem();
+		map.put("i18n", i18n);
+		map.put("linkId", linkId);
+		map.put("linkName", linkName);
+		map.put("filePath", filePath);
+		map.put("fileName", PathUtils.getFileName(filePath));
+		map.put("remoteIp", remoteIp);
+		map.put("userAgent", userAgent);
+		
+		return WT.buildTemplate(SERVICE_ID, "tpl/email/linkUsage-body.html", map);
+	}
 }

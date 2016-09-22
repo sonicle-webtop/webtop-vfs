@@ -35,6 +35,8 @@ Ext.define('Sonicle.webtop.vfs.view.SharingLink', {
 	extend: 'WT.sdk.ModelView',
 	requires: [
 		'Sonicle.FakeInput',
+		'Sonicle.form.Separator',
+		'Sonicle.form.Spacer',
 		'Sonicle.form.field.Password',
 		'Sonicle.webtop.vfs.store.SharingLinkType',
 		'Sonicle.webtop.vfs.model.SharingLink'
@@ -43,8 +45,8 @@ Ext.define('Sonicle.webtop.vfs.view.SharingLink', {
 	dockableConfig: {
 		title: '{sharingLink.tit}',
 		iconCls: 'wtvfs-icon-sharingLink-xs',
-		width: 360,
-		height: 210
+		width: 480,
+		height: 290
 	},
 	fieldTitle: 'fileName',
 	modelName: 'Sonicle.webtop.vfs.model.SharingLink',
@@ -54,6 +56,8 @@ Ext.define('Sonicle.webtop.vfs.view.SharingLink', {
 				vm = me.getVM();
 		
 		WTU.applyFormulas(vm, {
+			foIsUrlEmpty: WTF.isEmptyFormula('record', 'publicUrl'),
+			foIsRawUrlEmpty: WTF.isEmptyFormula('record', 'rawPublicUrl'),
 			foAuthModeIsP: WTF.equalsFormula('record', 'authMode', 'P')
 		});
 		
@@ -107,6 +111,33 @@ Ext.define('Sonicle.webtop.vfs.view.SharingLink', {
 					disabled: '{!foAuthModeIsP}'
 				},
 				fieldLabel: me.mys.res('sharingLink.fld-password.lbl'),
+				anchor: '100%'
+			}, {
+				xtype: 'sospacer',
+				mult: 2
+			}, {
+				xtype: 'soformseparator'
+			}, {
+				xtype: 'textfield',
+				bind: {
+					value: '{record.publicUrl}',
+					hidden: '{foIsUrlEmpty}'
+				},
+				editable: false,
+				selectOnFocus: true,
+				hidden: true,
+				fieldLabel: me.mys.res('sharingLink.fld-publicUrl.lbl'),
+				anchor: '100%'
+			}, {
+				xtype: 'textfield',
+				bind: {
+					value: '{record.rawPublicUrl}',
+					hidden: '{foIsRawUrlEmpty}'
+				},
+				editable: false,
+				selectOnFocus: true,
+				hidden: true,
+				fieldLabel: me.mys.res('sharingLink.fld-rawPublicUrl.lbl'),
 				anchor: '100%'
 			}]
 		});

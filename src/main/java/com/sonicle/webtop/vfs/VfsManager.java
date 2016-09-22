@@ -55,6 +55,7 @@ import com.sonicle.webtop.core.sdk.BaseManager;
 import com.sonicle.webtop.core.sdk.UserProfile;
 import com.sonicle.webtop.core.sdk.WTException;
 import com.sonicle.webtop.core.sdk.WTRuntimeException;
+import com.sonicle.webtop.core.util.NotificationHelper;
 import com.sonicle.webtop.vfs.bol.OSharingLink;
 import com.sonicle.webtop.vfs.bol.OStore;
 import com.sonicle.webtop.vfs.bol.model.SharingLink;
@@ -71,6 +72,7 @@ import com.sonicle.webtop.vfs.sfs.FtpSFS;
 import com.sonicle.webtop.vfs.sfs.FtpsSFS;
 import com.sonicle.webtop.vfs.sfs.GoogleDriveSFS;
 import com.sonicle.webtop.vfs.sfs.SftpSFS;
+import freemarker.template.TemplateException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -84,6 +86,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import javax.mail.internet.InternetAddress;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
@@ -110,17 +113,13 @@ public class VfsManager extends BaseManager {
 	
 	private final HashMap<String, StoreFileSystem> storeFileSystems = new HashMap<>();
 	
-	public VfsManager(boolean skipInit) throws WTException {
-		this(RunContext.getProfileId(), false);
+	public VfsManager(boolean fastInit) throws WTException {
+		this(fastInit, RunContext.getProfileId());
 	}
 	
-	public VfsManager(UserProfile.Id targetProfileId) throws WTException {
-		this(targetProfileId, false);
-	}
-	
-	public VfsManager(UserProfile.Id targetProfileId, boolean skipInit) throws WTException {
-		super(targetProfileId);
-		if(skipInit) initFileSystems();
+	public VfsManager(boolean fastInit, UserProfile.Id targetProfileId) throws WTException {
+		super(fastInit, targetProfileId);
+		if(!fastInit) initFileSystems();
 	}
 	
 	private void initFileSystems() throws WTException {
@@ -460,7 +459,12 @@ public class VfsManager extends BaseManager {
 	}
 	
 	public String createStoreFileFromStream(int storeId, String parentPath, String name, InputStream is) throws IOException, FileSystemException, WTException {
-		FileObject tfo = null, ntfo = null;
+		return createStoreFileFromStream(storeId, parentPath, name, is, false);
+	}
+	
+	public String createStoreFileFromStream(int storeId, String parentPath, String name, InputStream is, boolean overwrite) throws IOException, FileSystemException, WTException {
+		FileObject tfo = null;
+		NewTargetFile ntf = null;
 		OutputStream os = null;
 		
 		try {
@@ -469,24 +473,24 @@ public class VfsManager extends BaseManager {
 			tfo = getTargetFileObject(storeId, parentPath);
 			if(!tfo.isFolder()) throw new IllegalArgumentException("Please provide a valid parentPath");
 			
-			String newPath = FilenameUtils.separatorsToUnix(FilenameUtils.concat(parentPath, name));
-			ntfo = getTargetFileObject(storeId, newPath);
-			logger.debug("Creating store file from stream [{}, {}]", storeId, newPath);
-			ntfo.createFile();
+			ntf = getNewTargetFileObject(storeId, parentPath, name, overwrite);
+			logger.debug("Creating store file from stream [{}, {}]", storeId, ntf.path);
+			
+			ntf.tfo.createFile();
 			try {
-				os = ntfo.getContent().getOutputStream();
+				os = ntf.tfo.getContent().getOutputStream();
 				IOUtils.copy(is, os);
 			} finally {
 				IOUtils.closeQuietly(os);
 			}
-			return newPath;
+			return ntf.path;
 			
 		} catch(Exception ex) {
 			logger.warn("Error creating store file from stream", ex);
 			throw ex;
 		} finally {
 			IOUtils.closeQuietly(tfo);
-			IOUtils.closeQuietly(ntfo);
+			if(ntf != null) IOUtils.closeQuietly(ntf.tfo);
 		}
 	}
 	
@@ -603,7 +607,7 @@ public class VfsManager extends BaseManager {
 		try {
 			con = WT.getConnection(SERVICE_ID, false);
 			OSharingLink olink = dao.selectById(con, linkId);
-			if(olink == null) throw new WTException("Unable to retrieve sharing link [{0}]", linkId);
+			if(olink == null) return null;
 			
 			checkRightsOnStoreElements(olink.getStoreId(), "READ"); // Rights check!
 			
@@ -720,7 +724,32 @@ public class VfsManager extends BaseManager {
 		}
 	}
 	
-	
+	public void notifySharingLinkUsage(String linkId, String path, String ipAddress, String userAgent) throws WTException {
+		SharingLinkDAO dao = SharingLinkDAO.getInstance();
+		Connection con = null;
+		
+		try {
+			con = WT.getConnection(SERVICE_ID);
+			OSharingLink olink = dao.selectById(con, linkId);
+			if(olink == null) throw new WTException("Unable to retrieve sharing link [{0}]", linkId);
+			
+			if(olink.getLinkType().equals(SharingLink.TYPE_DOWNLOAD)) {
+				checkRightsOnStoreFolder(olink.getStoreId(), "READ"); // Rights check!
+				sendLinkUsageEmail(olink, path, ipAddress, userAgent);
+				
+			} else if(olink.getLinkType().equals(SharingLink.TYPE_UPLOAD)) {
+				checkRightsOnStoreElements(olink.getStoreId(), "UPDATE"); // Rights check!
+				sendLinkUsageEmail(olink, path, ipAddress, userAgent);
+			}
+			
+		} catch(SQLException | DAOException ex) {
+			throw new WTException(ex, "DB error");
+		} catch(Exception ex) {
+			throw ex;
+		} finally {
+			DbUtils.closeQuietly(con);
+		}
+	}
 	
 	private void buildShareCache() {
 		CoreManager core = WT.getCoreManager();
@@ -930,6 +959,31 @@ public class VfsManager extends BaseManager {
 		return tfo;
 	}
 	
+	private NewTargetFile getNewTargetFileObject(int storeId, String parentPath, String name, boolean overwrite) throws FileSystemException, WTException {
+		String newPath = FilenameUtils.separatorsToUnix(FilenameUtils.concat(parentPath, name));
+		
+		if(overwrite) {
+			return new NewTargetFile(newPath, getTargetFileObject(storeId, newPath));
+		} else {
+			FileObject newFo = getTargetFileObject(storeId, newPath);
+			if(!newFo.exists()) {
+				return new NewTargetFile(newPath, newFo);
+			} else {
+				String ext = FilenameUtils.getExtension(name);
+				String suffix = StringUtils.isBlank(ext) ? "" : "." + ext;
+				String baseName = FilenameUtils.getBaseName(name);
+				int i = 0;
+				do {
+					i++;
+					final String newName = baseName + " (" + i + ")" + suffix;
+					newPath = FilenameUtils.separatorsToUnix(FilenameUtils.concat(parentPath, newName));
+					newFo = getTargetFileObject(storeId, newPath);
+				} while(newFo.exists());
+				return new NewTargetFile(newPath, newFo);
+			}
+		}
+	}
+	
 	private String doRenameStoreFile(int storeId, String path, String newName) throws FileSystemException, SQLException, DAOException, WTException {
 		SharingLinkDAO dao = SharingLinkDAO.getInstance();
 		FileObject tfo = null, ntfo = null;
@@ -1039,18 +1093,48 @@ public class VfsManager extends BaseManager {
 		//TODO: cancellare collegati
 	}
 	
-	public static boolean isFileHidden(FileObject fo) throws FileSystemException {
-		return fo.isHidden() || StringUtils.startsWith(fo.getName().getBaseName(), ".");
+	private void sendLinkUsageEmail(OSharingLink olink, String path, String ipAddress, String userAgent) throws WTException {
+		final String BHD_KEY = (olink.getLinkType().equals(SharingLink.TYPE_DOWNLOAD)) ? VfsLocale.TPL_EMAIL_SHARINGLINKUSAGE_BODY_HEADER_DL : VfsLocale.TPL_EMAIL_SHARINGLINKUSAGE_BODY_HEADER_UL;
+		UserProfile.Id pid = olink.getProfileId();
+		
+		//TODO: rendere relativa la path del file rispetto allo Store???
+		try {
+			UserProfile.Data userData = WT.getCoreManager().getUserData(olink.getProfileId());
+			
+			String bodyHeader = lookupResource(userData.getLocale(), BHD_KEY);
+			String source = NotificationHelper.buildSource(userData.getLocale(), SERVICE_ID);
+			String subject = NotificationHelper.buildSubject(userData.getLocale(), SERVICE_ID, bodyHeader);
+			
+			String complexBody = TplHelper.buildLinkUsageBodyTpl(userData.getLocale(), olink.getSharingLinkId(), PathUtils.getFileName(olink.getFilePath()), path, ipAddress, userAgent);
+			String html = NotificationHelper.buildNoReplayTpl(userData.getLocale(), true, source, bodyHeader, complexBody);
+
+			InternetAddress from = WT.buildDomainInternetAddress(pid.getDomainId(), "webtop-notification", null);
+			if(from == null) throw new WTException("Error building sender address");
+			InternetAddress to = userData.getEmail();
+			if(to == null) throw new WTException("Error building destination address");
+			WT.sendEmail(pid, true, from, to, subject, html);
+
+		} catch(IOException | TemplateException ex) {
+			logger.error("Unable to build email template", ex);
+		} catch(Exception ex) {
+			logger.error("Unable to send email", ex);
+		}
 	}
 	
 	public static String[] generatePublicLinks(String publicBaseUrl, SharingLink link) {
-		if(PathUtils.isFolder(link.getFilePath())) {
-			String url = buildPublicLinkUrl(publicBaseUrl, PublicService.PUBPATH_CONTEXT_FILE, link, false);
-			return new String[]{url, null};
-		} else {
-			String url = buildPublicLinkUrl(publicBaseUrl, PublicService.PUBPATH_CONTEXT_FILE, link, false);
-			String durl = buildPublicLinkUrl(publicBaseUrl, PublicService.PUBPATH_CONTEXT_FILE, link, true);
+		if(link.getType().equals(SharingLink.TYPE_DOWNLOAD)) {
+			String url = null, durl = null;
+			if(PathUtils.isFolder(link.getFilePath())) {
+				url = buildPublicLinkUrl(publicBaseUrl, PublicService.PUBPATH_CONTEXT_LINK, link, false);
+				//TODO: implementare nel pubblico la gestione link diretti per le cartelle
+			} else {
+				//TODO: implementare nel pubblico l'anteprima dei file
+				durl = buildPublicLinkUrl(publicBaseUrl, PublicService.PUBPATH_CONTEXT_LINK, link, true);
+			}
 			return new String[]{url, durl};
+		} else {
+			String url = buildPublicLinkUrl(publicBaseUrl, PublicService.PUBPATH_CONTEXT_LINK, link, false);
+			return new String[]{url, null};
 		}
 	}
 	
@@ -1077,5 +1161,15 @@ public class VfsManager extends BaseManager {
 	public static String buildPublicLinkGetUrl(String publicBaseUrl, String context, SharingLink link) {
 		String s = context + "/" + link.getLinkId() + "/get/" + PathUtils.getFileName(link.getFilePath());
 		return PathUtils.concatPaths(publicBaseUrl, s);
+	}
+	
+	private class NewTargetFile {
+		public String path;
+		public FileObject tfo;
+		
+		public NewTargetFile(String path, FileObject tfo) {
+			this.path = path;
+			this.tfo = tfo;
+		}
 	}
 }

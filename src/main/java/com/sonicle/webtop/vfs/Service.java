@@ -51,6 +51,7 @@ import com.sonicle.commons.web.json.JsonResult;
 import com.sonicle.commons.web.json.MapItem;
 import com.sonicle.commons.web.json.Payload;
 import com.sonicle.commons.web.json.extjs.ExtTreeNode;
+import com.sonicle.vfs2.VfsUtils;
 import com.sonicle.vfs2.util.DropboxApiUtils;
 import com.sonicle.vfs2.util.GoogleDriveApiUtils;
 import com.sonicle.vfs2.util.GoogleDriveAppInfo;
@@ -93,7 +94,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.vfs2.FileObject;
-import org.apache.commons.vfs2.FileSystemException;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.format.DateTimeFormatter;
@@ -135,34 +135,31 @@ public class Service extends BaseService {
 		ServiceVars co = new ServiceVars();
 		Integer maxUpload = WT.getCoreServiceSettings(SERVICE_ID).getUploadMaxFileSize();
 		co.put("privateUploadMaxFileSize", LangUtils.coalesce(us.getPrivateUploadMaxFileSize(), maxUpload));
-		co.put("publicUploadMaxFileSize", LangUtils.coalesce(us.getPublicUploadMaxFileSize(), maxUpload));
 		co.put("uploadLinkExpiration", ss.getUploadLinkExpiration());
 		co.put("downloadLinkExpiration", ss.getDownloadLinkExpiration());
 		return co;
 	}
 	
 	private class OnUploadStoreFile implements IServiceUploadStreamListener {
-
 		@Override
 		public void onUpload(String context, HttpServletRequest request, HashMap<String, String> multipartParams, WebTopSession.UploadedFile file, InputStream is, MapItem responseData) throws UploadException {
 			
-			if(context.equals("UploadStoreFile")) {
-				try {
-					String parentFileId = multipartParams.get("fileId");
-					if(StringUtils.isBlank(parentFileId)) throw new UploadException("Parameter not specified [fileId]");
+			try {
+				String parentFileId = multipartParams.get("fileId");
+				if(StringUtils.isBlank(parentFileId)) throw new UploadException("Parameter not specified [fileId]");
 
-					StoreNodeId parentNodeId = (StoreNodeId)new StoreNodeId().parse(parentFileId);
-					int storeId = Integer.valueOf(parentNodeId.getStoreId());
-					String path = (parentNodeId.getSize() == 2) ? "/" : parentNodeId.getPath();
+				StoreNodeId parentNodeId = (StoreNodeId)new StoreNodeId().parse(parentFileId);
+				int storeId = Integer.valueOf(parentNodeId.getStoreId());
+				String path = (parentNodeId.getSize() == 2) ? "/" : parentNodeId.getPath();
+				
+				String newPath = manager.createStoreFileFromStream(storeId, path, file.getFilename(), is);
 
-					String newPath = manager.createStoreFileFromStream(storeId, path, file.getFilename(), is);
-					
-				} catch(Exception ex) {
-					logger.error("Unable to upload", ex);
-					throw new UploadException("Unable to upload");
-				}
-			} else {
-				throw new UploadException("Unknown context [{0}]", context);
+			} catch(UploadException ex) {
+				logger.trace("Upload failure", ex);
+				throw ex;
+			} catch(Throwable t) {
+				logger.error("Upload failure", t);
+				throw new UploadException("Upload failure");
 			}
 		}
 	}
@@ -405,7 +402,7 @@ public class Service extends BaseService {
 						
 						StoreFileSystem sfs = manager.getStoreFileSystem(storeId);
 						for(FileObject fo : manager.listStoreFiles(StoreFileType.FOLDER, storeId, path)) {
-							if(!showHidden && VfsManager.isFileHidden(fo)) continue;
+							if(!showHidden && VfsUtils.isFileObjectHidden(fo)) continue;
 							// Relativize path and force trailing separator (it's a folder)
 							final String filePath = PathUtils.ensureTrailingSeparator(sfs.getRelativePath(fo), false);
 							//final String fileId = new StoreNodeId(nodeId.getShareId(), nodeId.getStoreId(), filePath).toString();
@@ -771,7 +768,7 @@ public class Service extends BaseService {
 				
 				StoreFileSystem sfs = manager.getStoreFileSystem(storeId);
 				for(FileObject fo : manager.listStoreFiles(StoreFileType.FILE_OR_FOLDER, storeId, path)) {
-					if(!showHidden && VfsManager.isFileHidden(fo)) continue;
+					if(!showHidden && VfsUtils.isFileObjectHidden(fo)) continue;
 					// Relativize path and force trailing separator if file is a folder
 					final String filePath = fo.isFolder() ? PathUtils.ensureTrailingSeparator(sfs.getRelativePath(fo), false) : sfs.getRelativePath(fo);
 					final String fileId = new StoreNodeId(parentNodeId.getShareId(), parentNodeId.getStoreId(), filePath).toString();
@@ -987,7 +984,9 @@ public class Service extends BaseService {
 				} else {
 					item = manager.getSharingLink(id);
 					
-					new JsonResult(new JsSharingLink(item, up.getTimeZone())).printTo(out);
+					String publicBaseUrl = getPublicBaseUrl(request);
+					String[] links = VfsManager.generatePublicLinks(publicBaseUrl, item);
+					new JsonResult(new JsSharingLink(item, links, up.getTimeZone())).printTo(out);
 				}
 				
 			} else if(crud.equals(Crud.UPDATE)) {

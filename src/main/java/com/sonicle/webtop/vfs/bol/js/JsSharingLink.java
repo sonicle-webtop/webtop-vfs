@@ -35,6 +35,7 @@ package com.sonicle.webtop.vfs.bol.js;
 
 import com.sonicle.commons.PathUtils;
 import com.sonicle.commons.time.DateTimeUtils;
+import com.sonicle.webtop.vfs.VfsManager;
 import com.sonicle.webtop.vfs.bol.model.SharingLink;
 import org.apache.commons.lang.StringUtils;
 import org.joda.time.DateTime;
@@ -48,18 +49,21 @@ import org.joda.time.format.DateTimeFormatter;
 public class JsSharingLink {
 	public String linkId;
 	public String type; // Read-only
+	public String publicUrl; // Read-only
+	public String rawPublicUrl; // Read-only
 	public String filePath; // Read-only
 	public String fileName; // Read-only
 	public String expirationDate;
 	public String authMode;
 	public String password;
 	
-	
 	public JsSharingLink() {}
 	
-	public JsSharingLink(SharingLink o, DateTimeZone profileTz) {
+	public JsSharingLink(SharingLink o, String[] publicLinks, DateTimeZone profileTz) {
 		this.linkId = o.getLinkId();
 		this.type = o.getType();
+		this.publicUrl = publicLinks[0];
+		this.rawPublicUrl = publicLinks[1];
 		this.filePath = o.getFilePath();
 		this.fileName = PathUtils.getFileName(o.getFilePath());
 		this.expirationDate = DateTimeUtils.printYmdHmsWithZone(o.getExpiresOn(), profileTz);

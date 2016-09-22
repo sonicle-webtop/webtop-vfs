@@ -39,8 +39,8 @@
 .wtvfs-icon-uploadLinkExp-xs { background-image: url('linkUpload-red_16.png') !important; }
 .wtvfs-icon-sharingLink-xs { background-image: url('sharingLink_16.png') !important; }
 
-.vtvfs-gpfiles .x-grid-empty {text-align: center;}
-.vtvfs-gplinks-row-expired { color: #E60D35; }
+.wtvfs-gpfiles .x-grid-empty {text-align: center;}
+.wtvfs-gplinks-row-expired { color: #E60D35; }
 
 .so-filedrop {
 	position: absolute;

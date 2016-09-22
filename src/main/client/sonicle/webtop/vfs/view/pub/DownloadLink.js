@@ -31,7 +31,7 @@
  * feasible for technical reasons, the Appropriate Legal Notices must display
  * the words "Powered by Sonicle WebTop".
  */
-Ext.define('Sonicle.webtop.vfs.view.pub.PreviewFolder', {
+Ext.define('Sonicle.webtop.vfs.view.pub.DownloadLink', {
 	extend: 'WT.ux.panel.Panel',
 	requires: [
 		'Sonicle.grid.column.Bytes',
@@ -39,11 +39,6 @@ Ext.define('Sonicle.webtop.vfs.view.pub.PreviewFolder', {
 		'Sonicle.grid.column.Link',
 		'Sonicle.toolbar.PathBreadcrumb',
 		'Sonicle.webtop.vfs.model.pub.GridFile'
-		
-		//'Sonicle.FakeInput',
-		//'Sonicle.form.Label',
-		//'Sonicle.form.Spacer',
-		//'Sonicle.form.field.Password'
 	],
 	
 	layout: 'center',
@@ -63,12 +58,13 @@ Ext.define('Sonicle.webtop.vfs.view.pub.PreviewFolder', {
 			maxWidth: 900,
 			height: '100%',
 			maxHeight: 500,
-			title: me.mys.getVar('linkName'),
+			title: me.mys.res('pub.downloadLink.tit', me.mys.getVar('linkName')),
 			iconCls: me.mys.cssIconCls('downloadLink', 'xs'),
 			items: [{
 				region: 'center',
 				xtype: 'grid',
 				reference: 'gpfiles',
+				cls: 'wtvfs-gpfiles',
 				border: true,
 				store: {
 					model: 'Sonicle.webtop.vfs.model.pub.GridFile',
@@ -93,7 +89,6 @@ Ext.define('Sonicle.webtop.vfs.view.pub.PreviewFolder', {
 				},
 				selModel: {
 					type: 'rowmodel'
-					//mode : 'MULTI'
 				},
 				columns: [{
 					xtype: 'soiconcolumn',
@@ -130,7 +125,7 @@ Ext.define('Sonicle.webtop.vfs.view.pub.PreviewFolder', {
 					width: 200
 				}, {
 					xtype: 'actioncolumn',
-					header: me.mys.res('pub.previewfolder.gpfiles.actions.lbl'),
+					header: '&nbsp;',
 					flex: 1,
 					items: [{
 						iconCls: me.mys.cssIconCls('downloadFile', 'xs'),
@@ -167,7 +162,7 @@ Ext.define('Sonicle.webtop.vfs.view.pub.PreviewFolder', {
 			tbar: [
 				'->', {
 				xtype: 'button',
-				text: me.mys.res('pub.previewfolder.act-downloadAll.lbl'),
+				text: me.mys.res('pub.downloadLink.act-downloadAll.lbl'),
 				iconCls: me.mys.cssIconCls('downloadFile', 'xs'),
 				handler: function() {
 					me.openDlUrl('/');

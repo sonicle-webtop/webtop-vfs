@@ -62,7 +62,7 @@ Ext.define('Sonicle.webtop.vfs.view.SharingLinks', {
 			},
 			viewConfig: {
 				getRowClass: function (rec) {
-					return rec.get('expired') ? 'vtvfs-gplinks-row-expired' : '';
+					return rec.get('expired') ? 'wtvfs-gplinks-row-expired' : '';
 				}
 			},
 			columns: [{
