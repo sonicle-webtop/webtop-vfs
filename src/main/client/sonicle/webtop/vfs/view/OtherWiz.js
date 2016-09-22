@@ -123,7 +123,7 @@ Ext.define('Sonicle.webtop.vfs.view.OtherWiz', {
 					}, {
 						xtype: 'numberfield',
 						bind: '{port}',
-						inputType: 'number',
+						//inputType: 'number',
 						hideTrigger: true,
 						minValue: 1,
 						maxValue: 65000,
