@@ -57,7 +57,7 @@ Ext.define('Sonicle.webtop.vfs.view.pub.DownloadLink', {
 			width: '100%',
 			maxWidth: 900,
 			height: '100%',
-			maxHeight: 500,
+			maxHeight: 400,
 			title: me.mys.res('pub.downloadLink.tit', me.mys.getVar('linkName')),
 			iconCls: me.mys.cssIconCls('downloadLink', 'xs'),
 			items: [{

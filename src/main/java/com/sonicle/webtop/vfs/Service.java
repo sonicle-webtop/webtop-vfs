@@ -894,9 +894,9 @@ public class Service extends BaseService {
 				dl.setPassword(password);
 				dl = manager.addDownloadLink(dl);
 				
-				String publicBaseUrl = getPublicBaseUrl(request);
+				String servicePublicUrl = WT.getServicePublicUrl(up.getDomainId(), SERVICE_ID);
 				JsWizardData data = new JsWizardData();
-				data.put("urls", VfsManager.generateLinkPublicURLs(publicBaseUrl, dl));
+				data.put("urls", VfsManager.generateLinkPublicURLs(servicePublicUrl, dl));
 				new JsonResult(data).printTo(out);
 			}
 			
@@ -933,9 +933,9 @@ public class Service extends BaseService {
 				ul.setPassword(password);
 				ul = manager.addUploadLink(ul);
 				
-				String publicBaseUrl = getPublicBaseUrl(request);
+				String servicePublicUrl = WT.getServicePublicUrl(up.getDomainId(), SERVICE_ID);
 				JsWizardData data = new JsWizardData();
-				data.put("urls", VfsManager.generateLinkPublicURLs(publicBaseUrl, ul));
+				data.put("urls", VfsManager.generateLinkPublicURLs(servicePublicUrl, ul));
 				new JsonResult(data).printTo(out);
 			}
 			
@@ -984,8 +984,8 @@ public class Service extends BaseService {
 				} else {
 					item = manager.getSharingLink(id);
 					
-					String publicBaseUrl = getPublicBaseUrl(request);
-					String[] urls = VfsManager.generateLinkPublicURLs(publicBaseUrl, item);
+					String servicePublicUrl = WT.getServicePublicUrl(up.getDomainId(), SERVICE_ID);
+					String[] urls = VfsManager.generateLinkPublicURLs(servicePublicUrl, item);
 					new JsonResult(new JsSharingLink(item, urls, up.getTimeZone())).printTo(out);
 				}
 				
@@ -1032,9 +1032,5 @@ public class Service extends BaseService {
 		}
 		
 		return sb.toString();
-	}
-	
-	private String getPublicBaseUrl(HttpServletRequest request) {
-		return PathUtils.concatPathParts(ServletUtils.getBaseURL(request), "public", getPublicName());
 	}
 }

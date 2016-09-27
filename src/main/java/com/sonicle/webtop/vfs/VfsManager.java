@@ -1053,7 +1053,7 @@ public class VfsManager extends BaseManager {
 		SharingLinkDAO dao = SharingLinkDAO.getInstance();
 		UserProfile.Id pid = getTargetProfileId();
 		
-		sl.validate();
+		sl.validate(insert);
 		
 		OSharingLink o = new OSharingLink(sl);
 		if(o.getDomainId() == null) o.setDomainId(pid.getDomainId());
@@ -1103,10 +1103,9 @@ public class VfsManager extends BaseManager {
 			
 			String bodyHeader = lookupResource(userData.getLocale(), BHD_KEY);
 			String source = NotificationHelper.buildSource(userData.getLocale(), SERVICE_ID);
-			String subject = NotificationHelper.buildSubject(userData.getLocale(), SERVICE_ID, bodyHeader);
-			
-			String complexBody = TplHelper.buildLinkUsageBodyTpl(userData.getLocale(), olink.getSharingLinkId(), PathUtils.getFileName(olink.getFilePath()), path, ipAddress, userAgent);
-			String html = NotificationHelper.buildNoReplayTpl(userData.getLocale(), true, source, bodyHeader, complexBody);
+			String subject = TplHelper.buildLinkUsageEmailSubject(userData.getLocale(), bodyHeader);
+			String customBody = TplHelper.buildLinkUsageBodyTpl(userData.getLocale(), olink.getSharingLinkId(), PathUtils.getFileName(olink.getFilePath()), path, ipAddress, userAgent);
+			String html = NotificationHelper.buildCustomBodyTplForNoReplay(userData.getLocale(), source, bodyHeader, customBody);
 
 			InternetAddress from = WT.buildDomainInternetAddress(pid.getDomainId(), "webtop-notification", null);
 			if(from == null) throw new WTException("Error building sender address");
@@ -1125,15 +1124,15 @@ public class VfsManager extends BaseManager {
 		if(link.getType().equals(SharingLink.TYPE_DOWNLOAD)) {
 			String url = null, durl = null;
 			if(PathUtils.isFolder(link.getFilePath())) {
-				url = buildLinkPublicUrl(publicBaseUrl, PublicService.PUBPATH_CONTEXT_LINK, link, false);
+				url = buildLinkPublicUrl(publicBaseUrl, link, false);
 				//TODO: implementare nel pubblico la gestione link diretti per le cartelle
 			} else {
 				//TODO: implementare nel pubblico l'anteprima dei file
-				durl = buildLinkPublicUrl(publicBaseUrl, PublicService.PUBPATH_CONTEXT_LINK, link, true);
+				durl = buildLinkPublicUrl(publicBaseUrl, link, true);
 			}
 			return new String[]{url, durl};
 		} else {
-			String url = buildLinkPublicUrl(publicBaseUrl, PublicService.PUBPATH_CONTEXT_LINK, link, false);
+			String url = buildLinkPublicUrl(publicBaseUrl, link, false);
 			return new String[]{url, null};
 		}
 	}
@@ -1141,25 +1140,23 @@ public class VfsManager extends BaseManager {
 	/**
 	 * Builds an URL suitable for links that point to shared file.
 	 * @param publicBaseUrl The base URL up to the public servlet path (eg. http://localhost/webtop/public/cloud)
-	 * @param context Public service's context
 	 * @param link Shared link
 	 * @param direct True to point directly to binary file (not suitable for folders)
 	 * @return Generated URL
 	 */
-	public static String buildLinkPublicUrl(String publicBaseUrl, String context, SharingLink link, boolean direct) {
-		String s = context + "/" + link.getLinkId() + (direct ? "?raw=1" : "");
+	public static String buildLinkPublicUrl(String publicBaseUrl, SharingLink link, boolean direct) {
+		String s = PublicService.PUBPATH_CONTEXT_LINK + "/" + link.getLinkId() + (direct ? "?raw=1" : "");
 		return PathUtils.concatPaths(publicBaseUrl, s);
 	}
 	
 	/**
 	 * Builds an URL suitable for redirecting to public file download stream.
 	 * @param publicBaseUrl The base URL up to the public servlet path (eg. http://localhost/webtop/public/cloud)
-	 * @param context Public service's context
 	 * @param link Shared link
 	 * @return Generated URL
 	 */
-	public static String buildLinkPublicGetUrl(String publicBaseUrl, String context, SharingLink link) {
-		String s = context + "/" + link.getLinkId() + "/get/" + PathUtils.getFileName(link.getFilePath());
+	public static String buildLinkPublicGetUrl(String publicBaseUrl, SharingLink link) {
+		String s = PublicService.PUBPATH_CONTEXT_LINK + "/" + link.getLinkId() + "/get/" + PathUtils.getFileName(link.getFilePath());
 		return PathUtils.concatPaths(publicBaseUrl, s);
 	}
 	

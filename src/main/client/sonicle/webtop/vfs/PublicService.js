@@ -33,9 +33,6 @@
  */
 Ext.define('Sonicle.webtop.vfs.PublicService', {
 	extend: 'WT.sdk.PublicService',
-	requires: [
-		//'Sonicle.webtop.vfs.view.pub.Authorize'
-	],
 	
 	init: function() {
 		var me = this;

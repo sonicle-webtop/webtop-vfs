@@ -182,8 +182,8 @@ public class SharingLink {
 		setUserId(pid.getUser());
 	}
 	
-	public void validate() throws WTException {
-		if(type.equals(TYPE_UPLOAD) && !StringUtils.endsWith(filePath, "/")) throw new WTException("File path must target a directory");
+	public void validate(boolean insert) throws WTException {
+		if(insert && type.equals(TYPE_UPLOAD) && !PathUtils.isFolder(filePath)) throw new WTException("File path must target a directory");
 		if(authMode == null) throw new WTException("Provide a value for authMode");
 		if(authMode.equals(SharingLink.AUTH_MODE_PASSWORD)) {
 			if(StringUtils.isBlank(password)) throw new WTException("Provide a value for password");

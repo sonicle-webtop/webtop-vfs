@@ -36,6 +36,7 @@ package com.sonicle.webtop.vfs;
 import com.sonicle.commons.PathUtils;
 import com.sonicle.commons.web.json.MapItem;
 import com.sonicle.webtop.core.app.WT;
+import com.sonicle.webtop.core.util.NotificationHelper;
 import freemarker.template.TemplateException;
 import java.io.IOException;
 import java.util.Locale;
@@ -46,6 +47,10 @@ import java.util.Locale;
  */
 public class TplHelper {
 	private static final String SERVICE_ID = "com.sonicle.webtop.vfs";
+	
+	public static String buildLinkUsageEmailSubject(Locale locale, String title) {
+		return NotificationHelper.buildSubject(locale, SERVICE_ID, title);
+	}
 	
 	public static String buildLinkUsageBodyTpl(Locale locale, String linkId, String linkName, String filePath, String remoteIp, String userAgent) throws IOException, TemplateException {
 		MapItem i18n = new MapItem();
