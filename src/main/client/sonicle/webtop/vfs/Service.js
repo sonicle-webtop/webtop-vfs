@@ -112,26 +112,6 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 			referenceHolder: true,
 			items: [
 				me.getAction('showSharingLinks')
-				/*
-				'->'
-				me.addRef('txtsearch', Ext.create({
-					xtype: 'textfield',
-					width: 200,
-					triggers: {
-						search: {
-							cls: Ext.baseCSSPrefix + 'form-search-trigger',
-							handler: function(s) {
-								me.queryTasks(s.getValue());
-							}
-						}
-					},
-					listeners: {
-						specialkey: function(s, e) {
-							if(e.getKey() === e.ENTER) me.queryTasks(s.getValue());
-						}
-					}
-				}))
-				*/
 			]
 		}));
 		
@@ -164,8 +144,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				hideHeaders: true,
 				listeners: {
 					selectionchange: function(s, rec) {
-						console.log('selectionchange');
-						
+						//console.log('selectionchange');
 						var type = (rec.length === 1) ? rec[0].get('_type') : null;
 						if(type === 'folder') {
 							me.setCurNode(rec[0].getId());
@@ -176,8 +155,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 						}
 					},
 					itemclick: function(s, rec, itm, i, e) {
-						console.log('itemclick');
-						
+						//console.log('itemclick');
 						var type = rec.get('_type');
 						if(type === 'folder') { // Store node
 							me.setCurFile(rec.getId());
@@ -186,8 +164,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 						}
 					},
 					itemcontextmenu: function(s, rec, itm, i, e) {
-						console.log('itemcontextmenu');
-						
+						//console.log('itemcontextmenu');
 						var type = rec.get('_type');
 						if(type === 'root') {
 							me.setCurNode(rec.get('id'));
@@ -278,6 +255,8 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 							if(rec.get('type') === 'folder') {
 								me.setCurFile(rec.get('fileId'));
 								me.reloadGridFiles();
+							} else if(rec.get('type') === 'file') {
+								me.downloadFiles([rec.get('fileId')]);
 							}
 						}
 					},

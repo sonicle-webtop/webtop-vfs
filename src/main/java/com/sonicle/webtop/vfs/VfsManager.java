@@ -1107,8 +1107,9 @@ public class VfsManager extends BaseManager {
 			String customBody = TplHelper.buildLinkUsageBodyTpl(userData.getLocale(), olink.getSharingLinkId(), PathUtils.getFileName(olink.getFilePath()), path, ipAddress, userAgent);
 			String html = NotificationHelper.buildCustomBodyTplForNoReplay(userData.getLocale(), source, bodyHeader, customBody);
 
-			InternetAddress from = WT.buildDomainInternetAddress(pid.getDomainId(), "webtop-notification", null);
-			if(from == null) throw new WTException("Error building sender address");
+			//InternetAddress from = WT.buildDomainInternetAddress(pid.getDomainId(), "webtop-notification", null);
+			//if(from == null) throw new WTException("Error building sender address");
+			InternetAddress from = WT.getNotificationAddress(pid.getDomainId());
 			InternetAddress to = userData.getEmail();
 			if(to == null) throw new WTException("Error building destination address");
 			WT.sendEmail(pid, true, from, to, subject, html);
