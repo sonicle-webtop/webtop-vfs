@@ -113,10 +113,6 @@ public class VfsManager extends BaseManager {
 	
 	private final HashMap<String, StoreFileSystem> storeFileSystems = new HashMap<>();
 	
-	public VfsManager(boolean fastInit) throws WTException {
-		this(fastInit, RunContext.getProfileId());
-	}
-	
 	public VfsManager(boolean fastInit, UserProfile.Id targetProfileId) throws WTException {
 		super(fastInit, targetProfileId);
 		if(!fastInit) initFileSystems();

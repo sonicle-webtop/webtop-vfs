@@ -82,7 +82,7 @@ public class PublicService extends BasePublicService {
 	
 	@Override
 	public void initialize() throws Exception {
-		manager = new VfsManager(true);
+		manager = (VfsManager)WT.getServiceManager(SERVICE_ID);
 		registerUploadListener("UploadFile", new OnUploadFile());
 	}
 
@@ -91,8 +91,12 @@ public class PublicService extends BasePublicService {
 		manager = null;
 	}
 	
+	private WebTopSession getWts() {
+		return getEnv().getWebTopSession();
+	}
+	
 	private HashSet<String> getAuthedLinks() {
-		WebTopSession wts = getEnv().getWebTopSession();
+		WebTopSession wts = getWts();
 		synchronized(lock1) {
 			if(!wts.hasProperty(SERVICE_ID, WTSPROP_AUTHED_LINKS)) {
 				return (HashSet<String>)wts.setProperty(SERVICE_ID, WTSPROP_AUTHED_LINKS, new HashSet<String>());
@@ -105,7 +109,7 @@ public class PublicService extends BasePublicService {
 	@Override
 	public void processDefaultAction(HttpServletRequest request, HttpServletResponse response) throws Exception {
 		PublicPath path = new PublicPath(request.getPathInfo());
-		WebTopSession wts = getEnv().getWebTopSession();
+		WebTopSession wts = getWts();
 		
 		try {
 			try {
@@ -279,7 +283,7 @@ public class PublicService extends BasePublicService {
 				if(!link.getType().equals(SharingLink.TYPE_UPLOAD)) throw new UploadException("Wrong link type [{0}]", linkId);
 
 				String newPath = manager.createStoreFileFromStream(link.getStoreId(), link.getFilePath(), file.getFilename(), is);
-				WebTopSession wts = getEnv().getWebTopSession();
+				WebTopSession wts = getWts();
 				manager.notifySharingLinkUsage(link.getLinkId(), link.relativizePath(newPath), wts.getRemoteIP(), wts.getPlainUserAgent());
 				
 			} catch(UploadException ex) {

@@ -116,10 +116,9 @@ public class Service extends BaseService {
 
 	@Override
 	public void initialize() throws Exception {
-		UserProfile up = getEnv().getProfile();
-		manager = (VfsManager)WT.getServiceManager(SERVICE_ID, up.getId());
-		ss = new VfsServiceSettings(SERVICE_ID, up.getDomainId());
-		us = new VfsUserSettings(SERVICE_ID, up.getId());
+		manager = (VfsManager)WT.getServiceManager(SERVICE_ID);
+		ss = new VfsServiceSettings(SERVICE_ID, getEnv().getProfileId().getDomainId());
+		us = new VfsUserSettings(SERVICE_ID, getEnv().getProfileId());
 		initShares();
 		
 		registerUploadListener("UploadStoreFile", new OnUploadStoreFile());
@@ -138,6 +137,10 @@ public class Service extends BaseService {
 		co.put("uploadLinkExpiration", ss.getUploadLinkExpiration());
 		co.put("downloadLinkExpiration", ss.getDownloadLinkExpiration());
 		return co;
+	}
+	
+	private WebTopSession getWts() {
+		return getEnv().getWebTopSession();
 	}
 	
 	private class OnUploadStoreFile implements IServiceUploadStreamListener {
