@@ -60,6 +60,19 @@ Ext.define('Sonicle.webtop.vfs.view.UploadLinkWiz', {
 		}
 	},
 	
+	constructor: function(cfg) {
+		var me = this;
+		me.callParent([cfg]);
+		
+		WTU.applyFormulas(me.getVM(), {
+			foExpire: WTF.radioGroupBind('', 'expire', me.sufId('expire')),
+			foAuthMode: WTF.radioGroupBind('', 'authMode', me.sufId('authMode')),
+			foAuthModeIsP: WTF.equalsFormula('', 'authMode', 'P'),
+			foIsUrlEmpty: WTF.isEmptyFormula('', 'url'),
+			foIsRawUrlEmpty: WTF.isEmptyFormula('', 'rawUrl')
+		});
+	},
+	
 	initComponent: function() {
 		var me = this,
 				ic = me.getInitialConfig(),
@@ -68,14 +81,6 @@ Ext.define('Sonicle.webtop.vfs.view.UploadLinkWiz', {
 		if(Ext.isEmpty(ic.fileId)) Ext.Error.raise('Provide a value for fileId');
 		vm.set('fileId', ic.fileId);
 		vm.set('expirationDate', Sonicle.Date.add(new Date(), {days: me.mys.getVar('uploadLinkExpiration')}));
-		
-		WTU.applyFormulas(vm, {
-			foExpire: WTF.radioGroupBind('', 'expire', me.sufId('expire')),
-			foAuthMode: WTF.radioGroupBind('', 'authMode', me.sufId('authMode')),
-			foAuthModeIsP: WTF.equalsFormula('', 'authMode', 'P'),
-			foIsUrlEmpty: WTF.isEmptyFormula('', 'url'),
-			foIsRawUrlEmpty: WTF.isEmptyFormula('', 'rawUrl')
-		});
 		
 		me.callParent(arguments);
 		me.on('beforenavigate', me.onBeforeNavigate);

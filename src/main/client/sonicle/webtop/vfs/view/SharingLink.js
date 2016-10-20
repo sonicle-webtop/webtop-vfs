@@ -51,16 +51,19 @@ Ext.define('Sonicle.webtop.vfs.view.SharingLink', {
 	fieldTitle: 'fileName',
 	modelName: 'Sonicle.webtop.vfs.model.SharingLink',
 	
-	initComponent: function() {
-		var me = this,
-				vm = me.getVM();
+	constructor: function(cfg) {
+		var me = this;
+		me.callParent([cfg]);
 		
-		WTU.applyFormulas(vm, {
+		WTU.applyFormulas(me.getVM(), {
 			foIsUrlEmpty: WTF.isEmptyFormula('record', 'publicUrl'),
 			foIsRawUrlEmpty: WTF.isEmptyFormula('record', 'rawPublicUrl'),
 			foAuthModeIsP: WTF.equalsFormula('record', 'authMode', 'P')
 		});
-		
+	},
+	
+	initComponent: function() {
+		var me = this;
 		me.callParent(arguments);
 		
 		me.add({
