@@ -36,6 +36,7 @@ Ext.define('Sonicle.webtop.vfs.view.FtpWiz', {
 	requires: [
 		'WT.ux.panel.Form',
 		'Sonicle.FakeInput',
+		'Sonicle.plugin.NoAutocomplete',
 		'Sonicle.webtop.vfs.store.FtpScheme'
 	],
 	
@@ -139,21 +140,21 @@ Ext.define('Sonicle.webtop.vfs.view.FtpWiz', {
 				}, {
 					xtype: 'textfield',
 					bind: '{username}',
-					width: 280,
+					plugins: 'sonoautocomplete',
 					fieldLabel: me.mys.res('ftpWiz.fld-username.lbl'),
-					plugins: 'sonoautocomplete'
+					width: 280
 				}, {
 					xtype: 'textfield',
 					bind: '{password}',
 					inputType: 'password',
-					width: 280,
+					plugins: 'sonoautocomplete',
 					fieldLabel: me.mys.res('ftpWiz.fld-password.lbl'),
-					plugins: 'sonoautocomplete'
+					width: 280
 				}, {
 					xtype: 'textfield',
 					bind: '{path}',
-					width: 330,
-					fieldLabel: me.mys.res('ftpWiz.fld-path.lbl')
+					fieldLabel: me.mys.res('ftpWiz.fld-path.lbl'),
+					width: 330
 				}]
 			}]
 		}, {
