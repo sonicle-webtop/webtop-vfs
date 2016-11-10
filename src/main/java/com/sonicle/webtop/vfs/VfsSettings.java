@@ -71,6 +71,7 @@ public class VfsSettings {
 	 */
 	public static final String MYDOCUMENTS_URI = "mydocuments.uri";
 	public static class MyDocumentsUriTemplateValues {
+		public String HOME_PATH;
 		public String SERVICE_ID;
 		public String DOMAIN_ID;
 		public String USER_ID;

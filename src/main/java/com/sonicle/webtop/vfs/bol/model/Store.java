@@ -141,19 +141,4 @@ public class Store {
 				.path(path)
 				.build();
 	}
-	
-	public static Integer extractPort(String uri) throws URISyntaxException {
-		return extractPort(new URI(uri));
-	}
-	
-	public static Integer extractPort(URI uri) {
-		int port = uri.getPort();
-		return port == -1 ? null : port;
-	}
-	
-	public static String[] extractUserInfo(URI uri) {
-		String[] tokens = StringUtils.split(uri.getUserInfo(), ":", 2);
-		if(tokens == null || tokens.length == 0) return null;
-		return (tokens.length == 1) ? new String[]{tokens[0], null} : tokens;
-	}
 }

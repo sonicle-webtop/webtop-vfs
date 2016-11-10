@@ -385,7 +385,6 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		}));
 	},
 	
-	
 	expandFile: function(fileId) {
 		var me = this,
 				tree = me.trStores(),

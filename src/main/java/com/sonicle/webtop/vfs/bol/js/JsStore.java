@@ -33,6 +33,7 @@
  */
 package com.sonicle.webtop.vfs.bol.js;
 
+import com.sonicle.commons.URIUtils;
 import com.sonicle.webtop.vfs.bol.model.Store;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -65,8 +66,8 @@ public class JsStore {
 		URI uri = new URI(store.getUri());
 		this.scheme = uri.getScheme();
 		this.host = uri.getHost();
-		this.port = Store.extractPort(uri);
-		String[] ui = Store.extractUserInfo(uri);
+		this.port = URIUtils.getPort(uri);
+		String[] ui = URIUtils.parseUserInfo(uri);
 		if(ui != null) {
 			this.username = ui[0];
 			this.password = ui[1];

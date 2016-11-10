@@ -160,6 +160,8 @@ public class VfsManager extends BaseManager {
 		
 		if(store.getBuiltIn()) {
 			VfsSettings.MyDocumentsUriTemplateValues tpl = new VfsSettings.MyDocumentsUriTemplateValues();
+			//tpl.HOME_PATH = WT.getHomePath();
+			//TODO: gestire variabili per HOME_PATH, SERVICE_HOME_PATH
 			tpl.SERVICE_ID = SERVICE_ID;
 			tpl.DOMAIN_ID = store.getDomainId();
 			tpl.USER_ID = store.getUserId();
