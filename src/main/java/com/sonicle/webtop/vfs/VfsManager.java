@@ -1097,18 +1097,17 @@ public class VfsManager extends BaseManager {
 		
 		//TODO: rendere relativa la path del file rispetto allo Store???
 		try {
-			UserProfile.Data userData = WT.getCoreManager().getUserData(olink.getProfileId());
-			
-			String bodyHeader = lookupResource(userData.getLocale(), BHD_KEY);
-			String source = NotificationHelper.buildSource(userData.getLocale(), SERVICE_ID);
-			String subject = TplHelper.buildLinkUsageEmailSubject(userData.getLocale(), bodyHeader);
-			String customBody = TplHelper.buildLinkUsageBodyTpl(userData.getLocale(), olink.getSharingLinkId(), PathUtils.getFileName(olink.getFilePath()), path, ipAddress, userAgent);
-			String html = NotificationHelper.buildCustomBodyTplForNoReplay(userData.getLocale(), source, bodyHeader, customBody);
+			UserProfile.Data ud = WT.getUserData(olink.getProfileId());
+			String bodyHeader = lookupResource(ud.getLocale(), BHD_KEY);
+			String source = NotificationHelper.buildSource(ud.getLocale(), SERVICE_ID);
+			String subject = TplHelper.buildLinkUsageEmailSubject(ud.getLocale(), bodyHeader);
+			String customBody = TplHelper.buildLinkUsageBodyTpl(ud.getLocale(), olink.getSharingLinkId(), PathUtils.getFileName(olink.getFilePath()), path, ipAddress, userAgent);
+			String html = NotificationHelper.buildCustomBodyTplForNoReplay(ud.getLocale(), source, bodyHeader, customBody);
 
 			//InternetAddress from = WT.buildDomainInternetAddress(pid.getDomainId(), "webtop-notification", null);
 			//if(from == null) throw new WTException("Error building sender address");
 			InternetAddress from = WT.getNotificationAddress(pid.getDomainId());
-			InternetAddress to = userData.getEmail();
+			InternetAddress to = ud.getEmail();
 			if(to == null) throw new WTException("Error building destination address");
 			WT.sendEmail(pid, true, from, to, subject, html);
 
