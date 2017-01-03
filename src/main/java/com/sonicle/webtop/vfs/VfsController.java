@@ -33,24 +33,27 @@
  */
 package com.sonicle.webtop.vfs;
 
+import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.sdk.BaseController;
 import com.sonicle.webtop.core.sdk.UserProfile;
 import com.sonicle.webtop.core.sdk.WTException;
 import com.sonicle.webtop.core.sdk.interfaces.IControllerHandlesProfiles;
+import org.slf4j.Logger;
 
 /**
  *
  * @author malbinola
  */
 public class VfsController extends BaseController implements IControllerHandlesProfiles {
+	public static final Logger logger = WT.getLogger(VfsController.class);
 	
 	@Override
 	public void addProfile(UserProfile.Id profileId) throws WTException {
-		// Do nothing...
+		
 	}
 	
 	@Override
 	public void removeProfile(UserProfile.Id profileId, boolean deep) throws WTException {
-		//TODO: implementare cleanup utente
+		
 	}
 }

@@ -150,7 +150,7 @@ public class Service extends BaseService {
 			try {
 				String parentFileId = multipartParams.get("fileId");
 				if(StringUtils.isBlank(parentFileId)) throw new UploadException("Parameter not specified [fileId]");
-
+				
 				StoreNodeId parentNodeId = (StoreNodeId)new StoreNodeId().parse(parentFileId);
 				int storeId = Integer.valueOf(parentNodeId.getStoreId());
 				String path = (parentNodeId.getSize() == 2) ? "/" : parentNodeId.getPath();

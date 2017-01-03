@@ -115,7 +115,9 @@ public class VfsManager extends BaseManager {
 	
 	public VfsManager(boolean fastInit, UserProfile.Id targetProfileId) throws WTException {
 		super(fastInit, targetProfileId);
-		if(!fastInit) initFileSystems();
+		if(!fastInit) {
+			initFileSystems();
+		}
 	}
 	
 	private void initFileSystems() throws WTException {
