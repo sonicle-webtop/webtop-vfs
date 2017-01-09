@@ -328,9 +328,10 @@ public class VfsManager extends BaseManager {
 		try {
 			checkRightsOnStoreRoot(item.getProfileId(), "MANAGE"); // Rights check!
 			checkRightsOnStoreSchema(item.getUri()); // Rights check!
+			
 			con = WT.getConnection(SERVICE_ID, false);
 			item.setBuiltIn(false);
-			item = new Store(doStoreUpdate(true, con, item));
+			item = doStoreUpdate(true, con, item);
 			DbUtils.commitQuietly(con);
 			writeLog("STORE_INSERT", item.getStoreId().toString());
 			addStoreFileSystemToCache(item);
@@ -347,7 +348,45 @@ public class VfsManager extends BaseManager {
 		}
 	}
 	
-	public Store addBuiltInStore(Store item) throws WTException {
+	public Store addBuiltInStore() throws WTException {
+		StoreDAO dao = StoreDAO.getInstance();
+		Connection con = null;
+		
+		try {
+			checkRightsOnStoreRoot(getTargetProfileId(), "MANAGE"); // Rights check!
+			con = WT.getConnection(SERVICE_ID, false);
+			
+			OStore oitem = dao.selectBuiltInByDomainUser(con, getTargetProfileId().getDomainId(), getTargetProfileId().getUserId());
+			if (oitem != null) {
+				logger.debug("Built-in category already present");
+				return null;
+			}
+			
+			Store item = new Store();
+			item.setDomainId(getTargetProfileId().getDomainId());
+			item.setUserId(getTargetProfileId().getUserId());
+			item.setBuiltIn(true);
+			item.setName(lookupResource(getLocale(), VfsLocale.STORES_MYDOCUMENTS));
+			item.setUri("file:///this/is/an/automatic/path");
+			item = doStoreUpdate(true, con, item);
+			
+			DbUtils.commitQuietly(con);
+			writeLog("STORE_INSERT", item.getStoreId().toString());
+			return item;
+			
+		} catch(SQLException | DAOException ex) {
+			DbUtils.rollbackQuietly(con);
+			throw new WTException(ex, "DB error");
+		} catch(Exception ex) {
+			DbUtils.rollbackQuietly(con);
+			throw ex;
+		} finally {
+			DbUtils.closeQuietly(con);
+		}
+	}
+	
+	/*
+	public Store addBuiltInStore(Store item) throws WTOperationException, WTException {
 		Connection con = null;
 		
 		try {
@@ -356,7 +395,7 @@ public class VfsManager extends BaseManager {
 			con = WT.getConnection(SERVICE_ID, false);
 			item.setBuiltIn(true);
 			item.setUri("file:///this/is/an/automatic/path");
-			item = new Store(doStoreUpdate(true, con, item));
+			item = doStoreUpdate(true, con, item);
 			DbUtils.commitQuietly(con);
 			writeLog("STORE_INSERT", item.getStoreId().toString());
 			addStoreFileSystemToCache(item);
@@ -372,6 +411,7 @@ public class VfsManager extends BaseManager {
 			DbUtils.closeQuietly(con);
 		}
 	}
+	*/
 	
 	public Store updateStore(Store item) throws Exception {
 		Connection con = null;
@@ -913,7 +953,7 @@ public class VfsManager extends BaseManager {
 		return PathUtils.concatPaths(vus.getStoreFileBasepath(tpl), uri.getPath());
 	}
 	
-	private OStore doStoreUpdate(boolean insert, Connection con, Store store) throws WTException {
+	private Store doStoreUpdate(boolean insert, Connection con, Store store) throws WTException {
 		StoreDAO dao = StoreDAO.getInstance();
 		
 		OStore item = new OStore(store);
@@ -922,11 +962,11 @@ public class VfsManager extends BaseManager {
 		
 		try {
 			URI uri = new URI(store.getUri());
-			if(store.getBuiltIn() && uri.getScheme().equals("file")) {
+			if(!store.getBuiltIn() && uri.getScheme().equals("file")) {
 				item.setUri(prependFileBasePath(uri));
 			}
 		} catch(URISyntaxException ex) {
-			throw new WTException("Provided uri is not valid", ex);
+			throw new WTException("Provided URI is not valid", ex);
 		}
 		
 		if(insert) {
@@ -935,7 +975,7 @@ public class VfsManager extends BaseManager {
 		} else {
 			dao.update(con, item);
 		}
-        return item;
+        return new Store(item);
 	}
 	
 	private void doStoreDelete(Connection con, int storeId) throws WTException {
@@ -955,7 +995,7 @@ public class VfsManager extends BaseManager {
 		} else {
 			tfo = sfs.getRelativeFileObject(path);
 		}
-		if(tfo == null) throw new WTException("Cannot resolve target path");
+		if(tfo == null) throw new WTException("Cannot resolve target path [{0}]", path);
 		return tfo;
 	}
 	

@@ -49,7 +49,14 @@ public class VfsController extends BaseController implements IControllerHandlesP
 	
 	@Override
 	public void addProfile(UserProfile.Id profileId) throws WTException {
+		VfsManager manager = new VfsManager(true, profileId);
 		
+		// Adds built-in store
+		try {
+			manager.addBuiltInStore();
+		} catch(WTException ex) {
+			throw ex;
+		}
 	}
 	
 	@Override

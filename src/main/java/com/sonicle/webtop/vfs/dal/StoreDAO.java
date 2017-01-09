@@ -129,6 +129,19 @@ public class StoreDAO extends BaseDAO {
 				.fetchInto(OStore.class);
 	}
 	
+	public OStore selectBuiltInByDomainUser(Connection con, String domainId, String userId) throws DAOException {
+		DSLContext dsl = getDSL(con);
+		return dsl
+			.select()
+			.from(STORES)
+			.where(
+					STORES.DOMAIN_ID.equal(domainId)
+					.and(STORES.USER_ID.equal(userId))
+					.and(STORES.BUILT_IN.equal(true))
+			)
+			.fetchOneInto(OStore.class);
+	}
+	
 	public int insert(Connection con, OStore item) throws DAOException {
 		DSLContext dsl = getDSL(con);
 		StoresRecord record = dsl.newRecord(STORES, item);
