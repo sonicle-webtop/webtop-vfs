@@ -178,6 +178,7 @@ public class VfsManager extends BaseManager {
 		} else {
 			uri = store.getUri();
 			String scheme = UriParser.extractScheme(uri);
+			if (scheme == null) throw new URISyntaxException(uri, "Scheme not provided");
 			switch(scheme) {
 				case "ftp":
 					return new FtpSFS(uri, store.getParameters());
@@ -963,7 +964,7 @@ public class VfsManager extends BaseManager {
 		try {
 			URI uri = new URI(store.getUri());
 			if(!store.getBuiltIn() && uri.getScheme().equals("file")) {
-				item.setUri(prependFileBasePath(uri));
+				item.setUri(Store.buildURI("file", null, null, null, null, prependFileBasePath(uri)));
 			}
 		} catch(URISyntaxException ex) {
 			throw new WTException("Provided URI is not valid", ex);
