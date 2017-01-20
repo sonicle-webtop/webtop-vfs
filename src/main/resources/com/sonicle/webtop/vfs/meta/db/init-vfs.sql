@@ -36,7 +36,7 @@ CREATE TABLE "vfs"."stores" (
 "store_id" int4 DEFAULT nextval('"vfs".seq_stores'::regclass) NOT NULL,
 "domain_id" varchar(20) NOT NULL,
 "user_id" varchar(100) NOT NULL,
-"built_in" bool DEFAULT false NOT NULL,
+"built_in" int2 DEFAULT 0 NOT NULL,
 "name" varchar(50) NOT NULL,
 "uri" varchar(512),
 "parameters" text

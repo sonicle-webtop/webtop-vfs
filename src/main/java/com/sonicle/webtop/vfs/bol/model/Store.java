@@ -36,19 +36,19 @@ package com.sonicle.webtop.vfs.bol.model;
 import com.sonicle.vfs2.VfsURI;
 import com.sonicle.webtop.core.sdk.UserProfile;
 import com.sonicle.webtop.vfs.bol.OStore;
-import java.net.URI;
 import java.net.URISyntaxException;
-import org.apache.commons.lang3.StringUtils;
 
 /**
  *
  * @author malbinola
  */
 public class Store {
+	public static final Short BUILTIN_NO = 0;
+	public static final Short BUILTIN_MYDOC = 100;
 	private Integer storeId;
 	private String domainId;
 	private String userId;
-	private Boolean builtIn;
+	private Short builtIn;
 	private String name;
 	private String uri;
 	private String parameters;
@@ -90,11 +90,11 @@ public class Store {
 		this.userId = userId;
 	}
 	
-	public Boolean getBuiltIn() {
+	public Short getBuiltIn() {
 		return builtIn;
 	}
 
-	public void setBuiltIn(Boolean builtIn) {
+	public void setBuiltIn(Short builtIn) {
 		this.builtIn = builtIn;
 	}
 

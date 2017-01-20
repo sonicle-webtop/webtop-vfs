@@ -142,7 +142,7 @@ public class VfsManager extends BaseManager {
 	private StoreFileSystem createFileSystem(Store store) throws URISyntaxException {
 		String uri = null;
 		
-		if(store.getBuiltIn()) {
+		if (store.getBuiltIn().equals(Store.BUILTIN_MYDOC)) {
 			VfsSettings.MyDocumentsUriTemplateValues tpl = new VfsSettings.MyDocumentsUriTemplateValues();
 			tpl.SERVICE_HOME = WT.getServiceHomePath(SERVICE_ID);
 			tpl.SERVICE_ID = SERVICE_ID;
@@ -312,7 +312,7 @@ public class VfsManager extends BaseManager {
 			checkRightsOnStoreSchema(item.getUri()); // Rights check!
 			
 			con = WT.getConnection(SERVICE_ID, false);
-			item.setBuiltIn(false);
+			item.setBuiltIn(Store.BUILTIN_NO);
 			item = doStoreUpdate(true, con, item);
 			DbUtils.commitQuietly(con);
 			writeLog("STORE_INSERT", item.getStoreId().toString());
@@ -338,8 +338,8 @@ public class VfsManager extends BaseManager {
 			checkRightsOnStoreRoot(getTargetProfileId(), "MANAGE"); // Rights check!
 			con = WT.getConnection(SERVICE_ID, false);
 			
-			OStore oitem = dao.selectBuiltInByDomainUser(con, getTargetProfileId().getDomainId(), getTargetProfileId().getUserId());
-			if (oitem != null) {
+			List<OStore> oitems = dao.selectByDomainUsertBuiltIn(con, getTargetProfileId().getDomainId(), getTargetProfileId().getUserId(), Store.BUILTIN_MYDOC);
+			if (oitems.size() > 0) {
 				logger.debug("Built-in category already present");
 				return null;
 			}
@@ -347,7 +347,7 @@ public class VfsManager extends BaseManager {
 			Store item = new Store();
 			item.setDomainId(getTargetProfileId().getDomainId());
 			item.setUserId(getTargetProfileId().getUserId());
-			item.setBuiltIn(true);
+			item.setBuiltIn(Store.BUILTIN_MYDOC);
 			item.setName(lookupResource(getLocale(), VfsLocale.STORES_MYDOCUMENTS));
 			item.setUri("file:///this/is/an/automatic/path");
 			item = doStoreUpdate(true, con, item);
@@ -946,7 +946,7 @@ public class VfsManager extends BaseManager {
 		
 		try {
 			URI uri = new URI(store.getUri());
-			if(!store.getBuiltIn() && uri.getScheme().equals("file")) {
+			if((store.getBuiltIn() == 0) && uri.getScheme().equals("file")) {
 				item.setUri(Store.buildURI("file", null, null, null, null, prependFileBasePath(uri)));
 			}
 		} catch(URISyntaxException ex) {

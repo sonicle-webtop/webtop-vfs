@@ -46,7 +46,7 @@ public class JsStore {
 	public Integer storeId;
 	public String domainId;
 	public String userId;
-	public Boolean builtIn;
+	public Short builtIn;
 	public String name;
 	public String scheme;
 	public String host;

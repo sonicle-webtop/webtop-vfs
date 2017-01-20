@@ -42,7 +42,7 @@ import com.sonicle.webtop.vfs.jooq.tables.pojos.Stores;
  * @author malbinola
  */
 public class OStore extends Stores {
-	
+		
 	public OStore() {}
 	
 	public OStore(Store o) {

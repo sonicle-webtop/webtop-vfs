@@ -1420,90 +1420,90 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 			case 'editStore':
 				sel = me.getCurrentFileNode();
 				if(sel) {
-					if(sel.get('_builtIn')) return true;
+					if (sel.get('_builtIn') > 0) return true;
 					return !sel.getFPerms().UPDATE;
 				} else {
 					return true;
 				}
 			case 'deleteStore':
 				sel = me.getCurrentFileNode();
-				if(sel) {
-					if(sel.get('_builtIn')) return true;
+				if (sel) {
+					if (sel.get('_builtIn') > 0) return true;
 					return !sel.getFPerms().DELETE;
 				} else {
 					return true;
 				}
 			case 'addStoreFtp':
-				if(!me.isPermitted('STORE_OTHER', 'CREATE')) return true;
+				if (!me.isPermitted('STORE_OTHER', 'CREATE')) return true;
 				sel = me.getCurrentFileNode();
-				if(sel) {
+				if (sel) {
 					return !sel.getRPerms().MANAGE;
 				} else {
 					return true;
 				}
 			case 'addStoreDropbox':
-				if(!me.isPermitted('STORE_CLOUD', 'CREATE')) return true;
+				if (!me.isPermitted('STORE_CLOUD', 'CREATE')) return true;
 				sel = me.getCurrentFileNode();
-				if(sel) {
+				if (sel) {
 					return !sel.getRPerms().MANAGE;
 				} else {
 					return true;
 				}
 			case 'addStoreGooDrive':
-				if(!me.isPermitted('STORE_CLOUD', 'CREATE')) return true;
+				if (!me.isPermitted('STORE_CLOUD', 'CREATE')) return true;
 				sel = me.getCurrentFileNode();
-				if(sel) {
+				if (sel) {
 					return !sel.getRPerms().MANAGE;
 				} else {
 					return true;
 				}
 			case 'addStoreFile':
-				if(!me.isPermitted('STORE_FILE', 'CREATE')) return true;
+				if (!me.isPermitted('STORE_FILE', 'CREATE')) return true;
 				sel = me.getCurrentFileNode();
-				if(sel) {
+				if (sel) {
 					return !sel.getRPerms().MANAGE;
 				} else {
 					return true;
 				}
 			case 'addStoreOther':
-				if(!me.isPermitted('STORE_OTHER', 'CREATE')) return true;
+				if (!me.isPermitted('STORE_OTHER', 'CREATE')) return true;
 				sel = me.getCurrentFileNode();
-				if(sel) {
+				if (sel) {
 					return !sel.getRPerms().MANAGE;
 				} else {
 					return true;
 				}
 			case 'editSharing':
 				sel = me.getCurrentFileNode();
-				if(sel) {
+				if (sel) {
 					return !sel.getRPerms().MANAGE;
 				} else {
 					return true;
 				}
 			case 'createFileNode':
 				sel = me.getCurrentFileNode();
-				if(sel) {
+				if (sel) {
 					return !sel.getEPerms().CREATE;
 				} else {
 					return true;
 				}
 			case 'renameFileNode':
 				sel = me.getCurrentFileNode();
-				if(sel) {
+				if (sel) {
 					return !sel.getEPerms().UPDATE;
 				} else {
 					return true;
 				}
 			case 'deleteFileNode':
 				sel = me.getCurrentFileNode();
-				if(sel) {
+				if (sel) {
 					return !sel.getEPerms().DELETE;
 				} else {
 					return true;
 				}
 			case 'addFileNodeDlLink':
 				sel = me.getCurrentFileNode();
-				if(sel) {
+				if (sel) {
 					return !Ext.isEmpty(sel.getFDlLink());
 				} else {
 					return true;
@@ -1511,14 +1511,14 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 			case 'deleteFileNodeDlLink':
 			case 'sendFileNodeDlLink':
 				sel = me.getCurrentFileNode();
-				if(sel) {
+				if (sel) {
 					return Ext.isEmpty(sel.getFDlLink());
 				} else {
 					return true;
 				}
 			case 'addFileNodeUlLink':
 				sel = me.getCurrentFileNode();
-				if(sel) {
+				if (sel) {
 					return !Ext.isEmpty(sel.getFUlLink());
 				} else {
 					return true;
@@ -1526,42 +1526,42 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 			case 'deleteFileNodeUlLink':
 			case 'sendFileNodeUlLink':
 				sel = me.getCurrentFileNode();
-				if(sel) {
+				if (sel) {
 					return Ext.isEmpty(sel.getFUlLink());
 				} else {
 					return true;
 				}
 			case 'openFile':
 				sel = me.getSelectedFiles();
-				if(sel.length === 1) {
+				if (sel.length === 1) {
 					return (sel[0].getFType() === 'folder') ? true : false;
 				} else {
 					return true;
 				}
 			case 'downloadFile':
 				sel = me.getSelectedFiles();
-				if(sel.length === 1) {
+				if (sel.length === 1) {
 					return (sel[0].getFType() === 'folder') ? true : false;
 				} else {
 					return true;
 				}
 			case 'createFile':
 				sel = me.getSelectedFiles();
-				if(sel.length === 1) {
+				if (sel.length === 1) {
 					return (sel[0].getFType() !== 'folder') ? true : !sel[0].getEPerms().CREATE;
 				} else {
 					return true;
 				}
 			case 'renameFile':
 				sel = me.getSelectedFiles();
-				if(sel.length === 1) {
+				if (sel.length === 1) {
 					return !sel[0].getEPerms().UPDATE;
 				} else {
 					return true;
 				}
 			case 'addFileDlLink':
 				sel = me.getSelectedFiles();
-				if(sel.length === 1) {
+				if (sel.length === 1) {
 					return !Ext.isEmpty(sel[0].getFDlLink());
 				} else {
 					return true;
@@ -1569,15 +1569,15 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 			case 'deleteFileDlLink':
 			case 'sendFileDlLink':
 				sel = me.getSelectedFiles();
-				if(sel.length === 1) {
+				if (sel.length === 1) {
 					return Ext.isEmpty(sel[0].getFDlLink());
 				} else {
 					return true;
 				}
 			case 'addFileUlLink':
 				sel = me.getSelectedFiles();
-				if(sel.length === 1) {
-					if(!sel[0].getEPerms().CREATE) return true;
+				if (sel.length === 1) {
+					if (!sel[0].getEPerms().CREATE) return true;
 					return (sel[0].getFType() !== 'folder') ? true : !Ext.isEmpty(sel[0].getFUlLink());
 				} else {
 					return true;
@@ -1585,8 +1585,8 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 			case 'deleteFileUlLink':
 			case 'sendFileUlLink':
 				sel = me.getSelectedFiles();
-				if(sel.length === 1) {
-					if(!sel[0].getEPerms().CREATE) return true;
+				if (sel.length === 1) {
+					if (!sel[0].getEPerms().CREATE) return true;
 					return Ext.isEmpty(sel[0].getFUlLink());
 				} else {
 					return true;
