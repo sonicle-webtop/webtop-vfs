@@ -58,6 +58,7 @@ public class VfsServiceSettings extends BaseServiceSettings {
 	
 	public String getStoreFileBasepath(StoreFileBasepathTemplateValues tpl) {
 		String value = getString(STORE_FILE_BASEPATH, null);
+		value = StringUtils.replace(value, "{SERVICE_HOME}", tpl.SERVICE_HOME);
 		value = StringUtils.replace(value, "{SERVICE_ID}", tpl.SERVICE_ID);
 		value = StringUtils.replace(value, "{DOMAIN_ID}", tpl.DOMAIN_ID);
 		return PathUtils.ensureTrailingSeparator(value);
@@ -65,7 +66,7 @@ public class VfsServiceSettings extends BaseServiceSettings {
 	
 	public String getMyDocumentsUri(MyDocumentsUriTemplateValues tpl) {
 		String value = getString(MYDOCUMENTS_URI, null);
-		//TODO: aggiugere template home
+		value = StringUtils.replace(value, "{SERVICE_HOME}", tpl.SERVICE_HOME);
 		value = StringUtils.replace(value, "{SERVICE_ID}", tpl.SERVICE_ID);
 		value = StringUtils.replace(value, "{DOMAIN_ID}", tpl.DOMAIN_ID);
 		value = StringUtils.replace(value, "{USER_ID}", tpl.USER_ID);

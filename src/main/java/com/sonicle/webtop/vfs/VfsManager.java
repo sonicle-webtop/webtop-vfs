@@ -104,6 +104,7 @@ import org.slf4j.Logger;
 public class VfsManager extends BaseManager {
 	private static final Logger logger = WT.getLogger(VfsManager.class);
 	private static final String GROUPNAME_STORE = "STORE";
+	private static final String MYDOCUMENTS = "mydocuments";
 	
 	private final HashMap<Integer, UserProfile.Id> cacheOwnerByStore = new HashMap<>();
 	private final Object shareCacheLock = new Object();
@@ -126,15 +127,6 @@ public class VfsManager extends BaseManager {
 			List<Store> myStores = listStores();
 			for(Store store : myStores) {
 				addStoreFileSystemToCache(store);
-				/*
-				StoreFileSystem sfs = null;
-				try {
-					sfs = createFileSystem(store);
-				} catch(URISyntaxException ex) {
-					throw new WTException(ex, "Unable to parse URI");
-				}
-				storeFileSystems.put(String.valueOf(store.getStoreId()), sfs);
-				*/
 			}
 			
 			List<StoreShareRoot> roots = listIncomingStoreRoots();
@@ -142,16 +134,6 @@ public class VfsManager extends BaseManager {
 				HashMap<Integer, StoreShareFolder> folders = listIncomingStoreFolders(root.getShareId());
 				for(StoreShareFolder folder : folders.values()) {
 					addStoreFileSystemToCache(folder.getStore());
-					
-					/*
-					StoreFileSystem sfs = null;
-					try {
-						sfs = createFileSystem(folder.getStore());
-					} catch(URISyntaxException ex) {
-						throw new WTException(ex, "Unable to parse URI");
-					}
-					storeFileSystems.put(String.valueOf(folder.getStore().getStoreId()), sfs);
-					*/
 				}
 			}
 		}
@@ -162,8 +144,7 @@ public class VfsManager extends BaseManager {
 		
 		if(store.getBuiltIn()) {
 			VfsSettings.MyDocumentsUriTemplateValues tpl = new VfsSettings.MyDocumentsUriTemplateValues();
-			//tpl.HOME_PATH = WT.getHomePath();
-			//TODO: gestire variabili per HOME_PATH, SERVICE_HOME_PATH
+			tpl.SERVICE_HOME = WT.getServiceHomePath(SERVICE_ID);
 			tpl.SERVICE_ID = SERVICE_ID;
 			tpl.DOMAIN_ID = store.getDomainId();
 			tpl.USER_ID = store.getUserId();
@@ -171,7 +152,7 @@ public class VfsManager extends BaseManager {
 			VfsServiceSettings vus = new VfsServiceSettings(SERVICE_ID, store.getDomainId());
 			uri = vus.getMyDocumentsUri(tpl);
 			if(StringUtils.isBlank(uri)) {
-				uri = WT.getServiceHomePath(SERVICE_ID) + "mydocuments/" + store.getUserId() + "/";
+				uri = "file://" + WT.getServiceHomePath(SERVICE_ID) + MYDOCUMENTS + "/" + store.getUserId() + "/";
 			}
 			return new DefaultSFS(uri, null, true);
 			
@@ -947,6 +928,8 @@ public class VfsManager extends BaseManager {
 	
 	private String prependFileBasePath(URI uri) {
 		VfsSettings.StoreFileBasepathTemplateValues tpl = new VfsSettings.StoreFileBasepathTemplateValues();
+		
+		tpl.SERVICE_HOME = WT.getServiceHomePath(SERVICE_ID);
 		tpl.SERVICE_ID = SERVICE_ID;
 		tpl.DOMAIN_ID = getTargetProfileId().getDomain();
 		
@@ -994,7 +977,7 @@ public class VfsManager extends BaseManager {
 		if(path.equals("/")) {
 			tfo = sfs.getRootFileObject();
 		} else {
-			tfo = sfs.getRelativeFileObject(path);
+			tfo = sfs.getDescendantFileObject(path);
 		}
 		if(tfo == null) throw new WTException("Cannot resolve target path [{0}]", path);
 		return tfo;

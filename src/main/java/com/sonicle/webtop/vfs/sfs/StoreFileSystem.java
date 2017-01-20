@@ -37,11 +37,13 @@ import com.sonicle.commons.PathUtils;
 import java.net.URI;
 import java.net.URISyntaxException;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.vfs2.FileName;
 import org.apache.commons.vfs2.FileObject;
 import org.apache.commons.vfs2.FileSystemException;
 import org.apache.commons.vfs2.FileSystemManager;
 import org.apache.commons.vfs2.FileSystemOptions;
 import org.apache.commons.vfs2.VFS;
+import org.apache.commons.vfs2.provider.local.LocalFileName;
 
 /**
  *
@@ -83,16 +85,14 @@ public abstract class StoreFileSystem {
 		return rootFo;
 	}
 	
-	public FileObject getRelativeFileObject(String path) throws FileSystemException {
-		String absPath = uri.getPath() + path;
-		return getRootFileObject().resolveFile(absPath);
+	public FileObject getDescendantFileObject(String relativePath) throws FileSystemException {
+		FileObject rfo = getRootFileObject();
+		String path = PathUtils.concatPaths(rfo.getName().getPath(), relativePath);
+		return getRootFileObject().resolveFile(path);
 	}
 	
-	public String getRelativePath(FileObject fo) {
-		return relativizePath(fo.getName().getPath());
-	}
-	
-	public String relativizePath(String path) {
-		return PathUtils.ensureBeginningSeparator(StringUtils.removeStart(path, uri.getPath()));
+	public String getRelativePath(FileObject fo) throws FileSystemException {
+		FileName rootName = getRootFileObject().getName();
+		return PathUtils.ensureBeginningSeparator(rootName.getRelativeName(fo.getName()));
 	}
 }
