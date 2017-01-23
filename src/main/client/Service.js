@@ -720,7 +720,8 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				me.deleteStore(node.get('_storeId'), {
 					callback: function(success) {
 						if(success) {
-							sto.remove(node);
+							node.remove();
+							//sto.remove(node);
 							if(me.isInCurFile(node.getFId())) me.setCurFile(null);
 						}
 					}
@@ -807,9 +808,8 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				me.deleteFiles([node.getFId()], {
 					callback: function(success) {
 						if(success) {
-							node.removeAll();
-							sto.remove(node);
 							if(me.curFile && me.curFile.indexOf(node.getFId()) > -1) {
+								// Files grid is currently displaying node being deleted
 								me.setCurFile(node.parentNode.getFId());
 								me.reloadGridFiles();
 							} else {
@@ -817,6 +817,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 								rec2 = sto2.getById(node.getFId());
 								if(rec2) sto2.remove(rec2);
 							}
+							node.remove();
 						}
 					}
 				});
