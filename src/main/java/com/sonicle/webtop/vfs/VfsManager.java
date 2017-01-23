@@ -33,6 +33,7 @@
  */
 package com.sonicle.webtop.vfs;
 
+import com.ibm.icu.text.MessageFormat;
 import com.sonicle.commons.PathUtils;
 import com.sonicle.commons.db.DbUtils;
 import com.sonicle.commons.time.DateTimeUtils;
@@ -105,6 +106,7 @@ public class VfsManager extends BaseManager {
 	private static final Logger logger = WT.getLogger(VfsManager.class);
 	private static final String GROUPNAME_STORE = "STORE";
 	private static final String MYDOCUMENTS = "mydocuments";
+	private static final String MYDOCUMENTS_STORE_URI = "file:///this/is/an/automatic/path/";
 	
 	private final HashMap<Integer, UserProfile.Id> cacheOwnerByStore = new HashMap<>();
 	private final Object shareCacheLock = new Object();
@@ -142,7 +144,7 @@ public class VfsManager extends BaseManager {
 	private StoreFileSystem createFileSystem(Store store) throws URISyntaxException {
 		String uri = null;
 		
-		if (store.getBuiltIn().equals(Store.BUILTIN_MYDOC)) {
+		if (store.getBuiltIn().equals(Store.BUILTIN_MYDOCUMENTS)) {
 			VfsSettings.MyDocumentsUriTemplateValues tpl = new VfsSettings.MyDocumentsUriTemplateValues();
 			tpl.SERVICE_HOME = WT.getServiceHomePath(SERVICE_ID);
 			tpl.SERVICE_ID = SERVICE_ID;
@@ -330,7 +332,7 @@ public class VfsManager extends BaseManager {
 		}
 	}
 	
-	public Store addBuiltInStore() throws WTException {
+	public Store addBuiltInStoreMyDocuments() throws WTException {
 		StoreDAO dao = StoreDAO.getInstance();
 		Connection con = null;
 		
@@ -338,18 +340,18 @@ public class VfsManager extends BaseManager {
 			checkRightsOnStoreRoot(getTargetProfileId(), "MANAGE"); // Rights check!
 			con = WT.getConnection(SERVICE_ID, false);
 			
-			List<OStore> oitems = dao.selectByDomainUsertBuiltIn(con, getTargetProfileId().getDomainId(), getTargetProfileId().getUserId(), Store.BUILTIN_MYDOC);
+			List<OStore> oitems = dao.selectByDomainUsertBuiltIn(con, getTargetProfileId().getDomainId(), getTargetProfileId().getUserId(), Store.BUILTIN_MYDOCUMENTS);
 			if (oitems.size() > 0) {
-				logger.debug("Built-in category already present");
+				logger.debug("MyDocuments built-in store already present");
 				return null;
 			}
 			
 			Store item = new Store();
 			item.setDomainId(getTargetProfileId().getDomainId());
 			item.setUserId(getTargetProfileId().getUserId());
-			item.setBuiltIn(Store.BUILTIN_MYDOC);
+			item.setBuiltIn(Store.BUILTIN_MYDOCUMENTS);
 			item.setName(lookupResource(getLocale(), VfsLocale.STORES_MYDOCUMENTS));
-			item.setUri("file:///this/is/an/automatic/path");
+			item.setUri(MYDOCUMENTS_STORE_URI);
 			item = doStoreUpdate(true, con, item);
 			
 			DbUtils.commitQuietly(con);
@@ -367,25 +369,44 @@ public class VfsManager extends BaseManager {
 		}
 	}
 	
-	/*
-	public Store addBuiltInStore(Store item) throws WTOperationException, WTException {
+	public Store addBuiltInStoreDomainImages(String domainId) throws WTException {
+		StoreDAO dao = StoreDAO.getInstance();
 		Connection con = null;
 		
 		try {
-			checkRightsOnStoreRoot(item.getProfileId(), "MANAGE"); // Rights check!
-			checkRightsOnStoreSchema(item.getUri()); // Rights check!
+			if (!RunContext.isSysAdmin()) {
+				ensureUserDomain(domainId);
+			}
+			String imagesPath = WT.getDomainImagesPath(domainId);
+			
+			checkRightsOnStoreRoot(getTargetProfileId(), "MANAGE"); // Rights check!
 			con = WT.getConnection(SERVICE_ID, false);
-			item.setBuiltIn(true);
-			item.setUri("file:///this/is/an/automatic/path");
+			
+			List<OStore> oitems = dao.selectByDomainUsertBuiltIn(con, getTargetProfileId().getDomainId(), getTargetProfileId().getUserId(), Store.BUILTIN_DOMAINIMAGES);
+			for (OStore oitem : oitems) {
+				if (StringUtils.endsWith(oitem.getUri(), imagesPath)) {
+					logger.debug("Domain's images built-in store already present");
+					return null;
+				}
+			}
+			
+			Store item = new Store();
+			item.setDomainId(getTargetProfileId().getDomainId());
+			item.setUserId(getTargetProfileId().getUserId());
+			item.setBuiltIn(Store.BUILTIN_DOMAINIMAGES);
+			item.setName(MessageFormat.format("Images ({0})", domainId));
+			item.setUri(Store.buildURI("file", null, null, null, null, imagesPath));
 			item = doStoreUpdate(true, con, item);
 			DbUtils.commitQuietly(con);
 			writeLog("STORE_INSERT", item.getStoreId().toString());
-			addStoreFileSystemToCache(item);
 			return item;
 			
 		} catch(SQLException | DAOException ex) {
 			DbUtils.rollbackQuietly(con);
 			throw new WTException(ex, "DB error");
+		} catch(URISyntaxException ex) {
+			DbUtils.rollbackQuietly(con);
+			throw new WTException(ex, "Unable to generate URI");
 		} catch(Exception ex) {
 			DbUtils.rollbackQuietly(con);
 			throw ex;
@@ -393,7 +414,6 @@ public class VfsManager extends BaseManager {
 			DbUtils.closeQuietly(con);
 		}
 	}
-	*/
 	
 	public Store updateStore(Store item) throws Exception {
 		Connection con = null;
@@ -431,6 +451,32 @@ public class VfsManager extends BaseManager {
 		} catch(SQLException | DAOException ex) {
 			DbUtils.rollbackQuietly(con);
 			throw new WTException(ex, "DB error");
+		} catch(Exception ex) {
+			DbUtils.rollbackQuietly(con);
+			throw ex;
+		} finally {
+			DbUtils.closeQuietly(con);
+		}
+	}
+	
+	public void deleteBuiltInStoreDomainImages(String domainId) throws WTException {
+		Connection con = null;
+		
+		try {
+			if (!RunContext.isSysAdmin()) {
+				ensureUserDomain(domainId);
+			}
+			String imagesPath = WT.getDomainImagesPath(domainId);
+			
+			Integer storeId = null;
+			for (Store store : listStores()) {
+				if (store.getBuiltIn().equals(Store.BUILTIN_DOMAINIMAGES) && StringUtils.endsWith(store.getUri(), imagesPath)) {
+					storeId = store.getStoreId();
+					break;
+				}
+			}
+			if (storeId != null) deleteStore(storeId);
+			
 		} catch(Exception ex) {
 			DbUtils.rollbackQuietly(con);
 			throw ex;

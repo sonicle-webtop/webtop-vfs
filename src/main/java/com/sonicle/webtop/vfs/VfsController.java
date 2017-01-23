@@ -33,7 +33,9 @@
  */
 package com.sonicle.webtop.vfs;
 
+import com.sonicle.webtop.core.CoreManager;
 import com.sonicle.webtop.core.app.WT;
+import com.sonicle.webtop.core.bol.ODomain;
 import com.sonicle.webtop.core.sdk.BaseController;
 import com.sonicle.webtop.core.sdk.UserProfile;
 import com.sonicle.webtop.core.sdk.WTException;
@@ -49,11 +51,18 @@ public class VfsController extends BaseController implements IControllerHandlesP
 	
 	@Override
 	public void addProfile(UserProfile.Id profileId) throws WTException {
+		CoreManager core = WT.getCoreManager(profileId);
 		VfsManager manager = new VfsManager(true, profileId);
 		
 		// Adds built-in store
 		try {
-			manager.addBuiltInStore();
+			manager.addBuiltInStoreMyDocuments();
+			if (profileId.getUserId().equals("admin")) {
+				for (ODomain odomain : core.listDomains(false)) {
+					manager.addBuiltInStoreDomainImages(odomain.getDomainId());
+				}
+			}
+			
 		} catch(WTException ex) {
 			throw ex;
 		}

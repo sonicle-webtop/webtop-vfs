@@ -295,8 +295,10 @@ public class Service extends BaseService {
 	
 	private String storeIcon(Store store) {
 		String uri = store.getUri();
-		if (store.getBuiltIn().equals(Store.BUILTIN_MYDOC)) {
+		if (store.getBuiltIn().equals(Store.BUILTIN_MYDOCUMENTS)) {
 			return "storeMyDocs";
+		} else if (store.getBuiltIn().equals(Store.BUILTIN_DOMAINIMAGES)) {
+			return "storeDomainImages";
 		} else {
 			if(StringUtils.startsWith(uri, "dropbox")) {
 				return "storeDropbox";
