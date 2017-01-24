@@ -45,5 +45,6 @@ public abstract class SetupData {
 	public String name = null;
 	
 	public abstract URI generateURI() throws URISyntaxException;
-	public abstract void buildName();
+	public abstract String generateParameters();
+	public abstract void updateName();
 }

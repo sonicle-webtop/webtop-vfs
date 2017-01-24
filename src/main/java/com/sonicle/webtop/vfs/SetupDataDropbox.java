@@ -33,6 +33,7 @@
  */
 package com.sonicle.webtop.vfs;
 
+import com.sonicle.commons.LangUtils;
 import com.sonicle.commons.web.json.JsonResult;
 import com.sonicle.webtop.vfs.bol.model.ParamsDropbox;
 import com.sonicle.webtop.vfs.bol.model.Store;
@@ -58,8 +59,22 @@ public class SetupDataDropbox extends SetupData {
 	}
 	
 	@Override
-	public void buildName() {
+	public String generateParameters() {
+		return LangUtils.serialize(createParameters(), ParamsDropbox.class);
+	}
+	
+	@Override
+	public void updateName() {
 		name = MessageFormat.format("{0}", accountName);
+	}
+	
+	private ParamsDropbox createParameters() {
+		ParamsDropbox params = new ParamsDropbox();
+		params.accountId = accountId;
+		params.accountName = accountName;
+		params.authUrl = authUrl;
+		params.accessToken = accessToken;
+		return params;
 	}
 	
 	public static SetupDataDropbox fromJson(String value) {
@@ -70,14 +85,5 @@ public class SetupDataDropbox extends SetupData {
 	public static String toJson(SetupDataDropbox value) {
 		if(value == null) return null;
 		return JsonResult.gson.toJson(value, SetupDataDropbox.class);
-	}
-	
-	public ParamsDropbox buildParameters() {
-		ParamsDropbox params = new ParamsDropbox();
-		params.accountId = accountId;
-		params.accountName = accountName;
-		params.authUrl = authUrl;
-		params.accessToken = accessToken;
-		return params;
 	}
 }

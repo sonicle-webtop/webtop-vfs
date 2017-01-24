@@ -59,7 +59,12 @@ public class SetupDataOther extends SetupData {
 	}
 	
 	@Override
-	public void buildName() {
+	public String generateParameters() {
+		return null;
+	}
+	
+	@Override
+	public void updateName() {
 		name = MessageFormat.format("{0} ({1})", host, StringUtils.defaultIfEmpty(username, "anonymous"));
 	}
 }

@@ -504,29 +504,30 @@ public class Service extends BaseService {
 				String password = ServletUtils.getStringParameter(request, "password", null);
 				String path = ServletUtils.getStringParameter(request, "path", null);
 				
-				SetupDataFtp params = new SetupDataFtp();
-				params.profileId = profileId;
-				params.scheme = scheme;
-				params.host = host;
-				params.port = port;
-				params.username = username;
-				params.password = password;
-				params.path = path;
-				params.buildName();
-				wts.setProperty(SERVICE_ID, PROPERTY, params);
+				SetupDataFtp setup = new SetupDataFtp();
+				setup.profileId = profileId;
+				setup.scheme = scheme;
+				setup.host = host;
+				setup.port = port;
+				setup.username = username;
+				setup.password = password;
+				setup.path = path;
+				setup.updateName();
+				wts.setProperty(SERVICE_ID, PROPERTY, setup);
 				//TODO: controllo connessione
 				
-				new JsonResult(params).printTo(out);
+				new JsonResult(setup).printTo(out);
 				
 			} else if(crud.equals("s2")) {
 				String name = ServletUtils.getStringParameter(request, "name", true);
 				if(!wts.hasProperty(SERVICE_ID, PROPERTY)) throw new WTException();
-				SetupDataFtp params = (SetupDataFtp) wts.getProperty(SERVICE_ID, PROPERTY);
+				SetupDataFtp setup = (SetupDataFtp) wts.getProperty(SERVICE_ID, PROPERTY);
 				
 				Store store = new Store();
-				store.setProfileId(new UserProfile.Id(params.profileId));
-				store.setName(StringUtils.defaultIfBlank(name, params.name));
-				store.setUri(params.generateURI());
+				store.setProfileId(new UserProfile.Id(setup.profileId));
+				store.setName(StringUtils.defaultIfBlank(name, setup.name));
+				store.setUri(setup.generateURI());
+				store.setParameters(setup.generateParameters());
 				manager.addStore(store);
 				
 				wts.clearProperty(SERVICE_ID, PROPERTY);
@@ -554,39 +555,39 @@ public class Service extends BaseService {
 			if(crud.equals("s1")) {
 				String profileId = ServletUtils.getStringParameter(request, "profileId", true);
 				
-				SetupDataDropbox params = new SetupDataDropbox();
-				params.profileId = profileId;
-				params.authUrl = DropboxApiUtils.getAuthorizationUrl(APP_NAME, DROPBOX_USER_LOCALE, DROPBOX_APP_KEY, DROPBOX_APP_SECRET);
-				wts.setProperty(SERVICE_ID, PROPERTY, params);
+				SetupDataDropbox setup = new SetupDataDropbox();
+				setup.profileId = profileId;
+				setup.authUrl = DropboxApiUtils.getAuthorizationUrl(APP_NAME, DROPBOX_USER_LOCALE, DROPBOX_APP_KEY, DROPBOX_APP_SECRET);
+				wts.setProperty(SERVICE_ID, PROPERTY, setup);
 				
-				new JsonResult(params).printTo(out);
+				new JsonResult(setup).printTo(out);
 				
 			} else if(crud.equals("s2")) {
 				String code = ServletUtils.getStringParameter(request, "code", true);
 				if(!wts.hasProperty(SERVICE_ID, PROPERTY)) throw new WTException();
-				SetupDataDropbox params = (SetupDataDropbox) wts.getProperty(SERVICE_ID, PROPERTY);
+				SetupDataDropbox setup = (SetupDataDropbox) wts.getProperty(SERVICE_ID, PROPERTY);
 				
 				DbxAppInfo appInfo = DropboxApiUtils.createAppInfo(DROPBOX_APP_KEY, DROPBOX_APP_SECRET);
 				DbxRequestConfig reqConfig = DropboxApiUtils.createRequestConfig(APP_NAME, DROPBOX_USER_LOCALE);
 				DbxAuthFinish auth = DropboxApiUtils.exchangeAuthorizationCode(code, reqConfig, appInfo);
 				DbxAccountInfo ai = DropboxApiUtils.getAccountInfo(auth.accessToken, reqConfig);
-				params.accountId = String.valueOf(ai.userId);
-				params.accountName = ai.displayName;
-				params.accessToken = auth.accessToken;
-				params.buildName();
+				setup.accountId = String.valueOf(ai.userId);
+				setup.accountName = ai.displayName;
+				setup.accessToken = auth.accessToken;
+				setup.updateName();
 				
-				new JsonResult(params).printTo(out);
+				new JsonResult(setup).printTo(out);
 				
 			} else if(crud.equals("s3")) {
 				String name = ServletUtils.getStringParameter(request, "name", true);
 				if(!wts.hasProperty(SERVICE_ID, PROPERTY)) throw new WTException();
-				SetupDataDropbox params = (SetupDataDropbox) wts.getProperty(SERVICE_ID, PROPERTY);
+				SetupDataDropbox setup = (SetupDataDropbox) wts.getProperty(SERVICE_ID, PROPERTY);
 				
 				Store store = new Store();
-				store.setProfileId(new UserProfile.Id(params.profileId));
-				store.setName(StringUtils.defaultIfBlank(name, params.name));
-				store.setUri(params.generateURI());
-				store.setParameters(LangUtils.serialize(params.buildParameters(), ParamsDropbox.class));
+				store.setProfileId(new UserProfile.Id(setup.profileId));
+				store.setName(StringUtils.defaultIfBlank(name, setup.name));
+				store.setUri(setup.generateURI());
+				store.setParameters(setup.generateParameters());
 				manager.addStore(store);
 				
 				wts.clearProperty(SERVICE_ID, PROPERTY);
@@ -614,39 +615,39 @@ public class Service extends BaseService {
 				String profileId = ServletUtils.getStringParameter(request, "profileId", true);
 				
 				GoogleDriveAppInfo appInfo = new GoogleDriveAppInfo(APP_NAME, GDRIVE_CLIENT_ID, GDRIVE_CLIENT_SECRET);
-				SetupDataGoogleDrive params = new SetupDataGoogleDrive();
-				params.profileId = profileId;
-				params.authUrl = GoogleDriveApiUtils.getAuthorizationUrl(appInfo);
-				wts.setProperty(SERVICE_ID, PROPERTY, params);
+				SetupDataGoogleDrive setup = new SetupDataGoogleDrive();
+				setup.profileId = profileId;
+				setup.authUrl = GoogleDriveApiUtils.getAuthorizationUrl(appInfo);
+				wts.setProperty(SERVICE_ID, PROPERTY, setup);
 				
-				new JsonResult(params).printTo(out);
+				new JsonResult(setup).printTo(out);
 				
 			} else if(crud.equals("s2")) {
 				String code = ServletUtils.getStringParameter(request, "code", true);
 				if(!wts.hasProperty(SERVICE_ID, PROPERTY)) throw new WTException();
-				SetupDataGoogleDrive params = (SetupDataGoogleDrive) wts.getProperty(SERVICE_ID, PROPERTY);
+				SetupDataGoogleDrive setup = (SetupDataGoogleDrive) wts.getProperty(SERVICE_ID, PROPERTY);
 				
 				GoogleDriveAppInfo appInfo = new GoogleDriveAppInfo(APP_NAME, GDRIVE_CLIENT_ID, GDRIVE_CLIENT_SECRET);
 				GoogleCredential cred = GoogleDriveApiUtils.exchangeAuthorizationCode(code, appInfo);
-				params.refreshToken = cred.getRefreshToken();
-				params.accessToken = cred.getAccessToken();
-				Userinfoplus uip = GoogleDriveApiUtils.getUserInfo(params.accessToken, appInfo);
-				params.accountEmail = uip.getEmail();
-				params.accountName = uip.getName();
-				params.buildName();
+				setup.refreshToken = cred.getRefreshToken();
+				setup.accessToken = cred.getAccessToken();
+				Userinfoplus uip = GoogleDriveApiUtils.getUserInfo(setup.accessToken, appInfo);
+				setup.accountEmail = uip.getEmail();
+				setup.accountName = uip.getName();
+				setup.updateName();
 				
-				new JsonResult(params).printTo(out);
+				new JsonResult(setup).printTo(out);
 				
 			} else if(crud.equals("s3")) {
 				String name = ServletUtils.getStringParameter(request, "name", true);
 				if(!wts.hasProperty(SERVICE_ID, PROPERTY)) throw new WTException();
-				SetupDataGoogleDrive params = (SetupDataGoogleDrive) wts.getProperty(SERVICE_ID, PROPERTY);
+				SetupDataGoogleDrive setup = (SetupDataGoogleDrive) wts.getProperty(SERVICE_ID, PROPERTY);
 				
 				Store store = new Store();
-				store.setProfileId(new UserProfile.Id(params.profileId));
-				store.setName(StringUtils.defaultIfBlank(name, params.name));
-				store.setUri(params.generateURI());
-				store.setParameters(LangUtils.serialize(params.buildParameters(), ParamsGoogleDrive.class));
+				store.setProfileId(new UserProfile.Id(setup.profileId));
+				store.setName(StringUtils.defaultIfBlank(name, setup.name));
+				store.setUri(setup.generateURI());
+				store.setParameters(setup.generateParameters());
 				manager.addStore(store);
 				
 				wts.clearProperty(SERVICE_ID, PROPERTY);
@@ -671,23 +672,24 @@ public class Service extends BaseService {
 				String profileId = ServletUtils.getStringParameter(request, "profileId", true);
 				String path = ServletUtils.getStringParameter(request, "path", null);
 				
-				SetupDataFile params = new SetupDataFile();
-				params.profileId = profileId;
-				params.path = path;
-				params.buildName();
-				wts.setProperty(SERVICE_ID, PROPERTY, params);
+				SetupDataFile setup = new SetupDataFile();
+				setup.profileId = profileId;
+				setup.path = path;
+				setup.updateName();
+				wts.setProperty(SERVICE_ID, PROPERTY, setup);
 				
-				new JsonResult(params).printTo(out);
+				new JsonResult(setup).printTo(out);
 				
 			} else if(crud.equals("s2")) {
 				String name = ServletUtils.getStringParameter(request, "name", true);
 				if(!wts.hasProperty(SERVICE_ID, PROPERTY)) throw new WTException();
-				SetupDataFile params = (SetupDataFile) wts.getProperty(SERVICE_ID, PROPERTY);
+				SetupDataFile setup = (SetupDataFile) wts.getProperty(SERVICE_ID, PROPERTY);
 				
 				Store store = new Store();
-				store.setProfileId(new UserProfile.Id(params.profileId));
-				store.setName(StringUtils.defaultIfBlank(name, params.name));
-				store.setUri(params.generateURI());
+				store.setProfileId(new UserProfile.Id(setup.profileId));
+				store.setName(StringUtils.defaultIfBlank(name, setup.name));
+				store.setUri(setup.generateURI());
+				store.setParameters(setup.generateParameters());
 				manager.addStore(store);
 				
 				wts.clearProperty(SERVICE_ID, PROPERTY);
@@ -717,29 +719,30 @@ public class Service extends BaseService {
 				String password = ServletUtils.getStringParameter(request, "password", null);
 				String path = ServletUtils.getStringParameter(request, "path", null);
 				
-				SetupDataOther params = new SetupDataOther();
-				params.profileId = profileId;
-				params.scheme = scheme;
-				params.host = host;
-				params.port = port;
-				params.username = username;
-				params.password = password;
-				params.path = path;
-				params.buildName();
-				wts.setProperty(SERVICE_ID, PROPERTY, params);
+				SetupDataOther setup = new SetupDataOther();
+				setup.profileId = profileId;
+				setup.scheme = scheme;
+				setup.host = host;
+				setup.port = port;
+				setup.username = username;
+				setup.password = password;
+				setup.path = path;
+				setup.updateName();
+				wts.setProperty(SERVICE_ID, PROPERTY, setup);
 				//TODO: controllo connessione
 				
-				new JsonResult(params).printTo(out);
+				new JsonResult(setup).printTo(out);
 				
 			} else if(crud.equals("s2")) {
 				String name = ServletUtils.getStringParameter(request, "name", true);
 				if(!wts.hasProperty(SERVICE_ID, PROPERTY)) throw new WTException();
-				SetupDataOther params = (SetupDataOther) wts.getProperty(SERVICE_ID, PROPERTY);
+				SetupDataOther setup = (SetupDataOther) wts.getProperty(SERVICE_ID, PROPERTY);
 				
 				Store store = new Store();
-				store.setProfileId(new UserProfile.Id(params.profileId));
-				store.setName(StringUtils.defaultIfBlank(name, params.name));
-				store.setUri(params.generateURI());
+				store.setProfileId(new UserProfile.Id(setup.profileId));
+				store.setName(StringUtils.defaultIfBlank(name, setup.name));
+				store.setUri(setup.generateURI());
+				store.setParameters(setup.generateParameters());
 				manager.addStore(store);
 				
 				wts.clearProperty(SERVICE_ID, PROPERTY);

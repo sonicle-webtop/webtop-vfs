@@ -33,7 +33,9 @@
  */
 package com.sonicle.webtop.vfs;
 
+import com.sonicle.commons.LangUtils;
 import com.sonicle.commons.web.json.JsonResult;
+import com.sonicle.vfs2.util.GoogleDriveAppInfo;
 import com.sonicle.webtop.vfs.bol.model.ParamsGoogleDrive;
 import com.sonicle.webtop.vfs.bol.model.Store;
 import java.net.URI;
@@ -59,8 +61,23 @@ public class SetupDataGoogleDrive extends SetupData {
 	}
 	
 	@Override
-	public void buildName() {
+	public String generateParameters() {
+		return LangUtils.serialize(createParameters(), ParamsGoogleDrive.class);
+	}
+	
+	@Override
+	public void updateName() {
 		name =  MessageFormat.format("{0} ({1})", accountName, accountEmail);
+	}
+	
+	private ParamsGoogleDrive createParameters() {
+		ParamsGoogleDrive o = new ParamsGoogleDrive();
+		o.accountEmail = accountEmail;
+		o.accountName = accountName;
+		o.authUrl = authUrl;
+		o.accessToken = accessToken;
+		o.refreshToken = refreshToken;
+		return o;
 	}
 	
 	public static SetupDataGoogleDrive fromJson(String value) {
@@ -71,14 +88,5 @@ public class SetupDataGoogleDrive extends SetupData {
 	public static String toJson(SetupDataGoogleDrive value) {
 		if(value == null) return null;
 		return JsonResult.gson.toJson(value, SetupDataGoogleDrive.class);
-	}
-	
-	public ParamsGoogleDrive buildParameters() {
-		ParamsGoogleDrive params = new ParamsGoogleDrive();
-		params.accountEmail = accountEmail;
-		params.accountName = accountName;
-		params.authUrl = authUrl;
-		params.accessToken = accessToken;
-		return params;
 	}
 }

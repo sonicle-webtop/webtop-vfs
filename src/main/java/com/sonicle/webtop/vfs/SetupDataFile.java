@@ -53,8 +53,12 @@ public class SetupDataFile extends SetupData {
 	}
 	
 	@Override
-	public void buildName() {
-		//TODO
+	public String generateParameters() {
+		return null;
+	}
+	
+	@Override
+	public void updateName() {
 		name = FilenameUtils.getBaseName(path);
 	}
 }

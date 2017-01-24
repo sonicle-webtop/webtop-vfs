@@ -33,6 +33,8 @@
  */
 package com.sonicle.webtop.vfs.bol.model;
 
+import com.sonicle.commons.web.json.JsonResult;
+
 /**
  *
  * @author malbinola
@@ -44,4 +46,14 @@ public class ParamsDropbox {
 	public String accessToken = null;
 	
 	public ParamsDropbox() {}
+	
+	public static ParamsDropbox fromJson(String value) {
+		if(value == null) return null;
+		return JsonResult.gson.fromJson(value, ParamsDropbox.class);
+	}
+	
+	public static String toJson(ParamsDropbox value) {
+		if(value == null) return null;
+		return JsonResult.gson.toJson(value, ParamsDropbox.class);
+	}
 }

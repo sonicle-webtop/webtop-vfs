@@ -33,6 +33,8 @@
  */
 package com.sonicle.webtop.vfs.bol.model;
 
+import com.sonicle.commons.web.json.JsonResult;
+
 /**
  *
  * @author malbinola
@@ -45,4 +47,14 @@ public class ParamsGoogleDrive {
 	public String accessToken = null;
 	
 	public ParamsGoogleDrive() {}
+	
+	public static ParamsGoogleDrive fromJson(String value) {
+		if(value == null) return null;
+		return JsonResult.gson.fromJson(value, ParamsGoogleDrive.class);
+	}
+	
+	public static String toJson(ParamsGoogleDrive value) {
+		if(value == null) return null;
+		return JsonResult.gson.toJson(value, ParamsGoogleDrive.class);
+	}
 }
