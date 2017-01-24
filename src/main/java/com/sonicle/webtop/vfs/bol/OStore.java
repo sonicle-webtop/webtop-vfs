@@ -52,7 +52,7 @@ public class OStore extends Stores {
 		setUserId(o.getUserId());
 		setBuiltIn(o.getBuiltIn());
 		setName(o.getName());
-		setUri(o.getUri());
+		setUri(o.getUri().toString());
 		setParameters(o.getParameters());
 	}
 	

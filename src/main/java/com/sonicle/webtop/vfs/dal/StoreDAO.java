@@ -183,6 +183,18 @@ public class StoreDAO extends BaseDAO {
 			.execute();
 	}
 	
+	public int updateUriParameters(Connection con, int storeId, String uri, String parameters) throws DAOException {
+		DSLContext dsl = getDSL(con);
+		return dsl
+			.update(STORES)
+			.set(STORES.URI, uri)
+			.set(STORES.PARAMETERS, parameters)
+			.where(
+				STORES.STORE_ID.equal(storeId)
+			)
+			.execute();
+	}
+	
 	public int update(Connection con, int storeId, FieldsMap fieldValues) throws DAOException {
 		DSLContext dsl = getDSL(con);
 		return dsl

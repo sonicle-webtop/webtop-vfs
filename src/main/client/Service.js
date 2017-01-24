@@ -800,7 +800,6 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 	
 	deleteFileNodeUI: function(node) {
 		var me = this,
-			sto = me.trStores().getStore(),
 			sto2, rec2;
 		
 		WT.confirm(me.res('gpfiles.confirm.folder.delete', Ext.String.ellipsis(node.getFName(), 40)), function(bid) {
@@ -1477,6 +1476,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 			case 'editSharing':
 				sel = me.getCurrentFileNode();
 				if (sel) {
+					if ((sel.get('_type') === 'folder') && (sel.get('_scheme') === 'googledrive')) return true;
 					return !sel.getRPerms().MANAGE;
 				} else {
 					return true;

@@ -34,22 +34,27 @@
 package com.sonicle.webtop.vfs.sfs;
 
 import com.sonicle.commons.PathUtils;
+import com.sonicle.commons.db.DbUtils;
+import com.sonicle.webtop.core.app.WT;
+import com.sonicle.webtop.core.dal.DAOException;
+import com.sonicle.webtop.core.sdk.WTException;
+import com.sonicle.webtop.vfs.dal.StoreDAO;
 import java.net.URI;
-import java.net.URISyntaxException;
-import org.apache.commons.lang.StringUtils;
+import java.sql.Connection;
+import java.sql.SQLException;
 import org.apache.commons.vfs2.FileName;
 import org.apache.commons.vfs2.FileObject;
 import org.apache.commons.vfs2.FileSystemException;
 import org.apache.commons.vfs2.FileSystemManager;
 import org.apache.commons.vfs2.FileSystemOptions;
 import org.apache.commons.vfs2.VFS;
-import org.apache.commons.vfs2.provider.local.LocalFileName;
 
 /**
  *
  * @author malbinola
  */
 public abstract class StoreFileSystem {
+	protected int storeId;
 	protected URI uri;
 	protected String parameters;
 	protected boolean autoCreateRoot = false;
@@ -57,12 +62,13 @@ public abstract class StoreFileSystem {
 	protected FileObject rootFo = null;
 	protected final Object lock = new Object();
 	
-	public StoreFileSystem(String uri, String parameters) throws URISyntaxException {
-		this(uri, parameters, false);
+	public StoreFileSystem(int storeId, URI uri, String parameters) {
+		this(storeId, uri, parameters, false);
 	}
 	
-	public StoreFileSystem(String uri, String parameters, boolean autoCreateRoot) throws URISyntaxException {
-		this.uri = new URI(uri);
+	public StoreFileSystem(int storeId, URI uri, String parameters, boolean autoCreateRoot) {
+		this.storeId = storeId;
+		this.uri = uri;
 		this.parameters = parameters;
 		this.autoCreateRoot = autoCreateRoot;
 		fso = new FileSystemOptions();
@@ -70,19 +76,14 @@ public abstract class StoreFileSystem {
 	
 	protected abstract void configureOptions() throws FileSystemException;
 	
-	private void initRootFileObject() throws FileSystemException {
-		configureOptions();
-		FileSystemManager fsm = VFS.getManager();
-		FileObject fo = fsm.resolveFile(uri.toString(), fso);
-		if(autoCreateRoot && !fo.exists()) fo.createFolder();
-		if(fo.exists()) rootFo = fo;
-	}
-	
 	public FileObject getRootFileObject() throws FileSystemException {
 		synchronized(lock) {
-			if(rootFo == null) initRootFileObject();
+			if(rootFo == null) {
+				configureOptions();
+				rootFo = resolveRoot();
+			}
+			return rootFo;
 		}
-		return rootFo;
 	}
 	
 	public FileObject getDescendantFileObject(String relativePath) throws FileSystemException {
@@ -95,4 +96,39 @@ public abstract class StoreFileSystem {
 		FileName rootName = getRootFileObject().getName();
 		return PathUtils.ensureBeginningSeparator(rootName.getRelativeName(fo.getName()));
 	}
+	
+	protected FileObject resolveRoot() throws FileSystemException {
+		FileObject fo = VFS.getManager().resolveFile(uri.toString(), fso);
+		if(autoCreateRoot && !fo.exists()) fo.createFolder();
+		if(!fo.exists()) throw new FileSystemException("Root not exist");
+		return fo;
+	}
+	
+	protected int updateStore() throws WTException {
+		StoreDAO dao = StoreDAO.getInstance();
+		Connection con = null;
+		
+		try {
+			con = WT.getConnection("com.sonicle.webtop.vfs");
+			return dao.updateUriParameters(con, storeId, uri.toString(), parameters);
+			
+		} catch(SQLException | DAOException ex) {
+			throw new WTException(ex, "DB error");
+		} finally {
+			DbUtils.closeQuietly(con);
+		}
+	}
+	
+	
+	
+	
+	/*
+	private void initRootFileObject() throws FileSystemException {
+		configureOptions();
+		FileSystemManager fsm = VFS.getManager();
+		FileObject fo = fsm.resolveFile(uri.toString(), fso);
+		if(autoCreateRoot && !fo.exists()) fo.createFolder();
+		if(fo.exists()) rootFo = fo;
+	}
+	*/
 }

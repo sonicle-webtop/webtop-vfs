@@ -33,6 +33,7 @@
  */
 package com.sonicle.webtop.vfs;
 
+import java.net.URI;
 import java.net.URISyntaxException;
 
 /**
@@ -43,6 +44,6 @@ public abstract class SetupData {
 	public String profileId = null;
 	public String name = null;
 	
-	public abstract String generateURI() throws URISyntaxException;
+	public abstract URI generateURI() throws URISyntaxException;
 	public abstract void buildName();
 }

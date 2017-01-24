@@ -132,7 +132,7 @@ public class Service extends BaseService {
 	@Override
 	public ServiceVars returnServiceVars() {
 		ServiceVars co = new ServiceVars();
-		Integer maxUpload = WT.getCoreServiceSettings(SERVICE_ID).getUploadMaxFileSize();
+		Integer maxUpload = getEnv().getCoreServiceSettings().getUploadMaxFileSize();
 		co.put("privateUploadMaxFileSize", LangUtils.coalesce(us.getPrivateUploadMaxFileSize(), maxUpload));
 		co.put("uploadLinkExpiration", ss.getUploadLinkExpiration());
 		co.put("downloadLinkExpiration", ss.getDownloadLinkExpiration());
@@ -294,27 +294,27 @@ public class Service extends BaseService {
 	}
 	
 	private String storeIcon(Store store) {
-		String uri = store.getUri();
 		if (store.getBuiltIn().equals(Store.BUILTIN_MYDOCUMENTS)) {
 			return "storeMyDocs";
 		} else if (store.getBuiltIn().equals(Store.BUILTIN_DOMAINIMAGES)) {
 			return "storeDomainImages";
 		} else {
-			if(StringUtils.startsWith(uri, "dropbox")) {
+			String scheme = store.getUri().getScheme();
+			if(StringUtils.equals(scheme, "dropbox")) {
 				return "storeDropbox";
-			} else if(StringUtils.startsWith(uri, "file")) {
+			} else if(StringUtils.equals(scheme, "file")) {
 				return "storeFile";
-			} else if(StringUtils.startsWith(uri, "ftp")) {
+			} else if(StringUtils.equals(scheme, "ftp")) {
 				return "storeFtp";
-			} else if(StringUtils.startsWith(uri, "ftps")) {
+			} else if(StringUtils.equals(scheme, "ftps")) {
 				return "storeFtp";
-			} else if(StringUtils.startsWith(uri, "googledrive")) {
+			} else if(StringUtils.equals(scheme, "googledrive")) {
 				return "storeGooDrive";
-			} else if(StringUtils.startsWith(uri, "sftp")) {
+			} else if(StringUtils.equals(scheme, "sftp")) {
 				return "storeFtp";
-			} else if(StringUtils.startsWith(uri, "webdav")) {
+			} else if(StringUtils.equals(scheme, "webdav")) {
 				return "storeWebdav";
-			} else if(StringUtils.startsWith(uri, "smb")) {
+			} else if(StringUtils.equals(scheme, "smb")) {
 				return "storeSmb";
 			}  else {
 				return "store-xs";
@@ -332,6 +332,7 @@ public class Service extends BaseService {
 		node.put("_type", "folder");//JsFolderNode.TYPE_FOLDER);
 		node.put("_pid", store.getProfileId().toString());
 		node.put("_storeId", store.getStoreId());
+		node.put("_scheme", store.getUri().getScheme());
 		node.put("_builtIn", store.getBuiltIn());
 		node.put("_rperms", rootPerms.toString());
 		node.put("_fperms", folder.getPerms().toString());

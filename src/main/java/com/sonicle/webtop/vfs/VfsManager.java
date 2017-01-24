@@ -41,6 +41,8 @@ import com.sonicle.commons.web.json.CompositeId;
 import com.sonicle.vfs2.FileSelector;
 import com.sonicle.vfs2.TypeNameComparator;
 import com.sonicle.webtop.core.CoreManager;
+import com.sonicle.webtop.core.CoreServiceSettings;
+import com.sonicle.webtop.core.app.CoreManifest;
 import com.sonicle.webtop.core.app.RunContext;
 import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.bol.OShare;
@@ -95,7 +97,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.vfs2.FileObject;
 import org.apache.commons.vfs2.FileSystemException;
 import org.apache.commons.vfs2.Selectors;
-import org.apache.commons.vfs2.provider.UriParser;
 import org.slf4j.Logger;
 
 /**
@@ -142,8 +143,7 @@ public class VfsManager extends BaseManager {
 	}
 	
 	private StoreFileSystem createFileSystem(Store store) throws URISyntaxException {
-		String uri = null;
-		
+				
 		if (store.getBuiltIn().equals(Store.BUILTIN_MYDOCUMENTS)) {
 			VfsSettings.MyDocumentsUriTemplateValues tpl = new VfsSettings.MyDocumentsUriTemplateValues();
 			tpl.SERVICE_HOME = WT.getServiceHomePath(SERVICE_ID);
@@ -151,30 +151,34 @@ public class VfsManager extends BaseManager {
 			tpl.DOMAIN_ID = store.getDomainId();
 			tpl.USER_ID = store.getUserId();
 			
+			URI uri = null;
 			VfsServiceSettings vus = new VfsServiceSettings(SERVICE_ID, store.getDomainId());
-			uri = vus.getMyDocumentsUri(tpl);
-			if(StringUtils.isBlank(uri)) {
-				uri = "file://" + WT.getServiceHomePath(SERVICE_ID) + MYDOCUMENTS + "/" + store.getUserId() + "/";
+			String suri = vus.getMyDocumentsUri(tpl);
+			if(StringUtils.isBlank(suri)) {
+				uri = Store.buildURI("file", null, null, null, null, WT.getServiceHomePath(SERVICE_ID) + MYDOCUMENTS + "/" + store.getUserId() + "/");
+			} else {
+				uri = new URI(suri);
 			}
-			return new DefaultSFS(uri, null, true);
+			return new DefaultSFS(store.getStoreId(), uri, null, true);
+			
+		} else if (store.getBuiltIn().equals(Store.BUILTIN_DOMAINIMAGES)) {
+			return new DefaultSFS(store.getStoreId(), store.getUri(), null, true);
 			
 		} else {
-			uri = store.getUri();
-			String scheme = UriParser.extractScheme(uri);
-			if (scheme == null) throw new URISyntaxException(uri, "Scheme not provided");
-			switch(scheme) {
+			CoreServiceSettings css = new CoreServiceSettings(CoreManifest.ID, getTargetProfileId().getDomainId());
+			switch(store.getUri().getScheme()) {
 				case "ftp":
-					return new FtpSFS(uri, store.getParameters());
+					return new FtpSFS(store.getStoreId(), store.getUri(), store.getParameters());
 				case "sftp":
-					return new SftpSFS(uri, store.getParameters());
+					return new SftpSFS(store.getStoreId(), store.getUri(), store.getParameters());
 				case "ftps":
-					return new FtpsSFS(uri, store.getParameters());
+					return new FtpsSFS(store.getStoreId(), store.getUri(), store.getParameters());
 				case "dropbox":
-					return new DropboxSFS(uri, store.getParameters());
+					return new DropboxSFS(store.getStoreId(), store.getUri(), store.getParameters(), css.getDropboxAppKey(), css.getDropboxAppSecret());
 				case "googledrive":
-					return new GoogleDriveSFS(uri, store.getParameters());
+					return new GoogleDriveSFS(store.getStoreId(), store.getUri(), store.getParameters(), css.getGoogleDriveClientID(), css.getGoogleDriveClientSecret());
 				default:
-					return new DefaultSFS(uri, store.getParameters());
+					return new DefaultSFS(store.getStoreId(), store.getUri(), store.getParameters());
 			}
 		}
 	}
@@ -285,6 +289,8 @@ public class VfsManager extends BaseManager {
 			
 		} catch(SQLException | DAOException ex) {
 			throw new WTException(ex, "DB error");
+		} catch(URISyntaxException ex) {
+			throw new WTException(ex, "Bad store URI");
 		} finally {
 			DbUtils.closeQuietly(con);
 		}
@@ -297,10 +303,13 @@ public class VfsManager extends BaseManager {
 		try {
 			checkRightsOnStoreFolder(storeId, "READ"); // Rights check!
 			con = WT.getConnection(SERVICE_ID);
-			return new Store(dao.selectById(con, storeId));
+			OStore ostore = dao.selectById(con, storeId);
+			return new Store(ostore);
 			
 		} catch(SQLException | DAOException ex) {
 			throw new WTException(ex, "DB error");
+		} catch(URISyntaxException ex) {
+			throw new WTException(ex, "Bad store URI");
 		} finally {
 			DbUtils.closeQuietly(con);
 		}
@@ -351,7 +360,7 @@ public class VfsManager extends BaseManager {
 			item.setUserId(getTargetProfileId().getUserId());
 			item.setBuiltIn(Store.BUILTIN_MYDOCUMENTS);
 			item.setName(lookupResource(getLocale(), VfsLocale.STORES_MYDOCUMENTS));
-			item.setUri(MYDOCUMENTS_STORE_URI);
+			item.setUri(new URI(MYDOCUMENTS_STORE_URI));
 			item = doStoreUpdate(true, con, item);
 			
 			DbUtils.commitQuietly(con);
@@ -361,6 +370,9 @@ public class VfsManager extends BaseManager {
 		} catch(SQLException | DAOException ex) {
 			DbUtils.rollbackQuietly(con);
 			throw new WTException(ex, "DB error");
+		} catch(URISyntaxException ex) {
+			DbUtils.rollbackQuietly(con);
+			throw new WTException(ex, "Unable to generate URI");
 		} catch(Exception ex) {
 			DbUtils.rollbackQuietly(con);
 			throw ex;
@@ -470,7 +482,7 @@ public class VfsManager extends BaseManager {
 			
 			Integer storeId = null;
 			for (Store store : listStores()) {
-				if (store.getBuiltIn().equals(Store.BUILTIN_DOMAINIMAGES) && StringUtils.endsWith(store.getUri(), imagesPath)) {
+				if (store.getBuiltIn().equals(Store.BUILTIN_DOMAINIMAGES) && StringUtils.endsWith(store.getUri().toString(), imagesPath)) {
 					storeId = store.getStoreId();
 					break;
 				}
@@ -896,9 +908,8 @@ public class VfsManager extends BaseManager {
 		}
 	}
 	
-	private void checkRightsOnStoreSchema(String uri) {
-		String scheme = UriParser.extractScheme(uri);
-		switch(scheme) {
+	private void checkRightsOnStoreSchema(URI uri) {
+		switch(uri.getScheme()) {
 			case "file":
 				RunContext.ensureIsPermitted(SERVICE_ID, "STORE_FILE", "CREATE");
 				break;
@@ -991,21 +1002,23 @@ public class VfsManager extends BaseManager {
 		if(item.getUserId() == null) item.setUserId(getTargetProfileId().getUserId());
 		
 		try {
-			URI uri = new URI(store.getUri());
+			URI uri = store.getUri();
 			if((store.getBuiltIn() == 0) && uri.getScheme().equals("file")) {
-				item.setUri(Store.buildURI("file", null, null, null, null, prependFileBasePath(uri)));
+				item.setUri(Store.buildURI("file", null, null, null, null, prependFileBasePath(uri)).toString());
 			}
+			
+			if(insert) {
+				item.setStoreId(dao.getSequence(con).intValue());
+				dao.insert(con, item);
+			} else {
+				dao.update(con, item);
+			}
+			
+			return new Store(item);
+			
 		} catch(URISyntaxException ex) {
 			throw new WTException("Provided URI is not valid", ex);
 		}
-		
-		if(insert) {
-			item.setStoreId(dao.getSequence(con).intValue());
-			dao.insert(con, item);
-		} else {
-			dao.update(con, item);
-		}
-        return new Store(item);
 	}
 	
 	private void doStoreDelete(Connection con, int storeId) throws WTException {

@@ -33,7 +33,7 @@
  */
 package com.sonicle.webtop.vfs.sfs;
 
-import java.net.URISyntaxException;
+import java.net.URI;
 import org.apache.commons.vfs2.FileSystemException;
 import org.apache.commons.vfs2.provider.sftp.SftpFileSystemConfigBuilder;
 import org.apache.commons.vfs2.provider.sftp.TrustEveryoneUserInfo;
@@ -44,8 +44,8 @@ import org.apache.commons.vfs2.provider.sftp.TrustEveryoneUserInfo;
  */
 public class SftpSFS extends StoreFileSystem {
 	
-	public SftpSFS(String uri, String parameters) throws URISyntaxException {
-		super(uri, parameters);
+	public SftpSFS(int storeId, URI uri, String parameters) {
+		super(storeId, uri, parameters);
 	}
 
 	@Override

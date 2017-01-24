@@ -36,7 +36,9 @@ package com.sonicle.webtop.vfs.bol.model;
 import com.sonicle.vfs2.VfsURI;
 import com.sonicle.webtop.core.sdk.UserProfile;
 import com.sonicle.webtop.vfs.bol.OStore;
+import java.net.URI;
 import java.net.URISyntaxException;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  *
@@ -51,19 +53,19 @@ public class Store {
 	private String userId;
 	private Short builtIn;
 	private String name;
-	private String uri;
+	private URI uri;
 	private String parameters;
 	
 	public Store() {}
 	
-	public Store(OStore o) {
+	public Store(OStore o) throws URISyntaxException {
 		if(o == null) return;
 		storeId = o.getStoreId();
 		domainId = o.getDomainId();
 		userId = o.getUserId();
 		builtIn = o.getBuiltIn();
 		name = o.getName();
-		uri = o.getUri();
+		uri = new URI(o.getUri());
 		parameters = o.getParameters();
 	}
 
@@ -107,11 +109,11 @@ public class Store {
 		this.name = name;
 	}
 
-	public String getUri() {
+	public URI getUri() {
 		return uri;
 	}
 
-	public void setUri(String uri) {
+	public void setUri(URI uri) {
 		this.uri = uri;
 	}
 
@@ -132,7 +134,7 @@ public class Store {
 		setUserId(pid.getUser());
 	}
 	
-	public static String buildURI(String scheme, String host, Integer port, String username, String password, String path) throws URISyntaxException {
+	public static URI buildURI(String scheme, String host, Integer port, String username, String password, String path) throws URISyntaxException {
 		return new VfsURI.Builder()
 				.scheme(scheme)
 				.host(host)
@@ -141,5 +143,18 @@ public class Store {
 				.password(password)
 				.path(path)
 				.build();
+	}
+	
+	public static URI buildFileURI(String path) throws URISyntaxException {
+		return Store.buildURI("file", null, null, null, null, path);
+	}
+	
+	public static URI buildDropboxURI(String accountId, String accessToken) throws URISyntaxException {
+		return Store.buildURI("dropbox", "dropbox.com", null, accountId, accessToken, null);
+	}
+	
+	public static URI buildGoogleDriveURI(String accountEmail, String accessToken) throws URISyntaxException {
+		String[] tokens = StringUtils.split(accountEmail, "@");
+		return Store.buildURI("googledrive", tokens[1], null, tokens[0], accessToken, null);
 	}
 }

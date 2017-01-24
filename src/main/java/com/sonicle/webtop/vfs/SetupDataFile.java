@@ -34,6 +34,7 @@
 package com.sonicle.webtop.vfs;
 
 import com.sonicle.webtop.vfs.bol.model.Store;
+import java.net.URI;
 import java.net.URISyntaxException;
 import org.apache.commons.io.FilenameUtils;
 
@@ -47,8 +48,8 @@ public class SetupDataFile extends SetupData {
 	public SetupDataFile() {}
 
 	@Override
-	public String generateURI() throws URISyntaxException {
-		return Store.buildURI("file", null, null, null, null, path);
+	public URI generateURI() throws URISyntaxException {
+		return Store.buildFileURI(path);
 	}
 	
 	@Override

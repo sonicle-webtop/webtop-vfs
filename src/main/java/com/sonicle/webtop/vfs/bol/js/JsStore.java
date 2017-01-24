@@ -57,22 +57,21 @@ public class JsStore {
 	
 	public JsStore() {}
 	
-	public JsStore(Store store) throws URISyntaxException {
+	public JsStore(Store store) {
 		this.storeId = store.getStoreId();
 		this.domainId = store.getDomainId();
 		this.userId = store.getUserId();
 		this.builtIn = store.getBuiltIn();
 		this.name = store.getName();
-		URI uri = new URI(store.getUri());
-		this.scheme = uri.getScheme();
-		this.host = uri.getHost();
-		this.port = URIUtils.getPort(uri);
-		String[] ui = URIUtils.parseUserInfo(uri);
+		this.scheme = store.getUri().getScheme();
+		this.host = store.getUri().getHost();
+		this.port = URIUtils.getPort(store.getUri());
+		String[] ui = URIUtils.parseUserInfo(store.getUri());
 		if(ui != null) {
 			this.username = ui[0];
 			this.password = ui[1];
 		}
-		this.path = uri.getPath();
+		this.path = store.getUri().getPath();
 	}
 	
 	public static Store createStore(JsStore js) throws URISyntaxException {

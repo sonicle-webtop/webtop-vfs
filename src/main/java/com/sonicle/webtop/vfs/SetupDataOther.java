@@ -34,6 +34,7 @@
 package com.sonicle.webtop.vfs;
 
 import com.sonicle.webtop.vfs.bol.model.Store;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.text.MessageFormat;
 import org.apache.commons.lang3.StringUtils;
@@ -53,7 +54,7 @@ public class SetupDataOther extends SetupData {
 	public SetupDataOther() {}
 
 	@Override
-	public String generateURI() throws URISyntaxException {
+	public URI generateURI() throws URISyntaxException {
 		return Store.buildURI(scheme, host, port, username, password, path);
 	}
 	

@@ -41,6 +41,8 @@ import com.sonicle.commons.web.ServletUtils;
 import com.sonicle.commons.web.json.JsonResult;
 import com.sonicle.commons.web.json.MapItem;
 import com.sonicle.vfs2.VfsUtils;
+import com.sonicle.webtop.core.CoreServiceSettings;
+import com.sonicle.webtop.core.app.CoreManifest;
 import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.app.WebTopSession;
 import com.sonicle.webtop.core.bol.js.JsWTSPublic;
@@ -108,6 +110,7 @@ public class PublicService extends BasePublicService {
 	
 	@Override
 	public void processDefaultAction(HttpServletRequest request, HttpServletResponse response) throws Exception {
+		String internetName = ServletUtils.getInternetName(request);
 		PublicPath path = new PublicPath(request.getPathInfo());
 		WebTopSession wts = getWts();
 		
@@ -186,7 +189,9 @@ public class PublicService extends BasePublicService {
 						}
 						
 					} else if(link.getType().equals(SharingLink.TYPE_UPLOAD)) {
-						Integer maxUpload = WT.getCoreServiceSettings(SERVICE_ID).getUploadMaxFileSize();
+						String domainId = WT.findDomainByInternetName(internetName);
+						CoreServiceSettings css = new CoreServiceSettings(CoreManifest.ID, StringUtils.defaultString(domainId));
+						Integer maxUpload = css.getUploadMaxFileSize();
 						VfsUserSettings us = new VfsUserSettings(SERVICE_ID, link.getProfileId());
 						
 						JsWTSPublic.Vars vars = new JsWTSPublic.Vars();

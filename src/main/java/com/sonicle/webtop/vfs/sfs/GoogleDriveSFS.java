@@ -33,24 +33,75 @@
  */
 package com.sonicle.webtop.vfs.sfs;
 
+import com.sonicle.commons.LangUtils;
 import com.sonicle.vfs2.provider.googledrive.GDriveFileSystemConfigBuilder;
+import com.sonicle.vfs2.util.GoogleDriveApiUtils;
+import com.sonicle.vfs2.util.GoogleDriveAppInfo;
 import com.sonicle.webtop.core.app.WT;
+import com.sonicle.webtop.core.sdk.WTException;
+import com.sonicle.webtop.vfs.bol.model.ParamsGoogleDrive;
+import com.sonicle.webtop.vfs.bol.model.Store;
+import java.io.IOException;
+import java.net.URI;
 import java.net.URISyntaxException;
+import org.apache.commons.vfs2.FileObject;
 import org.apache.commons.vfs2.FileSystemException;
+import org.jooq.tools.StringUtils;
 
 /**
  *
  * @author malbinola
  */
 public class GoogleDriveSFS extends StoreFileSystem {
+	private final GoogleDriveAppInfo appInfo;
 	
-	public GoogleDriveSFS(String uri, String parameters) throws URISyntaxException {
-		super(uri, parameters);
+	public GoogleDriveSFS(int storeId, URI uri, String parameters, String clientId, String clientSecret) {
+		super(storeId, uri, parameters);
+		this.appInfo = GoogleDriveApiUtils.createAppInfo(WT.getPlatformName(), clientId, clientSecret);
 	}
 
 	@Override
 	protected void configureOptions() throws FileSystemException {
 		GDriveFileSystemConfigBuilder builder = GDriveFileSystemConfigBuilder.getInstance();
-		builder.setApplicationName(fso, WT.getPlatformName());
+		builder.setApplicationName(fso, appInfo.applicationName);
+	}
+
+	@Override
+	public FileObject getRootFileObject() throws FileSystemException {
+		synchronized(lock) {
+			if(rootFo == null) {
+				configureOptions();
+				refreshTokenIfNecessary();
+				rootFo = resolveRoot();
+			} else {
+				refreshTokenIfNecessary();
+			}
+			return rootFo;
+		}
+	}
+	
+	private void refreshTokenIfNecessary() throws FileSystemException {
+		try {
+			ParamsGoogleDrive params = readParams();
+			String newAccessToken = GoogleDriveApiUtils.refreshTokenIfNecessary(params.accessToken, params.refreshToken, appInfo);
+			if (!StringUtils.isBlank(newAccessToken)) {
+				uri = Store.buildGoogleDriveURI(params.accountEmail, newAccessToken);
+				params.accessToken = newAccessToken;
+				writeParams(params);
+				int ret = updateStore();
+				if (ret != 1) throw new WTException("Unable to update store");
+			}
+			
+		} catch(IOException | URISyntaxException | WTException ex) {
+			throw new FileSystemException(ex);
+		}
+	}
+	
+	private ParamsGoogleDrive readParams() {
+		return LangUtils.deserialize(this.parameters, ParamsGoogleDrive.class);
+	}
+	
+	private void writeParams(ParamsGoogleDrive params) {
+		this.parameters = LangUtils.serialize(params, ParamsGoogleDrive.class);
 	}
 }

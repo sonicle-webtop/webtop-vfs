@@ -33,9 +33,11 @@
  */
 package com.sonicle.webtop.vfs.sfs;
 
+import com.dropbox.core.DbxAppInfo;
 import com.sonicle.vfs2.provider.dropbox.DbxFileSystemConfigBuilder;
+import com.sonicle.vfs2.util.DropboxApiUtils;
 import com.sonicle.webtop.core.app.WT;
-import java.net.URISyntaxException;
+import java.net.URI;
 import org.apache.commons.vfs2.FileSystemException;
 
 /**
@@ -43,14 +45,18 @@ import org.apache.commons.vfs2.FileSystemException;
  * @author malbinola
  */
 public class DropboxSFS extends StoreFileSystem {
+	private final String clientIdentifier;
+	private final DbxAppInfo appInfo;
 	
-	public DropboxSFS(String uri, String parameters) throws URISyntaxException {
-		super(uri, parameters);
+	public DropboxSFS(int storeId, URI uri, String parameters, String appKey, String appSecret) {
+		super(storeId, uri, parameters);
+		clientIdentifier = WT.getPlatformName();
+		appInfo = DropboxApiUtils.createAppInfo(appKey, appSecret);
 	}
 
 	@Override
 	protected void configureOptions() throws FileSystemException {
 		DbxFileSystemConfigBuilder builder = DbxFileSystemConfigBuilder.getInstance();
-		builder.setClientIdentifier(fso, WT.getPlatformName());
+		builder.setClientIdentifier(fso, clientIdentifier);
 	}
 }

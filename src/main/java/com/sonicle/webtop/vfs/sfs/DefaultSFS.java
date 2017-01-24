@@ -33,7 +33,7 @@
  */
 package com.sonicle.webtop.vfs.sfs;
 
-import java.net.URISyntaxException;
+import java.net.URI;
 import org.apache.commons.vfs2.FileSystemException;
 
 /**
@@ -42,12 +42,12 @@ import org.apache.commons.vfs2.FileSystemException;
  */
 public class DefaultSFS extends StoreFileSystem {
 	
-	public DefaultSFS(String uri, String parameters) throws URISyntaxException {
-		super(uri, parameters);
+	public DefaultSFS(int storeId, URI uri, String parameters) {
+		super(storeId, uri, parameters);
 	}
 	
-	public DefaultSFS(String uri, String parameters, boolean autoCreateRoot) throws URISyntaxException {
-		super(uri, parameters, autoCreateRoot);
+	public DefaultSFS(int storeId, URI uri, String parameters, boolean autoCreateRoot) {
+		super(storeId, uri, parameters, autoCreateRoot);
 	}
 
 	@Override
