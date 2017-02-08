@@ -1194,7 +1194,7 @@ public class VfsManager extends BaseManager {
 			InternetAddress from = WT.getNotificationAddress(pid.getDomainId());
 			InternetAddress to = ud.getEmail();
 			if(to == null) throw new WTException("Error building destination address");
-			WT.sendEmail(pid, true, from, to, subject, html);
+			WT.sendEmail(getMailSession(), true, from, to, subject, html);
 
 		} catch(IOException | TemplateException ex) {
 			logger.error("Unable to build email template", ex);
