@@ -4,8 +4,8 @@
 		<package>com.sonicle.webtop.vfs</package>
 		<jsPackage>Sonicle.webtop.vfs</jsPackage>
 		<shortName>wtvfs</shortName>
-		<version>1.0.0</version>
-		<buildDate>24/06/2016</buildDate>
+		<version>@@webtop.service.version@@</version>
+		<buildDate>@@webtop.service.buildDate@@</buildDate>
 		
 		<company>Sonicle S.r.l.</company>
 		<companyEmail>sonicle@sonicle.com</companyEmail>
