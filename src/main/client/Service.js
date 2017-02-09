@@ -230,7 +230,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				},
 				viewConfig: {
 					deferEmptyText: false,
-					emptyText: me.res('gpfiles.emptyText')
+					emptyText: me.res('gpfiles.emp')
 				},
 				selModel: {
 					type: 'checkboxmodel',

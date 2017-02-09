@@ -85,7 +85,7 @@ Ext.define('Sonicle.webtop.vfs.view.pub.DownloadLink', {
 				},
 				viewConfig: {
 					deferEmptyText: false,
-					emptyText: me.mys.res('gpfiles.emptyText')
+					emptyText: me.mys.res('gpfiles.emp')
 				},
 				selModel: {
 					type: 'rowmodel'

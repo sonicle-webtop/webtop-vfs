@@ -140,6 +140,7 @@ Ext.define('Sonicle.webtop.vfs.view.OtherWiz', {
 					xtype: 'textfield',
 					bind: '{username}',
 					width: 280,
+					emptyText: me.mys.res('otherWiz.fld-username.emp'),
 					fieldLabel: me.mys.res('otherWiz.fld-username.lbl'),
 					plugins: 'sonoautocomplete'
 				}, {
@@ -150,17 +151,10 @@ Ext.define('Sonicle.webtop.vfs.view.OtherWiz', {
 					fieldLabel: me.mys.res('otherWiz.fld-password.lbl'),
 					plugins: 'sonoautocomplete'
 				}, {
-					xtype: 'fieldcontainer',
-					layout: 'hbox',
-					items: [{
-						xtype: 'displayfield',
-						value: '/&nbsp;'
-					}, {
-						xtype: 'textfield',
-						bind: '{path}',
-						width: 330
-					}],
-					fieldLabel: me.mys.res('otherWiz.fld-path.lbl')
+					xtype: 'textfield',
+					bind: '{path}',
+					fieldLabel: me.mys.res('otherWiz.fld-path.lbl'),
+					width: 330
 				}]
 			}]
 		}, {
