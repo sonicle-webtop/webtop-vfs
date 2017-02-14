@@ -58,13 +58,13 @@ public class Store {
 	
 	public Store() {}
 	
-	public Store(OStore o) throws URISyntaxException {
+	public Store(OStore o, String name) throws URISyntaxException {
 		if(o == null) return;
 		storeId = o.getStoreId();
 		domainId = o.getDomainId();
 		userId = o.getUserId();
 		builtIn = o.getBuiltIn();
-		name = o.getName();
+		this.name = name;
 		uri = new URI(o.getUri());
 		parameters = o.getParameters();
 	}

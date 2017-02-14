@@ -41,7 +41,8 @@ public class VfsLocale {
 	public static final String SERVICE_NAME = "service.name";
 	public static final String SERVICE_DESCRIPTION = "service.description";
 	public static final String STORES_MY = "stores.my";
-	public static final String STORES_MYDOCUMENTS = "stores.mydocuments";
+	public static final String STORE_MYDOCUMENTS = "store.mydocs";
+	public static final String STORE_IMAGES = "store.images";
 	
 	public static final String TPL_EMAIL_SHARINGLINKUSAGE_BODY_HEADER_DL = "tpl.email.sharinglinkUsage.body.header.download";
 	public static final String TPL_EMAIL_SHARINGLINKUSAGE_BODY_HEADER_UL = "tpl.email.sharinglinkUsage.body.header.upload";

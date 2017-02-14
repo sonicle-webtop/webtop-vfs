@@ -40,6 +40,7 @@ import com.sonicle.commons.time.DateTimeUtils;
 import com.sonicle.commons.web.json.CompositeId;
 import com.sonicle.vfs2.FileSelector;
 import com.sonicle.vfs2.TypeNameComparator;
+import com.sonicle.vfs2.VfsURI;
 import com.sonicle.webtop.core.CoreManager;
 import com.sonicle.webtop.core.CoreServiceSettings;
 import com.sonicle.webtop.core.app.CoreManifest;
@@ -76,6 +77,7 @@ import com.sonicle.webtop.vfs.sfs.FtpsSFS;
 import com.sonicle.webtop.vfs.sfs.GoogleDriveSFS;
 import com.sonicle.webtop.vfs.sfs.SftpSFS;
 import freemarker.template.TemplateException;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -89,6 +91,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import javax.mail.internet.InternetAddress;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -106,8 +109,9 @@ import org.slf4j.Logger;
 public class VfsManager extends BaseManager {
 	private static final Logger logger = WT.getLogger(VfsManager.class);
 	private static final String GROUPNAME_STORE = "STORE";
-	private static final String MYDOCUMENTS = "mydocuments";
-	private static final String MYDOCUMENTS_STORE_URI = "file:///this/is/an/automatic/path/";
+	private static final String MYDOCUMENTS_FOLDER = "mydocuments";
+	private static final String MYDOCUMENTS_URI_SCHEME = "mydocs";
+	private static final String IMAGES_URI_SCHEME = "images";
 	
 	private final HashMap<Integer, UserProfile.Id> cacheOwnerByStore = new HashMap<>();
 	private final Object shareCacheLock = new Object();
@@ -119,9 +123,23 @@ public class VfsManager extends BaseManager {
 	
 	public VfsManager(boolean fastInit, UserProfile.Id targetProfileId) throws WTException {
 		super(fastInit, targetProfileId);
+		initMyDocuments();
 		if(!fastInit) {
 			initFileSystems();
 		}
+	}
+	
+	private synchronized void initMyDocuments() throws WTException {
+		File myDocsDir = new File(WT.getServiceHomePath(SERVICE_ID) + MYDOCUMENTS_FOLDER);
+		try {
+			if (!myDocsDir.exists()) myDocsDir.mkdir();
+		} catch(SecurityException ex) {
+			throw new WTException("Cannot create mydocuments folder [{0}]", ex, myDocsDir.toString());
+		}
+	}
+	
+	private String getMyDocumentsUserPath(String userId) {
+		return WT.getServiceHomePath(SERVICE_ID) + MYDOCUMENTS_FOLDER + "/" + userId + "/";
 	}
 	
 	private void initFileSystems() throws WTException {
@@ -154,15 +172,19 @@ public class VfsManager extends BaseManager {
 			URI uri = null;
 			VfsServiceSettings vus = new VfsServiceSettings(SERVICE_ID, store.getDomainId());
 			String suri = vus.getMyDocumentsUri(tpl);
-			if(StringUtils.isBlank(suri)) {
-				uri = Store.buildURI("file", null, null, null, null, WT.getServiceHomePath(SERVICE_ID) + MYDOCUMENTS + "/" + store.getUserId() + "/");
+			if (StringUtils.isBlank(suri)) {
+				uri = new File(getMyDocumentsUserPath(store.getUserId())).toURI();
+				//uri = Store.buildURI("file", null, null, null, null, getMyDocumentsUserPath(store.getUserId()));
 			} else {
 				uri = new URI(suri);
 			}
 			return new DefaultSFS(store.getStoreId(), uri, null, true);
 			
 		} else if (store.getBuiltIn().equals(Store.BUILTIN_DOMAINIMAGES)) {
-			return new DefaultSFS(store.getStoreId(), store.getUri(), null, true);
+			String imagesPath = WT.getDomainImagesPath(store.getUri().getHost());
+			URI uri = new File(imagesPath).toURI();
+			//URI uri = Store.buildURI("file", null, null, null, null, imagesPath);
+			return new DefaultSFS(store.getStoreId(), uri, null, true);
 			
 		} else {
 			CoreServiceSettings css = new CoreServiceSettings(CoreManifest.ID, getTargetProfileId().getDomainId());
@@ -275,15 +297,28 @@ public class VfsManager extends BaseManager {
 		return listStores(getTargetProfileId());
 	}
 	
+	private String buildStoreName(Locale locale, OStore store) {
+		if (store.getBuiltIn().equals(Store.BUILTIN_MYDOCUMENTS)) {
+			return lookupResource(locale, VfsLocale.STORE_MYDOCUMENTS);
+		} else if (store.getBuiltIn().equals(Store.BUILTIN_DOMAINIMAGES)) {
+			URI uri = VfsURI.parseQuietly(store.getUri());
+			String domainId = (uri != null) ? uri.getHost() : "?";
+			return lookupResource(locale, VfsLocale.STORE_IMAGES) + " (" + domainId + ")";
+		} else {
+			return store.getName();
+		}
+	}
+	
 	private List<Store> listStores(UserProfile.Id pid) throws WTException {
 		StoreDAO dao = StoreDAO.getInstance();
 		ArrayList<Store> items = new ArrayList<>();
 		Connection con = null;
 		
 		try {
+			
 			con = WT.getConnection(SERVICE_ID);
 			for(OStore store : dao.selectByDomainUser(con, pid.getDomainId(), pid.getUserId())) {
-				items.add(new Store(store));
+				items.add(new Store(store, buildStoreName(getLocale(), store)));
 			}
 			return items;
 			
@@ -304,7 +339,7 @@ public class VfsManager extends BaseManager {
 			checkRightsOnStoreFolder(storeId, "READ"); // Rights check!
 			con = WT.getConnection(SERVICE_ID);
 			OStore ostore = dao.selectById(con, storeId);
-			return new Store(ostore);
+			return new Store(ostore, buildStoreName(getLocale(), ostore));
 			
 		} catch(SQLException | DAOException ex) {
 			throw new WTException(ex, "DB error");
@@ -349,8 +384,8 @@ public class VfsManager extends BaseManager {
 			checkRightsOnStoreRoot(getTargetProfileId(), "MANAGE"); // Rights check!
 			con = WT.getConnection(SERVICE_ID, false);
 			
-			List<OStore> oitems = dao.selectByDomainUsertBuiltIn(con, getTargetProfileId().getDomainId(), getTargetProfileId().getUserId(), Store.BUILTIN_MYDOCUMENTS);
-			if (oitems.size() > 0) {
+			List<OStore> oitems = dao.selectByDomainUserBuiltIn(con, getTargetProfileId().getDomainId(), getTargetProfileId().getUserId(), Store.BUILTIN_MYDOCUMENTS);
+			if (!oitems.isEmpty()) {
 				logger.debug("MyDocuments built-in store already present");
 				return null;
 			}
@@ -359,8 +394,8 @@ public class VfsManager extends BaseManager {
 			item.setDomainId(getTargetProfileId().getDomainId());
 			item.setUserId(getTargetProfileId().getUserId());
 			item.setBuiltIn(Store.BUILTIN_MYDOCUMENTS);
-			item.setName(lookupResource(getLocale(), VfsLocale.STORES_MYDOCUMENTS));
-			item.setUri(new URI(MYDOCUMENTS_STORE_URI));
+			item.setName("");
+			item.setUri(Store.buildURI(MYDOCUMENTS_URI_SCHEME, getTargetProfileId().getUserId(), null, null, null, null));
 			item = doStoreUpdate(true, con, item);
 			
 			DbUtils.commitQuietly(con);
@@ -389,25 +424,24 @@ public class VfsManager extends BaseManager {
 			if (!RunContext.isSysAdmin()) {
 				ensureUserDomain(domainId);
 			}
-			String imagesPath = WT.getDomainImagesPath(domainId);
 			
 			checkRightsOnStoreRoot(getTargetProfileId(), "MANAGE"); // Rights check!
 			con = WT.getConnection(SERVICE_ID, false);
 			
-			List<OStore> oitems = dao.selectByDomainUsertBuiltIn(con, getTargetProfileId().getDomainId(), getTargetProfileId().getUserId(), Store.BUILTIN_DOMAINIMAGES);
-			for (OStore oitem : oitems) {
-				if (StringUtils.endsWith(oitem.getUri(), imagesPath)) {
-					logger.debug("Domain's images built-in store already present");
-					return null;
-				}
+			URI uri = Store.buildURI(IMAGES_URI_SCHEME, domainId, null, null, null, null);
+			
+			List<OStore> oitems = dao.selectByDomainUserBuiltInUri(con, getTargetProfileId().getDomainId(), getTargetProfileId().getUserId(), Store.BUILTIN_DOMAINIMAGES, uri.toString());
+			if (!oitems.isEmpty()) {
+				logger.debug("Domain's images built-in store already present");
+				return null;
 			}
 			
 			Store item = new Store();
 			item.setDomainId(getTargetProfileId().getDomainId());
 			item.setUserId(getTargetProfileId().getUserId());
 			item.setBuiltIn(Store.BUILTIN_DOMAINIMAGES);
-			item.setName(MessageFormat.format("Images ({0})", domainId));
-			item.setUri(Store.buildURI("file", null, null, null, null, imagesPath));
+			item.setName("");
+			item.setUri(uri);
 			item = doStoreUpdate(true, con, item);
 			DbUtils.commitQuietly(con);
 			writeLog("STORE_INSERT", item.getStoreId().toString());
@@ -1014,7 +1048,7 @@ public class VfsManager extends BaseManager {
 				dao.update(con, item);
 			}
 			
-			return new Store(item);
+			return new Store(item, buildStoreName(getLocale(), item));
 			
 		} catch(URISyntaxException ex) {
 			throw new WTException("Provided URI is not valid", ex);
