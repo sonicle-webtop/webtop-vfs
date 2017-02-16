@@ -316,8 +316,9 @@ public class PublicService extends BasePublicService {
 				fo = manager.getStoreFile(storeId, filePath);
 				
 				if(fo.isFile()) {
-					String mediaType = ServletHelper.guessMediaType(fo.getName().getBaseName(), true);
-					ServletUtils.setFileStreamHeaders(response, mediaType, DispositionType.ATTACHMENT, outFileName);
+					//String mediaType = ServletHelper.guessMediaType(fo.getName().getBaseName(), true);
+					//ServletUtils.setFileStreamHeaders(response, mediaType, DispositionType.ATTACHMENT, outFileName);
+					ServletUtils.setFileStreamHeadersForceDownload(response, outFileName);
 					ServletUtils.setContentLengthHeader(response, fo.getContent().getSize());
 					IOUtils.copy(fo.getContent().getInputStream(), response.getOutputStream());
 					
