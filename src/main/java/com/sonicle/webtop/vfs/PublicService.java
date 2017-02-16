@@ -154,7 +154,7 @@ public class PublicService extends BasePublicService {
 									outName = PathUtils.getFileName(fileId);
 								}
 								
-								String servicePublicUrl = WT.getServicePublicUrl(wts.getProfileDomainId(), SERVICE_ID);
+								String servicePublicUrl = WT.getServicePublicUrl(link.getDomainId(), SERVICE_ID);
 								String url = buildPublicLinkPathGetUrl(servicePublicUrl, link, outName, fileId);
 								ServletUtils.setLocationHeader(response, url);
 								response.setStatus(HttpServletResponse.SC_FOUND);
