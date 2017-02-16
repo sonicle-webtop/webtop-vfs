@@ -895,7 +895,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 	},
 	
 	sendFileLinkUI: function(type, sel) {
-		WT.info('TODO');
+		WT.warn(WT.res('warn.todo'));
 	},
 	
 	editShare: function(id) {
@@ -947,7 +947,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 	},
 	
 	downloadFiles: function(fileIds) {
-		Sonicle.URLMgr.open(WTF.processBinUrl(this.ID, 'DownloadFiles', {
+		Sonicle.URLMgr.download(WTF.processBinUrl(this.ID, 'DownloadFiles', {
 			fileIds: WTU.arrayAsParam(fileIds)
 		}));
 	},

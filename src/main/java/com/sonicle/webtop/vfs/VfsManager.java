@@ -123,8 +123,8 @@ public class VfsManager extends BaseManager {
 	
 	public VfsManager(boolean fastInit, UserProfile.Id targetProfileId) throws WTException {
 		super(fastInit, targetProfileId);
-		initMyDocuments();
 		if(!fastInit) {
+			initMyDocuments();
 			initFileSystems();
 		}
 	}

@@ -173,7 +173,7 @@ public class PublicService extends BasePublicService {
 						} else {
 							Integer raw = ServletUtils.getIntParameter(request, "raw", 0);
 							if(raw == 1) { // Link points directly to raw data (no preview)
-								String servicePublicUrl = WT.getServicePublicUrl(wts.getProfileDomainId(), SERVICE_ID);
+								String servicePublicUrl = WT.getServicePublicUrl(link.getDomainId(), SERVICE_ID);
 								String url = VfsManager.buildLinkPublicGetUrl(servicePublicUrl, link);
 								ServletUtils.setLocationHeader(response, url);
 								response.setStatus(HttpServletResponse.SC_FOUND);
