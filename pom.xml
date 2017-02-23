@@ -9,14 +9,11 @@
 	
 	<parent>
 		<groupId>com.sonicle.webtop</groupId>
-		<artifactId>webtop-superpom-service-sdk</artifactId>
-		<version>1.0</version>
+		<artifactId>webtop-superpom-service</artifactId>
+		<version>1</version>
 	</parent>
 	
 	<properties>
-		<maven.compiler.source>1.7</maven.compiler.source>
-		<maven.compiler.target>1.7</maven.compiler.target>
-		
 		<!-- WEBTOP SERVICE CONFIGURATION -->
 		<webtop.service.package>com.sonicle.webtop.vfs</webtop.service.package>
 		<webtop.service.jsPackage>Sonicle.webtop.vfs</webtop.service.jsPackage>
