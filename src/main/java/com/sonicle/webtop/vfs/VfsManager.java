@@ -1,5 +1,4 @@
-/*
- * webtop-vfs is a WebTop Service developed by Sonicle S.r.l.
+/* 
  * Copyright (C) 2014 Sonicle S.r.l.
  *
  * This program is free software; you can redistribute it and/or modify it under
@@ -11,7 +10,7 @@
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
  * details.
  *
  * You should have received a copy of the GNU Affero General Public License
@@ -19,7 +18,7 @@
  * the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  * MA 02110-1301 USA.
  *
- * You can contact Sonicle S.r.l. at email address sonicle@sonicle.com
+ * You can contact Sonicle S.r.l. at email address sonicle[at]sonicle[dot]com
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
@@ -27,13 +26,12 @@
  *
  * In accordance with Section 7(b) of the GNU Affero General Public License
  * version 3, these Appropriate Legal Notices must retain the display of the
- * "Powered by Sonicle WebTop" logo. If the display of the logo is not reasonably
- * feasible for technical reasons, the Appropriate Legal Notices must display
- * the words "Powered by Sonicle WebTop".
+ * Sonicle logo and Sonicle copyright notice. If the display of the logo is not
+ * reasonably feasible for technical reasons, the Appropriate Legal Notices must
+ * display the words "Copyright (C) 2014 Sonicle S.r.l.".
  */
 package com.sonicle.webtop.vfs;
 
-import com.ibm.icu.text.MessageFormat;
 import com.sonicle.commons.PathUtils;
 import com.sonicle.commons.db.DbUtils;
 import com.sonicle.commons.time.DateTimeUtils;
@@ -62,13 +60,13 @@ import com.sonicle.webtop.core.sdk.WTRuntimeException;
 import com.sonicle.webtop.core.util.NotificationHelper;
 import com.sonicle.webtop.vfs.bol.OSharingLink;
 import com.sonicle.webtop.vfs.bol.OStore;
-import com.sonicle.webtop.vfs.bol.model.SharingLink;
-import com.sonicle.webtop.vfs.bol.model.Store;
-import com.sonicle.webtop.vfs.bol.model.StoreFileType;
-import com.sonicle.webtop.vfs.bol.model.StoreShareFolder;
-import com.sonicle.webtop.vfs.bol.model.StoreShareRoot;
+import com.sonicle.webtop.vfs.model.SharingLink;
+import com.sonicle.webtop.vfs.model.StoreFileType;
+import com.sonicle.webtop.vfs.model.StoreShareFolder;
+import com.sonicle.webtop.vfs.model.StoreShareRoot;
 import com.sonicle.webtop.vfs.dal.SharingLinkDAO;
 import com.sonicle.webtop.vfs.dal.StoreDAO;
+import com.sonicle.webtop.vfs.model.Store;
 import com.sonicle.webtop.vfs.sfs.DefaultSFS;
 import com.sonicle.webtop.vfs.sfs.StoreFileSystem;
 import com.sonicle.webtop.vfs.sfs.DropboxSFS;
@@ -106,7 +104,7 @@ import org.slf4j.Logger;
  *
  * @author malbinola
  */
-public class VfsManager extends BaseManager {
+public class VfsManager extends BaseManager implements IVfsManager {
 	private static final Logger logger = WT.getLogger(VfsManager.class);
 	private static final String GROUPNAME_STORE = "STORE";
 	private static final String MYDOCUMENTS_FOLDER = "mydocuments";
@@ -235,6 +233,7 @@ public class VfsManager extends BaseManager {
 		}
 	}
 	
+	@Override
 	public List<StoreShareRoot> listIncomingStoreRoots() throws WTException {
 		CoreManager core = WT.getCoreManager(getTargetProfileId());
 		ArrayList<StoreShareRoot> roots = new ArrayList();
@@ -251,6 +250,7 @@ public class VfsManager extends BaseManager {
 		return roots;
 	}
 	
+	@Override
 	public HashMap<Integer, StoreShareFolder> listIncomingStoreFolders(String rootShareId) throws WTException {
 		CoreManager core = WT.getCoreManager(getTargetProfileId());
 		LinkedHashMap<Integer, StoreShareFolder> folders = new LinkedHashMap<>();
@@ -293,6 +293,7 @@ public class VfsManager extends BaseManager {
 		core.updateSharing(SERVICE_ID, GROUPNAME_STORE, sharing);
 	}
 	
+	@Override
 	public List<Store> listStores() throws WTException {
 		return listStores(getTargetProfileId());
 	}
@@ -318,7 +319,7 @@ public class VfsManager extends BaseManager {
 			
 			con = WT.getConnection(SERVICE_ID);
 			for(OStore store : dao.selectByDomainUser(con, pid.getDomainId(), pid.getUserId())) {
-				items.add(new Store(store, buildStoreName(getLocale(), store)));
+				items.add(createStore(store, buildStoreName(getLocale(), store)));
 			}
 			return items;
 			
@@ -331,6 +332,7 @@ public class VfsManager extends BaseManager {
 		}
 	}
 	
+	@Override
 	public Store getStore(int storeId) throws WTException {
 		StoreDAO dao = StoreDAO.getInstance();
 		Connection con = null;
@@ -339,7 +341,7 @@ public class VfsManager extends BaseManager {
 			checkRightsOnStoreFolder(storeId, "READ"); // Rights check!
 			con = WT.getConnection(SERVICE_ID);
 			OStore ostore = dao.selectById(con, storeId);
-			return new Store(ostore, buildStoreName(getLocale(), ostore));
+			return createStore(ostore, buildStoreName(getLocale(), ostore));
 			
 		} catch(SQLException | DAOException ex) {
 			throw new WTException(ex, "DB error");
@@ -350,6 +352,7 @@ public class VfsManager extends BaseManager {
 		}
 	}
 	
+	@Override
 	public Store addStore(Store item) throws WTException {
 		Connection con = null;
 		
@@ -376,6 +379,7 @@ public class VfsManager extends BaseManager {
 		}
 	}
 	
+	@Override
 	public Store addBuiltInStoreMyDocuments() throws WTException {
 		StoreDAO dao = StoreDAO.getInstance();
 		Connection con = null;
@@ -416,6 +420,7 @@ public class VfsManager extends BaseManager {
 		}
 	}
 	
+	@Override
 	public Store addBuiltInStoreDomainImages(String domainId) throws WTException {
 		StoreDAO dao = StoreDAO.getInstance();
 		Connection con = null;
@@ -461,7 +466,8 @@ public class VfsManager extends BaseManager {
 		}
 	}
 	
-	public Store updateStore(Store item) throws Exception {
+	@Override
+	public Store updateStore(Store item) throws WTException {
 		Connection con = null;
 		
 		try {
@@ -470,6 +476,7 @@ public class VfsManager extends BaseManager {
 			doStoreUpdate(false, con, item);
 			DbUtils.commitQuietly(con);
 			writeLog("STORE_UPDATE", String.valueOf(item.getStoreId()));
+			
 			return item;
 			
 		} catch(SQLException | DAOException ex) {
@@ -483,6 +490,7 @@ public class VfsManager extends BaseManager {
 		}
 	}
 	
+	@Override
 	public void deleteStore(int storeId) throws WTException {
 		Connection con = null;
 		
@@ -505,6 +513,7 @@ public class VfsManager extends BaseManager {
 		}
 	}
 	
+	@Override
 	public void deleteBuiltInStoreDomainImages(String domainId) throws WTException {
 		Connection con = null;
 		
@@ -539,6 +548,7 @@ public class VfsManager extends BaseManager {
 		return DigestUtils.md5Hex(new CompositeId(storeId, path).toString());
 	}
 	
+	@Override
 	public FileObject[] listStoreFiles(StoreFileType fileType, int storeId, String path) throws FileSystemException, WTException {
 		FileObject tfo = null;
 		
@@ -561,6 +571,7 @@ public class VfsManager extends BaseManager {
 		}	
 	}
 	
+	@Override
 	public FileObject getStoreFile(int storeId, String path) throws FileSystemException, WTException {
 		try {
 			checkRightsOnStoreFolder(storeId, "READ"); // Rights check!
@@ -572,11 +583,13 @@ public class VfsManager extends BaseManager {
 		}
 	}
 	
-	public String createStoreFileFromStream(int storeId, String parentPath, String name, InputStream is) throws IOException, FileSystemException, WTException {
-		return createStoreFileFromStream(storeId, parentPath, name, is, false);
+	@Override
+	public String addStoreFileFromStream(int storeId, String parentPath, String name, InputStream is) throws IOException, FileSystemException, WTException {
+		return addStoreFileFromStream(storeId, parentPath, name, is, false);
 	}
 	
-	public String createStoreFileFromStream(int storeId, String parentPath, String name, InputStream is, boolean overwrite) throws IOException, FileSystemException, WTException {
+	@Override
+	public String addStoreFileFromStream(int storeId, String parentPath, String name, InputStream is, boolean overwrite) throws IOException, FileSystemException, WTException {
 		FileObject tfo = null;
 		NewTargetFile ntf = null;
 		OutputStream os = null;
@@ -608,7 +621,8 @@ public class VfsManager extends BaseManager {
 		}
 	}
 	
-	public String createStoreFile(StoreFileType fileType, int storeId, String parentPath, String name) throws FileSystemException, WTException {
+	@Override
+	public String addStoreFile(StoreFileType fileType, int storeId, String parentPath, String name) throws FileSystemException, WTException {
 		FileObject tfo = null, ntfo = null;
 		
 		try {
@@ -636,6 +650,7 @@ public class VfsManager extends BaseManager {
 		}
 	}
 	
+	@Override
 	public String renameStoreFile(int storeId, String path, String newName) throws FileSystemException, WTException {
 		try {
 			checkRightsOnStoreElements(storeId, "UPDATE"); // Rights check!
@@ -647,6 +662,7 @@ public class VfsManager extends BaseManager {
 		}
 	}
 	
+	@Override
 	public void deleteStoreFile(int storeId, String path) throws FileSystemException, WTException {
 		try {
 			checkRightsOnStoreElements(storeId, "DELETE"); // Rights check!
@@ -662,6 +678,7 @@ public class VfsManager extends BaseManager {
 		return generateLinkId(getTargetProfileId(), type, storeId, path);
 	}
 	
+	@Override
 	public LinkedHashMap<String, SharingLink> listDownloadLinks(int storeId, String path) throws WTException {
 		SharingLinkDAO dao = SharingLinkDAO.getInstance();
 		LinkedHashMap<String, SharingLink> items = new LinkedHashMap<>();
@@ -674,10 +691,10 @@ public class VfsManager extends BaseManager {
 			
 			logger.debug("path starts with {}", path);
 			
-			List<OSharingLink> links = dao.selectByProfileTypeStorePath(con, getTargetProfileId(), SharingLink.TYPE_DOWNLOAD, storeId, path);
-			for(OSharingLink link : links) {
-				final SharingLink dl = new SharingLink(link);
-				items.put(dl.getFileHash(), dl);
+			List<OSharingLink> olinks = dao.selectByProfileTypeStorePath(con, getTargetProfileId(), SharingLink.TYPE_DOWNLOAD, storeId, path);
+			for(OSharingLink olink : olinks) {
+				final SharingLink dl = createSharingLink(olink);
+				items.put(dl.getFileHash(), createSharingLink(olink));
 			}
 			return items;
 			
@@ -689,6 +706,7 @@ public class VfsManager extends BaseManager {
 		}
 	}
 	
+	@Override
 	public LinkedHashMap<String, SharingLink> listUploadLinks(int storeId, String path) throws WTException {
 		SharingLinkDAO dao = SharingLinkDAO.getInstance();
 		LinkedHashMap<String, SharingLink> items = new LinkedHashMap<>();
@@ -699,9 +717,9 @@ public class VfsManager extends BaseManager {
 			ensureUser(); // Rights check!
 			con = WT.getConnection(SERVICE_ID, false);
 			
-			List<OSharingLink> uls = dao.selectByProfileTypeStorePath(con, getTargetProfileId(), SharingLink.TYPE_UPLOAD, storeId, path);
-			for(OSharingLink link : uls) {
-				final SharingLink ul = new SharingLink(link);
+			List<OSharingLink> olinks = dao.selectByProfileTypeStorePath(con, getTargetProfileId(), SharingLink.TYPE_UPLOAD, storeId, path);
+			for(OSharingLink olink : olinks) {
+				final SharingLink ul = createSharingLink(olink);
 				items.put(ul.getFileHash(), ul);
 			}
 			return items;
@@ -714,6 +732,7 @@ public class VfsManager extends BaseManager {
 		}
 	}
 	
+	@Override
 	public SharingLink getSharingLink(String linkId) throws WTException {
 		SharingLinkDAO dao = SharingLinkDAO.getInstance();
 		Connection con = null;
@@ -725,7 +744,7 @@ public class VfsManager extends BaseManager {
 			
 			checkRightsOnStoreElements(olink.getStoreId(), "READ"); // Rights check!
 			
-			return new SharingLink(olink);
+			return createSharingLink(olink);
 			
 		} catch(SQLException | DAOException ex) {
 			DbUtils.rollbackQuietly(con);
@@ -738,6 +757,7 @@ public class VfsManager extends BaseManager {
 		}
 	}
 	
+	@Override
 	public SharingLink addDownloadLink(SharingLink link) throws WTException {
 		Connection con = null;
 		
@@ -746,7 +766,7 @@ public class VfsManager extends BaseManager {
 			
 			con = WT.getConnection(SERVICE_ID, false);
 			link.setType(SharingLink.TYPE_DOWNLOAD);
-			link = new SharingLink(doSharingLinkUpdate(true, con, link));
+			link = createSharingLink(doSharingLinkUpdate(true, con, link));
 			DbUtils.commitQuietly(con);
 			writeLog("DOWNLOADLINK_INSERT", link.getLinkId());
 			return link;
@@ -762,6 +782,7 @@ public class VfsManager extends BaseManager {
 		}
 	}
 	
+	@Override
 	public SharingLink addUploadLink(SharingLink link) throws WTException {
 		Connection con = null;
 		
@@ -770,7 +791,7 @@ public class VfsManager extends BaseManager {
 			
 			con = WT.getConnection(SERVICE_ID, false);
 			link.setType(SharingLink.TYPE_UPLOAD);
-			link = new SharingLink(doSharingLinkUpdate(true, con, link));
+			link = createSharingLink(doSharingLinkUpdate(true, con, link));
 			DbUtils.commitQuietly(con);
 			writeLog("UPLOADLINK_INSERT", link.getLinkId());
 			return link;
@@ -786,7 +807,8 @@ public class VfsManager extends BaseManager {
 		}
 	}
 	
-	public void updateSharingLink(SharingLink link) throws Exception {
+	@Override
+	public void updateSharingLink(SharingLink link) throws WTException {
 		SharingLinkDAO dao = SharingLinkDAO.getInstance();
 		Connection con = null;
 		
@@ -812,6 +834,7 @@ public class VfsManager extends BaseManager {
 		}
 	}
 	
+	@Override
 	public void deleteSharingLink(String linkId) throws WTException {
 		SharingLinkDAO dao = SharingLinkDAO.getInstance();
 		Connection con = null;
@@ -942,6 +965,52 @@ public class VfsManager extends BaseManager {
 		}
 	}
 	
+	
+	
+	
+	private Store createStore(OStore ostore, String newName) throws URISyntaxException {
+		if (ostore == null) return null;
+		Store sto = new Store();
+		sto.setStoreId(ostore.getStoreId());
+		sto.setDomainId(ostore.getDomainId());
+		sto.setUserId(ostore.getUserId());
+		sto.setBuiltIn(ostore.getBuiltIn());
+		sto.setName(!StringUtils.isBlank(newName) ? newName : ostore.getName());
+		sto.setUri(new URI(ostore.getUri()));
+		sto.setParameters(ostore.getParameters());
+		return sto;
+	}
+	
+	private OStore createOStore(Store store) {
+		if (store == null) return null;
+		OStore ostore = new OStore();
+		ostore.setStoreId(store.getStoreId());
+		ostore.setDomainId(store.getDomainId());
+		ostore.setUserId(store.getUserId());
+		ostore.setBuiltIn(store.getBuiltIn());
+		ostore.setName(store.getName());
+		ostore.setUri(store.getUri().toString());
+		ostore.setParameters(store.getParameters());
+		return ostore;
+	}
+	
+	private SharingLink createSharingLink(OSharingLink oslink) {
+		if (oslink == null) return null;
+		SharingLink link = new SharingLink();
+		link.setLinkId(oslink.getSharingLinkId());
+		link.setDomainId(oslink.getDomainId());
+		link.setType(oslink.getLinkType());
+		link.setUserId(oslink.getUserId());
+		link.setStoreId(oslink.getStoreId());
+		link.setFilePath(oslink.getFilePath());
+		link.setFileHash(oslink.getFileHash());
+		link.setCreatedOn(oslink.getCreatedOn());
+		link.setExpiresOn(oslink.getExpiresOn());
+		link.setAuthMode(oslink.getAuthMode());
+		link.setPassword(oslink.getPassword());
+		return link;
+	}
+	
 	private void checkRightsOnStoreSchema(URI uri) {
 		switch(uri.getScheme()) {
 			case "file":
@@ -1031,24 +1100,24 @@ public class VfsManager extends BaseManager {
 	private Store doStoreUpdate(boolean insert, Connection con, Store store) throws WTException {
 		StoreDAO dao = StoreDAO.getInstance();
 		
-		OStore item = new OStore(store);
-		if(item.getDomainId() == null) item.setDomainId(getTargetProfileId().getDomainId());
-		if(item.getUserId() == null) item.setUserId(getTargetProfileId().getUserId());
+		OStore ostore = createOStore(store);
+		if(ostore.getDomainId() == null) ostore.setDomainId(getTargetProfileId().getDomainId());
+		if(ostore.getUserId() == null) ostore.setUserId(getTargetProfileId().getUserId());
 		
 		try {
 			URI uri = store.getUri();
 			if((store.getBuiltIn() == 0) && uri.getScheme().equals("file")) {
-				item.setUri(Store.buildURI("file", null, null, null, null, prependFileBasePath(uri)).toString());
+				ostore.setUri(Store.buildURI("file", null, null, null, null, prependFileBasePath(uri)).toString());
 			}
 			
 			if(insert) {
-				item.setStoreId(dao.getSequence(con).intValue());
-				dao.insert(con, item);
+				ostore.setStoreId(dao.getSequence(con).intValue());
+				dao.insert(con, ostore);
 			} else {
-				dao.update(con, item);
+				dao.update(con, ostore);
 			}
 			
-			return new Store(item, buildStoreName(getLocale(), item));
+			return createStore(ostore, buildStoreName(getLocale(), ostore));
 			
 		} catch(URISyntaxException ex) {
 			throw new WTException("Provided URI is not valid", ex);

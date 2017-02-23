@@ -1,5 +1,4 @@
-/*
- * webtop-vfs is a WebTop Service developed by Sonicle S.r.l.
+/* 
  * Copyright (C) 2014 Sonicle S.r.l.
  *
  * This program is free software; you can redistribute it and/or modify it under
@@ -11,7 +10,7 @@
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
  * details.
  *
  * You should have received a copy of the GNU Affero General Public License
@@ -19,7 +18,7 @@
  * the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  * MA 02110-1301 USA.
  *
- * You can contact Sonicle S.r.l. at email address sonicle@sonicle.com
+ * You can contact Sonicle S.r.l. at email address sonicle[at]sonicle[dot]com
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
@@ -27,9 +26,9 @@
  *
  * In accordance with Section 7(b) of the GNU Affero General Public License
  * version 3, these Appropriate Legal Notices must retain the display of the
- * "Powered by Sonicle WebTop" logo. If the display of the logo is not reasonably
- * feasible for technical reasons, the Appropriate Legal Notices must display
- * the words "Powered by Sonicle WebTop".
+ * Sonicle logo and Sonicle copyright notice. If the display of the logo is not
+ * reasonably feasible for technical reasons, the Appropriate Legal Notices must
+ * display the words "Copyright (C) 2014 Sonicle S.r.l.".
  */
 package com.sonicle.webtop.vfs;
 
@@ -50,10 +49,9 @@ import com.sonicle.webtop.core.sdk.BasePublicService;
 import com.sonicle.webtop.core.sdk.UploadException;
 import com.sonicle.webtop.core.sdk.WTException;
 import com.sonicle.webtop.core.sdk.interfaces.IServiceUploadStreamListener;
-import com.sonicle.webtop.core.servlet.ServletHelper;
 import com.sonicle.webtop.vfs.bol.js.JsPubGridFile;
-import com.sonicle.webtop.vfs.bol.model.SharingLink;
-import com.sonicle.webtop.vfs.bol.model.StoreFileType;
+import com.sonicle.webtop.vfs.model.SharingLink;
+import com.sonicle.webtop.vfs.model.StoreFileType;
 import com.sonicle.webtop.vfs.sfs.StoreFileSystem;
 import freemarker.template.TemplateException;
 import java.io.IOException;
@@ -287,7 +285,7 @@ public class PublicService extends BasePublicService {
 				if(link == null) throw new UploadException("Link not found [{0}]", linkId);
 				if(!link.getType().equals(SharingLink.TYPE_UPLOAD)) throw new UploadException("Wrong link type [{0}]", linkId);
 
-				String newPath = manager.createStoreFileFromStream(link.getStoreId(), link.getFilePath(), file.getFilename(), is);
+				String newPath = manager.addStoreFileFromStream(link.getStoreId(), link.getFilePath(), file.getFilename(), is);
 				WebTopSession wts = getWts();
 				manager.notifySharingLinkUsage(link.getLinkId(), link.relativizePath(newPath), wts.getRemoteIP(), wts.getPlainUserAgent());
 				

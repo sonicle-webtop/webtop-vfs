@@ -1,17 +1,16 @@
-/*
- * webtop-vfs is a WebTop Service developed by Sonicle S.r.l.
+/* 
  * Copyright (C) 2014 Sonicle S.r.l.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
  * the Free Software Foundation with the addition of the following permission
  * added to Section 15 as permitted in Section 7(a): FOR ANY PART OF THE COVERED
- * WORK IN WHICH THE COPYRIGHT IS OWNED BY SONICsonicLE, SONICLE DISCLAIMS THE
+ * WORK IN WHICH THE COPYRIGHT IS OWNED BY SONICLE, SONICLE DISCLAIMS THE
  * WARRANTY OF NON INFRINGEMENT OF THIRD PARTY RIGHTS.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
  * details.
  *
  * You should have received a copy of the GNU Affero General Public License
@@ -19,7 +18,7 @@
  * the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  * MA 02110-1301 USA.
  *
- * You can contact Sonicle S.r.l. at email address sonicle@sonicle.com
+ * You can contact Sonicle S.r.l. at email address sonicle[at]sonicle[dot]com
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
@@ -27,9 +26,9 @@
  *
  * In accordance with Section 7(b) of the GNU Affero General Public License
  * version 3, these Appropriate Legal Notices must retain the display of the
- * "Powered by Sonicle WebTop" logo. If the display of the logo is not reasonably
- * feasible for technical reasons, the Appropriate Legal Notices must display
- * the words "Powered by Sonicle WebTop".
+ * Sonicle logo and Sonicle copyright notice. If the display of the logo is not
+ * reasonably feasible for technical reasons, the Appropriate Legal Notices must
+ * display the words "Copyright (C) 2014 Sonicle S.r.l.".
  */
 package com.sonicle.webtop.vfs;
 
@@ -43,7 +42,6 @@ import com.sonicle.commons.LangUtils;
 import com.sonicle.commons.PathUtils;
 import com.sonicle.commons.time.DateTimeUtils;
 import com.sonicle.commons.web.Crud;
-import com.sonicle.commons.web.DispositionType;
 import com.sonicle.commons.web.ServletUtils;
 import com.sonicle.commons.web.ServletUtils.StringArray;
 import com.sonicle.commons.web.json.CompositeId;
@@ -66,21 +64,18 @@ import com.sonicle.webtop.core.sdk.UploadException;
 import com.sonicle.webtop.core.sdk.UserProfile;
 import com.sonicle.webtop.core.sdk.WTException;
 import com.sonicle.webtop.core.sdk.interfaces.IServiceUploadStreamListener;
-import com.sonicle.webtop.core.servlet.ServletHelper;
 import com.sonicle.webtop.vfs.bol.js.JsGridFile;
 import com.sonicle.webtop.vfs.bol.js.JsGridSharingLink;
 import com.sonicle.webtop.vfs.bol.js.JsSharing;
 import com.sonicle.webtop.vfs.bol.js.JsSharingLink;
 import com.sonicle.webtop.vfs.bol.js.JsStore;
-import com.sonicle.webtop.vfs.bol.model.Store;
-import com.sonicle.webtop.vfs.bol.model.StoreShareFolder;
-import com.sonicle.webtop.vfs.bol.model.StoreShareRoot;
+import com.sonicle.webtop.vfs.model.Store;
+import com.sonicle.webtop.vfs.model.StoreShareFolder;
+import com.sonicle.webtop.vfs.model.StoreShareRoot;
 import com.sonicle.webtop.vfs.bol.model.MyStoreFolder;
 import com.sonicle.webtop.vfs.bol.model.MyStoreRoot;
-import com.sonicle.webtop.vfs.bol.model.ParamsDropbox;
-import com.sonicle.webtop.vfs.bol.model.ParamsGoogleDrive;
-import com.sonicle.webtop.vfs.bol.model.StoreFileType;
-import com.sonicle.webtop.vfs.bol.model.SharingLink;
+import com.sonicle.webtop.vfs.model.StoreFileType;
+import com.sonicle.webtop.vfs.model.SharingLink;
 import com.sonicle.webtop.vfs.sfs.StoreFileSystem;
 import java.io.InputStream;
 import java.io.PrintWriter;
@@ -155,7 +150,7 @@ public class Service extends BaseService {
 				int storeId = Integer.valueOf(parentNodeId.getStoreId());
 				String path = (parentNodeId.getSize() == 2) ? "/" : parentNodeId.getPath();
 				
-				String newPath = manager.createStoreFileFromStream(storeId, path, file.getFilename(), is);
+				String newPath = manager.addStoreFileFromStream(storeId, path, file.getFilename(), is);
 
 			} catch(UploadException ex) {
 				logger.trace("Upload failure", ex);
@@ -807,7 +802,7 @@ public class Service extends BaseService {
 				int storeId = Integer.valueOf(parentNodeId.getStoreId());
 				String path = (parentNodeId.getSize() == 2) ? "/" : parentNodeId.getPath();
 				
-				String newPath = manager.createStoreFile(StoreFileType.FOLDER, storeId, path, name);
+				String newPath = manager.addStoreFile(StoreFileType.FOLDER, storeId, path, name);
 				final String fileHash = manager.generateStoreFileHash(storeId, newPath);
 				new JsonResult(fileHash).printTo(out);
 				
