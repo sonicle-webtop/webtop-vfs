@@ -121,6 +121,7 @@ Ext.define('Sonicle.webtop.vfs.view.SharingLinks', {
 			tbar: [
 				me.addAction('remove', {
 					text: WT.res('act-remove.lbl'),
+					tooltip: null,
 					iconCls: 'wt-icon-remove-xs',
 					disabled: true,
 					handler: function() {

@@ -61,7 +61,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 	
 	setCurNode: function(nodeId) {
 		this.curNode = nodeId;
-		console.log('current node: '+nodeId);
+		//console.log('current node: '+nodeId);
 	},
 	
 	getCurrentFileNode: function() {
@@ -71,7 +71,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 	
 	setCurFile: function(fileId) {
 		var me = this, tr, node, tbu;
-		console.log('current file: '+fileId);
+		//console.log('current file: '+fileId);
 		
 		if(fileId !== me.curFile) {
 			tbu = me.tbUpload();
@@ -139,6 +139,11 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 					root: {
 						id: 'root',
 						expanded: true
+					},
+					listeners: {
+						load: function(s) {
+							if ((s.loadCount === 1) && me.isActive()) me.setDefaultFile();
+						}
 					}
 				},
 				hideHeaders: true,
@@ -416,9 +421,21 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		return this.getMainComponent().lookupReference('btnupload');
 	},
 	
+	getMyRoot: function() {
+		return this.trStores().getStore().findNode('_pid', WT.getVar('profileId'), false);
+	},
+	
+	getBuiltInStoreByRoot: function(rootNode, builtIn) {
+		if (!rootNode) return null;
+		return rootNode.findChildBy(function(n) {
+			return (n.get('_builtIn') === builtIn);
+		});
+	},
+	
 	initActions: function() {
 		var me = this;
 		me.addAction('showSharingLinks', {
+			tooltip: null,
 			iconCls: me.cssIconCls('sharingLink', 'xs'),
 			handler: function() {
 				me.showSharingLinks({
@@ -435,6 +452,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		});
 		me.addAction('editSharing', {
 			text: WT.res('sharing.tit'),
+			tooltip: null,
 			iconCls: WTF.cssIconCls(WT.XID, 'sharing', 'xs'),
 			handler: function() {
 				var node = me.getCurrentFileNode();
@@ -442,42 +460,49 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 			}
 		});
 		me.addAction('addStoreFtp', {
+			tooltip: null,
 			handler: function() {
 				var node = me.getCurrentFileNode();
 				if(node) me.addStoreUI('ftp', node);
 			}
 		});
 		me.addAction('addStoreDropbox', {
+			tooltip: null,
 			handler: function() {
 				var node = me.getCurrentFileNode();
 				if(node) me.addStoreUI('dropbox', node);
 			}
 		});
 		me.addAction('addStoreGooDrive', {
+			tooltip: null,
 			handler: function() {
 				var node = me.getCurrentFileNode();
 				if(node) me.addStoreUI('goodrive', node);
 			}
 		});
 		me.addAction('addStoreFile', {
+			tooltip: null,
 			handler: function() {
 				var node = me.getCurrentFileNode();
 				if(node) me.addStoreUI('file', node);
 			}
 		});
 		me.addAction('addStoreOther', {
+			tooltip: null,
 			handler: function() {
 				var node = me.getCurrentFileNode();
 				if(node) me.addStoreUI('other', node);
 			}
 		});
 		me.addAction('editStore', {
+			tooltip: null,
 			handler: function() {
 				var node = me.getCurrentFileNode();
 				if(node) me.editStoreUI(node);
 			}
 		});
 		me.addAction('deleteStore', {
+			tooltip: null,
 			handler: function() {
 				var node = me.getCurrentFileNode();
 				if(node) me.deleteStoreUI(node);
@@ -485,6 +510,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		});
 		me.addAction('createFileNode', {
 			text: me.res('act-createFileFolder.lbl'),
+			tooltip: null,
 			iconCls: me.cssIconCls('createFileFolder', 'xs'),
 			handler: function() {
 				var node = me.getCurrentFileNode();
@@ -493,6 +519,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		});
 		me.addAction('renameFileNode', {
 			text: me.res('act-renameFile.lbl'),
+			tooltip: null,
 			iconCls: me.cssIconCls('renameFile', 'xs'),
 			handler: function() {
 				var node = me.getCurrentFileNode();
@@ -501,6 +528,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		});
 		me.addAction('deleteFileNode', {
 			text: me.res('act-deleteFile.lbl'),
+			tooltip: null,
 			iconCls: me.cssIconCls('deleteFile', 'xs'),
 			handler: function() {
 				var node = me.getCurrentFileNode();
@@ -509,6 +537,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		});
 		me.addAction('addFileNodeDlLink', {
 			text: me.res('act-addFileDlLink.lbl'),
+			tooltip: null,
 			iconCls: me.cssIconCls('addFileDlLink', 'xs'),
 			handler: function() {
 				var node = me.getCurrentFileNode();
@@ -517,6 +546,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		});
 		me.addAction('deleteFileNodeDlLink', {
 			text: me.res('act-deleteFileDlLink.lbl'),
+			tooltip: null,
 			iconCls: me.cssIconCls('deleteFileDlLink', 'xs'),
 			handler: function() {
 				var node = me.getCurrentFileNode();
@@ -525,6 +555,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		});
 		me.addAction('sendFileNodeDlLink', {
 			text: me.res('act-sendFileDlLink.lbl'),
+			tooltip: null,
 			handler: function() {
 				var node = me.getCurrentFileNode();
 				if(node) me.sendFileLinkUI('D', node);
@@ -532,6 +563,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		});
 		me.addAction('addFileNodeUlLink', {
 			text: me.res('act-addFileUlLink.lbl'),
+			tooltip: null,
 			iconCls: me.cssIconCls('addFileUlLink', 'xs'),
 			handler: function() {
 				var sel = me.getCurrentFileNode();
@@ -540,6 +572,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		});
 		me.addAction('deleteFileNodeUlLink', {
 			text: me.res('act-deleteFileUlLink.lbl'),
+			tooltip: null,
 			iconCls: me.cssIconCls('deleteFileUlLink', 'xs'),
 			handler: function() {
 				var sel = me.getCurrentFileNode();
@@ -548,6 +581,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		});
 		me.addAction('sendFileNodeUlLink', {
 			text: me.res('act-sendFileUlLink.lbl'),
+			tooltip: null,
 			handler: function() {
 				var node = me.getCurrentFileNode();
 				if(node) me.sendFileLinkUI('U', node);
@@ -562,60 +596,70 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 			}
 		});
 		me.addAction('openFile', {
+			tooltip: null,
 			handler: function() {
 				var sel = me.getSelectedFile();
 				if(sel) me.openFileUI(sel);
 			}
 		});
 		me.addAction('downloadFile', {
+			tooltip: null,
 			handler: function() {
 				var sel = me.getSelectedFiles();
 				if(sel.length > 0) me.downloadFilesUI(sel);
 			}
 		});
 		me.addAction('renameFile', {
+			tooltip: null,
 			handler: function() {
 				var sel = me.getSelectedFile();
 				if(sel) me.renameFileUI(sel);
 			}
 		});
 		me.addAction('deleteFile', {
+			tooltip: null,
 			handler: function() {
 				var sel = me.getSelectedFiles();
 				if(sel.length > 0) me.deleteFilesUI(sel);
 			}
 		});
 		me.addAction('addFileDlLink', {
+			tooltip: null,
 			handler: function() {
 				var sel = me.getSelectedFile();
 				if(sel) me.addFileLinkUI('D', sel);
 			}
 		});
 		me.addAction('deleteFileDlLink', {
+			tooltip: null,
 			handler: function() {
 				var sel = me.getSelectedFile();
 				if(sel) me.deleteFileLinkUI('D', sel);
 			}
 		});
 		me.addAction('sendFileDlLink', {
+			tooltip: null,
 			handler: function() {
 				var sel = me.getSelectedFile();
 				if(sel) me.sendFileLinkUI('D', sel);
 			}
 		});
 		me.addAction('addFileUlLink', {
+			tooltip: null,
 			handler: function() {
 				var sel = me.getSelectedFile();
 				if(sel) me.addFileLinkUI('U', sel);
 			}
 		});
 		me.addAction('deleteFileUlLink', {
+			tooltip: null,
 			handler: function() {
 				var sel = me.getSelectedFile();
 				if(sel) me.deleteFileLinkUI('U', sel);
 			}
 		});
 		me.addAction('sendFileUlLink', {
+			tooltip: null,
 			handler: function() {
 				var sel = me.getSelectedFile();
 				if(sel) me.sendFileLinkUI('U', sel);
@@ -1215,11 +1259,13 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				'-',
 				me.getAction('addFileNodeDlLink'),
 				me.getAction('deleteFileNodeDlLink'),
-				me.getAction('sendFileNodeDlLink'),
+				//TODO: aggiungere integrazione posta
+				//me.getAction('sendFileNodeDlLink')
 				'-',
 				me.getAction('addFileNodeUlLink'),
-				me.getAction('deleteFileNodeUlLink'),
-				me.getAction('sendFileNodeUlLink')
+				me.getAction('deleteFileNodeUlLink')
+				//TODO: aggiungere integrazione posta
+				//me.getAction('sendFileNodeUlLink')
 			],
 			listeners: {
 				beforeshow: function(s) {
@@ -1257,11 +1303,13 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				'-',
 				me.getAction('addFileDlLink'),
 				me.getAction('deleteFileDlLink'),
-				me.getAction('sendFileDlLink'),
+				//TODO: aggiungere integrazione posta
+				//me.getAction('sendFileDlLink'),
 				'-',
 				me.getAction('addFileUlLink'),
-				me.getAction('deleteFileUlLink'),
-				me.getAction('sendFileUlLink')
+				me.getAction('deleteFileUlLink')
+				//TODO: aggiungere integrazione posta
+				//me.getAction('sendFileUlLink')
 			],
 			listeners: {
 				beforeshow: function(s) {
@@ -1279,22 +1327,20 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		}));
 	},
 	
-	onActivate: function() {
-		/*
+	setDefaultFile: function() {
 		var me = this,
-				gp = me.gpTasks();
+				rn = me.getMyRoot(me.trStores()),
+				n = me.getBuiltInStoreByRoot(rn, 100);
+		if (n) me.setCurFile(n.getId());
+	},
+	
+	onActivate: function() {
+		var me = this,
+				tr = me.trStores();
 		
-		if(me.needsReload) {
-			me.needsReload = false;
-			me.reloadTasks();
+		if ((me.getActivationCount() === 1) && (tr.getStore().loadCount > 0)) {
+			me.setDefaultFile();
 		}
-		
-		me.updateDisabled('showTask');
-		me.updateDisabled('printTask');
-		me.updateDisabled('copyTask');
-		me.updateDisabled('moveTask');
-		me.updateDisabled('deleteTask');
-		*/
 	},
 	
 	reloadFiles: function() {
