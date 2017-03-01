@@ -44,7 +44,7 @@
 		-->
 		<dependency>
 			<groupId>com.sonicle.commons</groupId>
-			<artifactId>sonicle-commons-vfs2</artifactId>
+			<artifactId>sonicle-vfs2</artifactId>
 			<version>1.0</version>
 		</dependency>
 	</dependencies>
