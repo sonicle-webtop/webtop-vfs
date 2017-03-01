@@ -43,8 +43,8 @@
 		</dependency>
 		-->
 		<dependency>
-			<groupId>com.sonicle.vfs2</groupId>
-			<artifactId>sonicle-vfs2-providers</artifactId>
+			<groupId>com.sonicle.commons</groupId>
+			<artifactId>sonicle-commons-vfs2</artifactId>
 			<version>1.0</version>
 		</dependency>
 	</dependencies>
