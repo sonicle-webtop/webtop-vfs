@@ -33,8 +33,8 @@
 package com.sonicle.webtop.vfs.bol.model;
 
 import com.sonicle.webtop.vfs.model.StoreShareFolder;
-import com.sonicle.webtop.core.bol.model.SharePermsElements;
-import com.sonicle.webtop.core.bol.model.SharePermsFolder;
+import com.sonicle.webtop.core.model.SharePermsElements;
+import com.sonicle.webtop.core.model.SharePermsFolder;
 import com.sonicle.webtop.core.sdk.UserProfileId;
 import com.sonicle.webtop.vfs.model.Store;
 
