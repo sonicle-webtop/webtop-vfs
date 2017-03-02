@@ -36,7 +36,7 @@ import com.sonicle.webtop.core.CoreManager;
 import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.bol.ODomain;
 import com.sonicle.webtop.core.sdk.BaseController;
-import com.sonicle.webtop.core.sdk.UserProfile;
+import com.sonicle.webtop.core.sdk.UserProfileId;
 import com.sonicle.webtop.core.sdk.WTException;
 import com.sonicle.webtop.core.sdk.interfaces.IControllerHandlesProfiles;
 import org.slf4j.Logger;
@@ -49,7 +49,7 @@ public class VfsController extends BaseController implements IControllerHandlesP
 	public static final Logger logger = WT.getLogger(VfsController.class);
 	
 	@Override
-	public void addProfile(UserProfile.Id profileId) throws WTException {
+	public void addProfile(UserProfileId profileId) throws WTException {
 		CoreManager core = WT.getCoreManager(profileId);
 		VfsManager manager = new VfsManager(true, profileId);
 		
@@ -68,7 +68,7 @@ public class VfsController extends BaseController implements IControllerHandlesP
 	}
 	
 	@Override
-	public void removeProfile(UserProfile.Id profileId, boolean deep) throws WTException {
+	public void removeProfile(UserProfileId profileId, boolean deep) throws WTException {
 		
 	}
 }

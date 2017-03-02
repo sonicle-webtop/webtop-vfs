@@ -35,7 +35,7 @@ package com.sonicle.webtop.vfs.bol.model;
 import com.sonicle.webtop.vfs.model.StoreShareFolder;
 import com.sonicle.webtop.core.bol.model.SharePermsElements;
 import com.sonicle.webtop.core.bol.model.SharePermsFolder;
-import com.sonicle.webtop.core.sdk.UserProfile;
+import com.sonicle.webtop.core.sdk.UserProfileId;
 import com.sonicle.webtop.vfs.model.Store;
 
 /**
@@ -45,7 +45,7 @@ import com.sonicle.webtop.vfs.model.Store;
 public class MyStoreFolder extends StoreShareFolder  {
 	public static final String RIGHTS = "crud";
 
-	public MyStoreFolder(String shareId, UserProfile.Id ownerId, Store drive) {
+	public MyStoreFolder(String shareId, UserProfileId ownerId, Store drive) {
 		super(shareId, ownerId, SharePermsFolder.full(), SharePermsElements.full(), drive);
 	}
 }

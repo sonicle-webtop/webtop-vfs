@@ -62,6 +62,7 @@ import com.sonicle.webtop.core.bol.model.Sharing;
 import com.sonicle.webtop.core.sdk.BaseService;
 import com.sonicle.webtop.core.sdk.UploadException;
 import com.sonicle.webtop.core.sdk.UserProfile;
+import com.sonicle.webtop.core.sdk.UserProfileId;
 import com.sonicle.webtop.core.sdk.WTException;
 import com.sonicle.webtop.core.sdk.interfaces.IServiceUploadStreamListener;
 import com.sonicle.webtop.vfs.bol.js.JsGridFile;
@@ -170,7 +171,7 @@ public class Service extends BaseService {
 	}
 	
 	private void updateRootsCache() throws WTException {
-		UserProfile.Id pid = getEnv().getProfile().getId();
+		UserProfileId pid = getEnv().getProfile().getId();
 		synchronized(cacheRootsById) {
 			cacheRootsById.clear();
 			cacheRootsById.put(MyStoreRoot.SHARE_ID, new MyStoreRoot(pid));
@@ -519,7 +520,7 @@ public class Service extends BaseService {
 				SetupDataFtp setup = (SetupDataFtp) wts.getProperty(SERVICE_ID, PROPERTY);
 				
 				Store store = new Store();
-				store.setProfileId(new UserProfile.Id(setup.profileId));
+				store.setProfileId(new UserProfileId(setup.profileId));
 				store.setName(StringUtils.defaultIfBlank(name, setup.name));
 				store.setUri(setup.generateURI());
 				store.setParameters(setup.generateParameters());
@@ -579,7 +580,7 @@ public class Service extends BaseService {
 				SetupDataDropbox setup = (SetupDataDropbox) wts.getProperty(SERVICE_ID, PROPERTY);
 				
 				Store store = new Store();
-				store.setProfileId(new UserProfile.Id(setup.profileId));
+				store.setProfileId(new UserProfileId(setup.profileId));
 				store.setName(StringUtils.defaultIfBlank(name, setup.name));
 				store.setUri(setup.generateURI());
 				store.setParameters(setup.generateParameters());
@@ -639,7 +640,7 @@ public class Service extends BaseService {
 				SetupDataGoogleDrive setup = (SetupDataGoogleDrive) wts.getProperty(SERVICE_ID, PROPERTY);
 				
 				Store store = new Store();
-				store.setProfileId(new UserProfile.Id(setup.profileId));
+				store.setProfileId(new UserProfileId(setup.profileId));
 				store.setName(StringUtils.defaultIfBlank(name, setup.name));
 				store.setUri(setup.generateURI());
 				store.setParameters(setup.generateParameters());
@@ -681,7 +682,7 @@ public class Service extends BaseService {
 				SetupDataFile setup = (SetupDataFile) wts.getProperty(SERVICE_ID, PROPERTY);
 				
 				Store store = new Store();
-				store.setProfileId(new UserProfile.Id(setup.profileId));
+				store.setProfileId(new UserProfileId(setup.profileId));
 				store.setName(StringUtils.defaultIfBlank(name, setup.name));
 				store.setUri(setup.generateURI());
 				store.setParameters(setup.generateParameters());
@@ -734,7 +735,7 @@ public class Service extends BaseService {
 				SetupDataOther setup = (SetupDataOther) wts.getProperty(SERVICE_ID, PROPERTY);
 				
 				Store store = new Store();
-				store.setProfileId(new UserProfile.Id(setup.profileId));
+				store.setProfileId(new UserProfileId(setup.profileId));
 				store.setName(StringUtils.defaultIfBlank(name, setup.name));
 				store.setUri(setup.generateURI());
 				store.setParameters(setup.generateParameters());

@@ -34,7 +34,7 @@ package com.sonicle.webtop.vfs.bol.model;
 
 import com.sonicle.webtop.vfs.model.StoreShareRoot;
 import com.sonicle.webtop.core.bol.model.SharePermsRoot;
-import com.sonicle.webtop.core.sdk.UserProfile;
+import com.sonicle.webtop.core.sdk.UserProfileId;
 
 /**
  *
@@ -43,7 +43,7 @@ import com.sonicle.webtop.core.sdk.UserProfile;
 public class MyStoreRoot extends StoreShareRoot {
 	public static final String SHARE_ID = "0";
 	
-	public MyStoreRoot(UserProfile.Id ownerId) {
+	public MyStoreRoot(UserProfileId ownerId) {
 		super(SHARE_ID, SharePermsRoot.full(), ownerId, null);
 	}
 }

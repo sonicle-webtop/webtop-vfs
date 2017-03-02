@@ -33,7 +33,7 @@
 package com.sonicle.webtop.vfs;
 
 import com.sonicle.webtop.core.sdk.BaseUserSettings;
-import com.sonicle.webtop.core.sdk.UserProfile;
+import com.sonicle.webtop.core.sdk.UserProfileId;
 import static com.sonicle.webtop.vfs.VfsSettings.*;
 
 /**
@@ -43,7 +43,7 @@ import static com.sonicle.webtop.vfs.VfsSettings.*;
 public class VfsUserSettings extends BaseUserSettings {
 	private VfsServiceSettings ss;
 	
-	public VfsUserSettings(String serviceId, UserProfile.Id profileId) {
+	public VfsUserSettings(String serviceId, UserProfileId profileId) {
 		super(serviceId, profileId);
 		ss = new VfsServiceSettings(serviceId, profileId.getDomainId());
 	}

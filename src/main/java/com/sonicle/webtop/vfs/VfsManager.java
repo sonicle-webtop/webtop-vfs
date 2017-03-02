@@ -55,6 +55,7 @@ import com.sonicle.webtop.core.dal.DAOException;
 import com.sonicle.webtop.core.sdk.AuthException;
 import com.sonicle.webtop.core.sdk.BaseManager;
 import com.sonicle.webtop.core.sdk.UserProfile;
+import com.sonicle.webtop.core.sdk.UserProfileId;
 import com.sonicle.webtop.core.sdk.WTException;
 import com.sonicle.webtop.core.sdk.WTRuntimeException;
 import com.sonicle.webtop.core.util.NotificationHelper;
@@ -111,15 +112,15 @@ public class VfsManager extends BaseManager implements IVfsManager {
 	private static final String MYDOCUMENTS_URI_SCHEME = "mydocs";
 	private static final String IMAGES_URI_SCHEME = "images";
 	
-	private final HashMap<Integer, UserProfile.Id> cacheOwnerByStore = new HashMap<>();
+	private final HashMap<Integer, UserProfileId> cacheOwnerByStore = new HashMap<>();
 	private final Object shareCacheLock = new Object();
-	private final HashMap<UserProfile.Id, String> cacheShareRootByOwner = new HashMap<>();
-	private final HashMap<UserProfile.Id, String> cacheWildcardShareFolderByOwner = new HashMap<>();
+	private final HashMap<UserProfileId, String> cacheShareRootByOwner = new HashMap<>();
+	private final HashMap<UserProfileId, String> cacheWildcardShareFolderByOwner = new HashMap<>();
 	private final HashMap<Integer, String> cacheShareFolderByStore = new HashMap<>();
 	
 	private final HashMap<String, StoreFileSystem> storeFileSystems = new HashMap<>();
 	
-	public VfsManager(boolean fastInit, UserProfile.Id targetProfileId) throws WTException {
+	public VfsManager(boolean fastInit, UserProfileId targetProfileId) throws WTException {
 		super(fastInit, targetProfileId);
 		if(!fastInit) {
 			initMyDocuments();
@@ -259,7 +260,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		// returns readable shares (we don't need to test READ permission)
 		List<OShare> shares = core.listIncomingShareFolders(rootShareId, GROUPNAME_STORE);
 		for(OShare share : shares) {
-			UserProfile.Id ownerId = core.userUidToProfileId(share.getUserUid());
+			UserProfileId ownerId = core.userUidToProfileId(share.getUserUid());
 			List<Store> stores = null;
 			if(share.hasWildcard()) {
 				stores = listStores(ownerId);
@@ -310,7 +311,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		}
 	}
 	
-	private List<Store> listStores(UserProfile.Id pid) throws WTException {
+	private List<Store> listStores(UserProfileId pid) throws WTException {
 		StoreDAO dao = StoreDAO.getInstance();
 		ArrayList<Store> items = new ArrayList<>();
 		Connection con = null;
@@ -899,7 +900,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 				cacheShareRootByOwner.put(root.getOwnerProfileId(), root.getShareId());
 				for(OShare folder : core.listIncomingShareFolders(root.getShareId(), GROUPNAME_STORE)) {
 					if(folder.hasWildcard()) {
-						UserProfile.Id ownerId = core.userUidToProfileId(folder.getUserUid());
+						UserProfileId ownerId = core.userUidToProfileId(folder.getUserUid());
 						cacheWildcardShareFolderByOwner.put(ownerId, folder.getShareId().toString());
 					} else {
 						cacheShareFolderByStore.put(Integer.valueOf(folder.getInstance()), folder.getShareId().toString());
@@ -911,14 +912,14 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		}
 	}
 	
-	private String ownerToRootShareId(UserProfile.Id owner) {
+	private String ownerToRootShareId(UserProfileId owner) {
 		synchronized(shareCacheLock) {
 			if(!cacheShareRootByOwner.containsKey(owner)) buildShareCache();
 			return cacheShareRootByOwner.get(owner);
 		}
 	}
 	
-	private String ownerToWildcardFolderShareId(UserProfile.Id ownerPid) {
+	private String ownerToWildcardFolderShareId(UserProfileId ownerPid) {
 		synchronized(shareCacheLock) {
 			if(!cacheWildcardShareFolderByOwner.containsKey(ownerPid) && cacheShareRootByOwner.isEmpty()) buildShareCache();
 			return cacheWildcardShareFolderByOwner.get(ownerPid);
@@ -932,13 +933,13 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		}
 	}
 	
-	private UserProfile.Id storeToOwner(int storeId) {
+	private UserProfileId storeToOwner(int storeId) {
 		synchronized(cacheOwnerByStore) {
 			if(cacheOwnerByStore.containsKey(storeId)) {
 				return cacheOwnerByStore.get(storeId);
 			} else {
 				try {
-					UserProfile.Id owner = findStoreOwner(storeId);
+					UserProfileId owner = findStoreOwner(storeId);
 					cacheOwnerByStore.put(storeId, owner);
 					return owner;
 				} catch(WTException ex) {
@@ -948,7 +949,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		}
 	}
 	
-	private UserProfile.Id findStoreOwner(int storeId) throws WTException {
+	private UserProfileId findStoreOwner(int storeId) throws WTException {
 		Connection con = null;
 		
 		try {
@@ -956,7 +957,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			StoreDAO dao = StoreDAO.getInstance();
 			Owner owner = dao.selectOwnerById(con, storeId);
 			if(owner == null) throw new WTException("Store not found [{0}]", storeId);
-			return new UserProfile.Id(owner.getDomainId(), owner.getUserId());
+			return new UserProfileId(owner.getDomainId(), owner.getUserId());
 			
 		} catch(SQLException | DAOException ex) {
 			throw new WTException(ex, "DB error");
@@ -1025,8 +1026,8 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		}
 	}
 	
-	private void checkRightsOnStoreRoot(UserProfile.Id ownerPid, String action) throws WTException {
-		UserProfile.Id targetPid = getTargetProfileId();
+	private void checkRightsOnStoreRoot(UserProfileId ownerPid, String action) throws WTException {
+		UserProfileId targetPid = getTargetProfileId();
 		
 		if(RunContext.isWebTopAdmin()) return;
 		if(ownerPid.equals(targetPid)) return;
@@ -1041,9 +1042,9 @@ public class VfsManager extends BaseManager implements IVfsManager {
 	
 	private void checkRightsOnStoreFolder(int storeId, String action) throws WTException {
 		if(RunContext.isWebTopAdmin()) return;
-		UserProfile.Id targetPid = getTargetProfileId();
+		UserProfileId targetPid = getTargetProfileId();
 		// Skip rights check if running user is resource's owner
-		UserProfile.Id ownerPid = storeToOwner(storeId);
+		UserProfileId ownerPid = storeToOwner(storeId);
 		if(ownerPid.equals(targetPid)) return;
 		
 		// Checks rights on the wildcard instance (if present)
@@ -1062,11 +1063,11 @@ public class VfsManager extends BaseManager implements IVfsManager {
 	}
 	
 	private void checkRightsOnStoreElements(int storeId, String action) throws WTException {
-		UserProfile.Id targetPid = getTargetProfileId();
+		UserProfileId targetPid = getTargetProfileId();
 		
 		if(RunContext.isWebTopAdmin()) return;
 		// Skip rights check if running user is resource's owner
-		UserProfile.Id ownerPid = storeToOwner(storeId);
+		UserProfileId ownerPid = storeToOwner(storeId);
 		if(ownerPid.equals(getTargetProfileId())) return;
 		
 		// Checks rights on the wildcard instance (if present)
@@ -1231,13 +1232,13 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		}
 	}
 	
-	private String generateLinkId(UserProfile.Id profileId, String linkType, int storeId, String path) {
+	private String generateLinkId(UserProfileId profileId, String linkType, int storeId, String path) {
 		return DigestUtils.md5Hex(new CompositeId(profileId.getDomainId(), profileId.getUserId(), linkType, storeId, path).toString());
 	}
 	
 	private OSharingLink doSharingLinkUpdate(boolean insert, Connection con, SharingLink sl) throws WTException {
 		SharingLinkDAO dao = SharingLinkDAO.getInstance();
-		UserProfile.Id pid = getTargetProfileId();
+		UserProfileId pid = getTargetProfileId();
 		
 		sl.validate(insert);
 		
@@ -1259,7 +1260,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 	/*
 	private OSharingLink doSharingLinkInsert(Connection con, SharingLink sl) throws WTException {
 		SharingLinkDAO dao = SharingLinkDAO.getInstance();
-		UserProfile.Id pid = getTargetProfileId();
+		UserProfileId pid = getTargetProfileId();
 		
 		sl.validate();
 		OSharingLink o = new OSharingLink(sl);
@@ -1281,7 +1282,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 	
 	private void sendLinkUsageEmail(OSharingLink olink, String path, String ipAddress, String userAgent) throws WTException {
 		final String BHD_KEY = (olink.getLinkType().equals(SharingLink.TYPE_DOWNLOAD)) ? VfsLocale.TPL_EMAIL_SHARINGLINKUSAGE_BODY_HEADER_DL : VfsLocale.TPL_EMAIL_SHARINGLINKUSAGE_BODY_HEADER_UL;
-		UserProfile.Id pid = olink.getProfileId();
+		UserProfileId pid = olink.getProfileId();
 		
 		//TODO: rendere relativa la path del file rispetto allo Store???
 		try {

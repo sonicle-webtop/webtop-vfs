@@ -43,9 +43,9 @@
 		</dependency>
 		-->
 		<dependency>
-			<groupId>com.sonicle.commons</groupId>
+			<groupId>com.sonicle.libraries</groupId>
 			<artifactId>sonicle-vfs2</artifactId>
-			<version>1.0</version>
+			<version>LATEST</version>
 		</dependency>
 	</dependencies>
 </project>

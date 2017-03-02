@@ -32,7 +32,7 @@
  */
 package com.sonicle.webtop.vfs.bol;
 
-import com.sonicle.webtop.core.sdk.UserProfile;
+import com.sonicle.webtop.core.sdk.UserProfileId;
 import com.sonicle.webtop.vfs.jooq.tables.pojos.Stores;
 
 /**
@@ -43,7 +43,7 @@ public class OStore extends Stores {
 		
 	public OStore() {}
 	
-	public UserProfile.Id getProfileId() {
-		return new UserProfile.Id(getDomainId(), getUserId());
+	public UserProfileId getProfileId() {
+		return new UserProfileId(getDomainId(), getUserId());
 	}
 }

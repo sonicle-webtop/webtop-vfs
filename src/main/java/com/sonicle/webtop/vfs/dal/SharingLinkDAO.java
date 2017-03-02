@@ -34,7 +34,7 @@ package com.sonicle.webtop.vfs.dal;
 
 import com.sonicle.webtop.core.dal.BaseDAO;
 import com.sonicle.webtop.core.dal.DAOException;
-import com.sonicle.webtop.core.sdk.UserProfile;
+import com.sonicle.webtop.core.sdk.UserProfileId;
 import com.sonicle.webtop.vfs.bol.OSharingLink;
 import static com.sonicle.webtop.vfs.jooq.tables.SharingLinks.SHARING_LINKS;
 import com.sonicle.webtop.vfs.jooq.tables.records.SharingLinksRecord;
@@ -75,7 +75,7 @@ public class SharingLinkDAO extends BaseDAO {
 			.fetchOneInto(OSharingLink.class);
 	}
 	
-	public List<OSharingLink> selectByProfileTypeStorePath(Connection con, UserProfile.Id profileId, String linkType, int storeId, String filePathStartsWith) throws DAOException {
+	public List<OSharingLink> selectByProfileTypeStorePath(Connection con, UserProfileId profileId, String linkType, int storeId, String filePathStartsWith) throws DAOException {
 		DSLContext dsl = getDSL(con);
 		return dsl
 			.select()
