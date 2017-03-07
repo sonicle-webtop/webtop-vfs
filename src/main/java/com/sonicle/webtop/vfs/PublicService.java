@@ -161,7 +161,7 @@ public class PublicService extends BasePublicService {
 								String p = ServletUtils.getStringParameter(request, "p", true);
 								
 								String filePath = PathUtils.concatPaths(link.getFilePath(), p);
-								writeStoreFile(response, link.getStoreId(), filePath, fileUrlPath.getOutFileName());
+								writeStoreFile(response, link, fileUrlPath.getOutFileName());
 								manager.notifySharingLinkUsage(link.getLinkId(), filePath, wts.getRemoteIP(), wts.getPlainUserAgent());
 
 							} else {
@@ -177,7 +177,7 @@ public class PublicService extends BasePublicService {
 								response.setStatus(HttpServletResponse.SC_FOUND);
 								
 							} else if(fileUrlPath.isGet()) { // Real binary stream
-								writeStoreFile(response, link.getStoreId(), link.getFilePath(), fileUrlPath.getOutFileName());
+								writeStoreFile(response, link, fileUrlPath.getOutFileName());
 								manager.notifySharingLinkUsage(link.getLinkId(), link.getFilePath(), wts.getRemoteIP(), wts.getPlainUserAgent());
 								
 							} else {
@@ -307,11 +307,12 @@ public class PublicService extends BasePublicService {
 		}
 	}
 	
-	private void writeStoreFile(HttpServletResponse response, int storeId, String filePath, String outFileName) {
+	private void writeStoreFile(HttpServletResponse response, SharingLink link, String outFileName) {
 		try {
 			FileObject fo = null;
 			try {
-				fo = manager.getStoreFile(storeId, filePath);
+				VfsManager vfsmgr=(VfsManager)WT.getServiceManager(SERVICE_ID,link.getProfileId());
+				fo = vfsmgr.getStoreFile(link.getStoreId(), link.getFilePath());
 				
 				if(fo.isFile()) {
 					//String mediaType = ServletHelper.guessMediaType(fo.getName().getBaseName(), true);
