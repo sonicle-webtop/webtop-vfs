@@ -79,6 +79,7 @@ import com.sonicle.webtop.vfs.model.StoreFileType;
 import com.sonicle.webtop.vfs.model.SharingLink;
 import com.sonicle.webtop.vfs.sfs.StoreFileSystem;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -858,11 +859,13 @@ public class Service extends BaseService {
 				}
 				
 				String filename = fo.getName().getBaseName();
-				IOUtils.copy(fo.getContent().getInputStream(), response.getOutputStream());
 				//String mediaType = ServletHelper.guessMediaType(filename, true);
-				//ServletUtils.setFileStreamHeaders(response, mediaType, DispositionType.ATTACHMENT, filename);
-				ServletUtils.setFileStreamHeadersForceDownload(response, filename);
+				
+				OutputStream os = response.getOutputStream();
 				ServletUtils.setContentLengthHeader(response, fo.getContent().getSize());
+				ServletUtils.setFileStreamHeadersForceDownload(response, filename);
+				IOUtils.copy(fo.getContent().getInputStream(), os);
+				
 			} finally {
 				IOUtils.closeQuietly(fo);
 			}
