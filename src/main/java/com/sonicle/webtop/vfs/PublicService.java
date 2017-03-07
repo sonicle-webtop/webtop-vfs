@@ -56,6 +56,7 @@ import com.sonicle.webtop.vfs.sfs.StoreFileSystem;
 import freemarker.template.TemplateException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -311,20 +312,20 @@ public class PublicService extends BasePublicService {
 		try {
 			FileObject fo = null;
 			try {
-				VfsManager vfsmgr=(VfsManager)WT.getServiceManager(SERVICE_ID,link.getProfileId());
-				fo = vfsmgr.getStoreFile(link.getStoreId(), link.getFilePath());
+				VfsManager vfsMgr = (VfsManager)WT.getServiceManager(SERVICE_ID, link.getProfileId());
+				fo = vfsMgr.getStoreFile(link.getStoreId(), link.getFilePath());
 				
 				if(fo.isFile()) {
 					//String mediaType = ServletHelper.guessMediaType(fo.getName().getBaseName(), true);
-					//ServletUtils.setFileStreamHeaders(response, mediaType, DispositionType.ATTACHMENT, outFileName);
+					OutputStream os = response.getOutputStream();
 					ServletUtils.setFileStreamHeadersForceDownload(response, outFileName);
 					ServletUtils.setContentLengthHeader(response, fo.getContent().getSize());
-					IOUtils.copy(fo.getContent().getInputStream(), response.getOutputStream());
+					IOUtils.copy(fo.getContent().getInputStream(), os);
 					
 				} else if(fo.isFolder()) {
-					ServletUtils.setFileStreamHeaders(response, "application/zip", DispositionType.ATTACHMENT, outFileName);
-					
-					ZipOutputStream zos = new ZipOutputStream(response.getOutputStream());
+					OutputStream os = response.getOutputStream();
+					ServletUtils.setFileStreamHeadersForceDownload(response, outFileName); // Filename already contains .zip extension!
+					ZipOutputStream zos = new ZipOutputStream(os);
 					try {
 						VfsUtils.zipFileObject(fo, zos, true);
 						zos.flush();
