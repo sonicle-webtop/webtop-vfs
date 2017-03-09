@@ -129,7 +129,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 	}
 	
 	private synchronized void initMyDocuments() throws WTException {
-		File myDocsDir = new File(WT.getServiceHomePath(SERVICE_ID) + MYDOCUMENTS_FOLDER);
+		File myDocsDir = new File(WT.getServiceHomePath(SERVICE_ID,getTargetProfileId()) + MYDOCUMENTS_FOLDER);
 		try {
 			if (!myDocsDir.exists()) myDocsDir.mkdir();
 		} catch(SecurityException ex) {
@@ -137,8 +137,8 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		}
 	}
 	
-	private String getMyDocumentsUserPath(String userId) {
-		return WT.getServiceHomePath(SERVICE_ID) + MYDOCUMENTS_FOLDER + "/" + userId + "/";
+	private String getMyDocumentsUserPath(UserProfileId profileId) {
+		return WT.getServiceHomePath(SERVICE_ID,profileId) + MYDOCUMENTS_FOLDER + "/" + profileId.getUserId() + "/";
 	}
 	
 	private void initFileSystems() throws WTException {
@@ -163,7 +163,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 				
 		if (store.getBuiltIn().equals(Store.BUILTIN_MYDOCUMENTS)) {
 			VfsSettings.MyDocumentsUriTemplateValues tpl = new VfsSettings.MyDocumentsUriTemplateValues();
-			tpl.SERVICE_HOME = WT.getServiceHomePath(SERVICE_ID);
+			tpl.SERVICE_HOME = WT.getServiceHomePath(SERVICE_ID,store.getProfileId());
 			tpl.SERVICE_ID = SERVICE_ID;
 			tpl.DOMAIN_ID = store.getDomainId();
 			tpl.USER_ID = store.getUserId();
@@ -172,7 +172,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			VfsServiceSettings vus = new VfsServiceSettings(SERVICE_ID, store.getDomainId());
 			String suri = vus.getMyDocumentsUri(tpl);
 			if (StringUtils.isBlank(suri)) {
-				uri = new File(getMyDocumentsUserPath(store.getUserId())).toURI();
+				uri = new File(getMyDocumentsUserPath(store.getProfileId())).toURI();
 				//uri = Store.buildURI("file", null, null, null, null, getMyDocumentsUserPath(store.getUserId()));
 			} else {
 				uri = new URI(suri);
@@ -1090,7 +1090,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 	private String prependFileBasePath(URI uri) {
 		VfsSettings.StoreFileBasepathTemplateValues tpl = new VfsSettings.StoreFileBasepathTemplateValues();
 		
-		tpl.SERVICE_HOME = WT.getServiceHomePath(SERVICE_ID);
+		tpl.SERVICE_HOME = WT.getServiceHomePath(SERVICE_ID,getTargetProfileId());
 		tpl.SERVICE_ID = SERVICE_ID;
 		tpl.DOMAIN_ID = getTargetProfileId().getDomain();
 		
