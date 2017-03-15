@@ -67,9 +67,9 @@ Ext.define('Sonicle.webtop.vfs.view.UploadLinkWiz', {
 		WTU.applyFormulas(me.getVM(), {
 			foExpire: WTF.radioGroupBind('', 'expire', me.sufId('expire')),
 			foAuthMode: WTF.radioGroupBind('', 'authMode', me.sufId('authMode')),
-			foAuthModeIsP: WTF.equalsFormula('', 'authMode', 'P'),
-			foIsUrlEmpty: WTF.isEmptyFormula('', 'url'),
-			foIsRawUrlEmpty: WTF.isEmptyFormula('', 'rawUrl')
+			foAuthModeIsP: WTF.foIsEqual('', 'authMode', 'P'),
+			foIsUrlEmpty: WTF.foIsEmpty('', 'url'),
+			foIsRawUrlEmpty: WTF.foIsEmpty('', 'rawUrl')
 		});
 	},
 	
@@ -253,9 +253,9 @@ Ext.define('Sonicle.webtop.vfs.view.UploadLinkWiz', {
 	onBeforeNavigate: function(s, dir, np, pp) {
 		if(dir === -1) return;
 		var me = this,
-				ret = true,
 				ppcmp = me.getPageCmp(pp),
-				vm = me.getVM();
+				vm = me.getVM(),
+				ret;
 		
 		if(pp === 's1') {
 			ret = ppcmp.down('wtform').isValid();

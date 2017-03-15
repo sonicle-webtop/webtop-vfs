@@ -56,9 +56,9 @@ Ext.define('Sonicle.webtop.vfs.view.SharingLink', {
 		me.callParent([cfg]);
 		
 		WTU.applyFormulas(me.getVM(), {
-			foIsUrlEmpty: WTF.isEmptyFormula('record', 'publicUrl'),
-			foIsRawUrlEmpty: WTF.isEmptyFormula('record', 'rawPublicUrl'),
-			foAuthModeIsP: WTF.equalsFormula('record', 'authMode', 'P')
+			foIsUrlEmpty: WTF.foIsEmpty('record', 'publicUrl'),
+			foIsRawUrlEmpty: WTF.foIsEmpty('record', 'rawPublicUrl'),
+			foAuthModeIsP: WTF.foIsEqual('record', 'authMode', 'P')
 		});
 	},
 	

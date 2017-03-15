@@ -67,9 +67,9 @@ Ext.define('Sonicle.webtop.vfs.view.DownloadLinkWiz', {
 		WTU.applyFormulas(me.getVM(), {
 			foExpire: WTF.radioGroupBind('', 'expire', me.sufId('expire')),
 			foAuthMode: WTF.radioGroupBind('', 'authMode', me.sufId('authMode')),
-			foAuthModeIsP: WTF.equalsFormula('', 'authMode', 'P'),
-			foIsUrlEmpty: WTF.isEmptyFormula('', 'url'),
-			foIsRawUrlEmpty: WTF.isEmptyFormula('', 'rawUrl')
+			foAuthModeIsP: WTF.foIsEqual('', 'authMode', 'P'),
+			foIsUrlEmpty: WTF.foIsEmpty('', 'url'),
+			foIsRawUrlEmpty: WTF.foIsEmpty('', 'rawUrl')
 		});
 	},
 	
