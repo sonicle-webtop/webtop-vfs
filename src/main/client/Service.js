@@ -939,7 +939,28 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 	},
 	
 	sendFileLinkUI: function(type, sel) {
-		WT.warn(WT.res('warn.todo'));
+		var me = this,
+				linkId = (type === 'D') ? sel.getFDlLink() : sel.getFUlLink();
+		me.getLinkEmbedCode(linkId, {
+			callback: function(success, html) {
+				if (success) {
+					html = '<br>' + html + '<br>';
+					var mapi = WT.getServiceApi('com.sonicle.webtop.mail');
+					if (mapi) {
+						mapi.newMessage({
+							format: 'html',
+							content: html
+						}, {
+							dirty: true,
+							contentReady: false,
+							appendContent: false
+						});
+					} else {
+						WT.rawMessage(html, {title: me.res('sharingLink.embedcode.tit')});
+					}
+				}
+			}
+		});
 	},
 	
 	editShare: function(id) {
@@ -1089,6 +1110,19 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		WT.ajaxReq(me.ID, 'ManageSharingLink', {
 			params: {
 				crud: 'delete',
+				id: linkId
+			},
+			callback: function(success, json) {
+				Ext.callback(opts.callback, opts.scope || me, [success, json.data, json]);
+			}
+		});
+	},
+	
+	getLinkEmbedCode: function(linkId, opts) {
+		opts = opts || {};
+		var me = this;
+		WT.ajaxReq(me.ID, 'GetLinkEmbedCode', {
+			params: {
 				id: linkId
 			},
 			callback: function(success, json) {
@@ -1259,13 +1293,11 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				'-',
 				me.getAct('addFileNodeDlLink'),
 				me.getAct('deleteFileNodeDlLink'),
-				//TODO: aggiungere integrazione posta
-				//me.getAct('sendFileNodeDlLink')
+				me.getAct('sendFileNodeDlLink'),
 				'-',
 				me.getAct('addFileNodeUlLink'),
-				me.getAct('deleteFileNodeUlLink')
-				//TODO: aggiungere integrazione posta
-				//me.getAct('sendFileNodeUlLink')
+				me.getAct('deleteFileNodeUlLink'),
+				me.getAct('sendFileNodeUlLink')
 			],
 			listeners: {
 				beforeshow: function(s) {
@@ -1303,13 +1335,11 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				'-',
 				me.getAct('addFileDlLink'),
 				me.getAct('deleteFileDlLink'),
-				//TODO: aggiungere integrazione posta
-				//me.getAct('sendFileDlLink'),
+				me.getAct('sendFileDlLink'),
 				'-',
 				me.getAct('addFileUlLink'),
-				me.getAct('deleteFileUlLink')
-				//TODO: aggiungere integrazione posta
-				//me.getAct('sendFileUlLink')
+				me.getAct('deleteFileUlLink'),
+				me.getAct('sendFileUlLink')
 			],
 			listeners: {
 				beforeshow: function(s) {

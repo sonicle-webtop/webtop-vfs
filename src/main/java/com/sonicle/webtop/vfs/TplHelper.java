@@ -36,9 +36,11 @@ import com.sonicle.commons.PathUtils;
 import com.sonicle.commons.web.json.MapItem;
 import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.util.NotificationHelper;
+import com.sonicle.webtop.vfs.model.SharingLink;
 import freemarker.template.TemplateException;
 import java.io.IOException;
 import java.util.Locale;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  *
@@ -67,5 +69,29 @@ public class TplHelper {
 		map.put("userAgent", userAgent);
 		
 		return WT.buildTemplate(SERVICE_ID, "tpl/email/linkUsage-body.html", map);
+	}
+	
+	public static String buildLinkEmbedCodeTpl(Locale locale, String linkType, String linkUrl, String linkName, String linkExpiration, String password) throws IOException, TemplateException {
+		MapItem i18n = new MapItem();
+		if (linkType.equals(SharingLink.TYPE_DOWNLOAD)) {
+			i18n.put("type", WT.lookupResource(SERVICE_ID, locale, VfsLocale.TPL_EMAIL_LINKEMBEDCODE_TYPE_DL));
+		} else if (linkType.equals(SharingLink.TYPE_UPLOAD)) {
+			i18n.put("type", WT.lookupResource(SERVICE_ID, locale, VfsLocale.TPL_EMAIL_LINKEMBEDCODE_TYPE_UL));
+		}
+		i18n.put("expiration", WT.lookupResource(SERVICE_ID, locale, VfsLocale.TPL_EMAIL_LINKEMBEDCODE_EXPIRATION));
+		i18n.put("password", WT.lookupResource(SERVICE_ID, locale, VfsLocale.TPL_EMAIL_LINKEMBEDCODE_PASSWORD));
+		
+		MapItem map = new MapItem();
+		map.put("i18n", i18n);
+		map.put("linkUrl", linkUrl);
+		map.put("linkName", linkName);
+		if (!StringUtils.isBlank(linkExpiration)) {
+			map.put("linkExpiration", linkExpiration);
+		}
+		if (!StringUtils.isBlank(password)) {
+			map.put("linkPassword", password);
+		}
+		
+		return WT.buildTemplate(SERVICE_ID, "tpl/email/linkEmbed.html", map);
 	}
 }

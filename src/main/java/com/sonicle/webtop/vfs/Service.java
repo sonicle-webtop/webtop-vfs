@@ -53,6 +53,7 @@ import com.sonicle.vfs2.VfsUtils;
 import com.sonicle.vfs2.util.DropboxApiUtils;
 import com.sonicle.vfs2.util.GoogleDriveApiUtils;
 import com.sonicle.vfs2.util.GoogleDriveAppInfo;
+import com.sonicle.webtop.core.CoreUserSettings;
 import com.sonicle.webtop.core.app.RunContext;
 import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.app.WebTopSession;
@@ -897,7 +898,7 @@ public class Service extends BaseService {
 				dl.setFilePath(nodeId.getPath());
 				if(!StringUtils.isBlank(expirationDate)) {
 					DateTime dt = ymdHmsFmt.parseDateTime(expirationDate);
-					dl.setExpiresOn(DateTimeUtils.withTimeAtEndOfDay(dt));
+					dl.setExpiresOn(dt.withTimeAtStartOfDay());
 				}
 				dl.setAuthMode(authMode);
 				dl.setPassword(password);
@@ -934,9 +935,9 @@ public class Service extends BaseService {
 				ul.setType(SharingLink.TYPE_UPLOAD);
 				ul.setStoreId(storeId);
 				ul.setFilePath(nodeId.getPath());
-				if(!StringUtils.isBlank(expirationDate)) {
+				if (!StringUtils.isBlank(expirationDate)) {
 					DateTime dt = ymdHmsFmt.parseDateTime(expirationDate);
-					ul.setExpiresOn(DateTimeUtils.withTimeAtEndOfDay(dt));
+					ul.setExpiresOn(dt.withTimeAtStartOfDay());
 				}
 				ul.setAuthMode(authMode);
 				ul.setPassword(password);
@@ -1012,9 +1013,28 @@ public class Service extends BaseService {
 			}
 			
 		} catch(Exception ex) {
-			logger.error("Error in ManageActivities", ex);
+			logger.error("Error in ManageSharingLink", ex);
 			new JsonResult(false, "Error").printTo(out);
+		}
+	}
+	
+	public void processGetLinkEmbedCode(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		UserProfile up = getEnv().getProfile();
+		CoreUserSettings cus = getEnv().getCoreUserSettings();
+		SharingLink item = null;
+		
+		try {
+			String id = ServletUtils.getStringParameter(request, "id", true);
 			
+			item = manager.getSharingLink(id);
+			String servicePublicUrl = WT.getServicePublicUrl(up.getDomainId(), SERVICE_ID);
+			String html = VfsManager.generateLinkEmbedCode(up.getLocale(), cus.getShortDateFormat(), servicePublicUrl, item);
+			
+			new JsonResult(html).printTo(out);
+			
+		} catch(Exception ex) {
+			logger.error("Error in GetLinkEmbedCode", ex);
+			new JsonResult(false, "Error").printTo(out);
 		}
 	}
 	

@@ -1307,6 +1307,23 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		}
 	}
 	
+	public static String generateLinkEmbedCode(Locale locale, String dateFormat, String publicBaseUrl, SharingLink link) {
+		
+		try {
+			String[] urls = VfsManager.generateLinkPublicURLs(publicBaseUrl, link);
+			
+			String url = (urls[1] != null) ? urls[1] : urls[0];
+			String expiration = (link.getExpiresOn() != null) ? DateTimeUtils.createFormatter(dateFormat).print(link.getExpiresOn()) : null;
+			String password = (link.getAuthMode().equals(SharingLink.AUTH_MODE_PASSWORD)) ? link.getPassword() : null;
+			
+			return TplHelper.buildLinkEmbedCodeTpl(locale, link.getType(), url, PathUtils.getFileName(link.getFilePath()), expiration, password);
+			
+		} catch(IOException | TemplateException ex) {
+			logger.error("Unable to build embed template", ex);
+			return null;
+		}
+	}
+	
 	public static String[] generateLinkPublicURLs(String publicBaseUrl, SharingLink link) {
 		if(link.getType().equals(SharingLink.TYPE_DOWNLOAD)) {
 			String url = null, durl = null;

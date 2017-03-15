@@ -77,7 +77,7 @@ public class JsSharingLink {
 		bean.setType(js.type);
 		if(!StringUtils.isBlank(js.expirationDate)) {
 			DateTime dt = ymdHmsFmt.parseDateTime(js.expirationDate);
-			bean.setExpiresOn(DateTimeUtils.withTimeAtEndOfDay(dt));
+			bean.setExpiresOn(dt.withTimeAtStartOfDay());
 		}
 		bean.setAuthMode(js.authMode);
 		bean.setPassword(js.password);

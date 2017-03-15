@@ -48,4 +48,8 @@ public class VfsLocale {
 	public static final String TPL_EMAIL_SHARINGLINKUSAGE_BODY_SHAREDLINK = "tpl.email.sharinglinkUsage.body.sharedLink";
 	public static final String TPL_EMAIL_SHARINGLINKUSAGE_BODY_FILE = "tpl.email.sharinglinkUsage.body.file";
 	public static final String TPL_EMAIL_SHARINGLINKUSAGE_BODY_REMOTEUSER = "tpl.email.sharinglinkUsage.body.remoteUser";
+	public static final String TPL_EMAIL_LINKEMBEDCODE_TYPE_DL = "tpl.email.linkEmbedCode.type.download";
+	public static final String TPL_EMAIL_LINKEMBEDCODE_TYPE_UL = "tpl.email.linkEmbedCode.type.upload";
+	public static final String TPL_EMAIL_LINKEMBEDCODE_EXPIRATION = "tpl.email.linkEmbedCode.expiration";
+	public static final String TPL_EMAIL_LINKEMBEDCODE_PASSWORD = "tpl.email.linkEmbedCode.mode.password";
 }
