@@ -33,8 +33,8 @@
  */
 Ext.define('Sonicle.webtop.vfs.model.SharingLink', {
 	extend: 'WTA.ux.data.BaseModel',
+	
 	proxy: WTF.apiProxy('com.sonicle.webtop.vfs', 'ManageSharingLink'),
-	requires: ['Sonicle.data.validator.Presence'],
 	
 	identifier: 'negativestring',
 	idProperty: 'linkId',
@@ -50,9 +50,8 @@ Ext.define('Sonicle.webtop.vfs.model.SharingLink', {
 		WTF.field('password', 'string', true, {
 			validators: [{
 				type: 'sopresence',
-				skip: function(rec) {
-					return rec.get('authMode') !== 'P';
-				}
+				ifField: 'authMode',
+				ifValues: ['P']
 			}]
 		})
 	]
