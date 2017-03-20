@@ -128,6 +128,25 @@ public class StoreDAO extends BaseDAO {
 				.fetchInto(OStore.class);
 	}
 	
+	public List<Integer> selectIdByDomainUserBuiltIn(Connection con, String domainId, String userId, short builtIn) throws DAOException {
+		DSLContext dsl = getDSL(con);
+		return dsl
+				.select(
+					STORES.STORE_ID
+				)
+				.from(STORES)
+				.where(
+						STORES.DOMAIN_ID.equal(domainId)
+						.and(STORES.USER_ID.equal(userId))
+						.and(STORES.BUILT_IN.equal(builtIn))
+				)
+				.orderBy(
+						STORES.BUILT_IN.desc(),
+						STORES.NAME.asc()
+				)
+				.fetchInto(Integer.class);
+	}
+	
 	public List<OStore> selectByDomainUserBuiltIn(Connection con, String domainId, String userId, short builtIn) throws DAOException {
 		DSLContext dsl = getDSL(con);
 		return dsl

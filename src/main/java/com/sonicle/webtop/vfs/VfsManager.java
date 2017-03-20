@@ -294,11 +294,6 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		core.updateSharing(SERVICE_ID, GROUPNAME_STORE, sharing);
 	}
 	
-	@Override
-	public List<Store> listStores() throws WTException {
-		return listStores(getTargetProfileId());
-	}
-	
 	private String buildStoreName(Locale locale, OStore store) {
 		if (store.getBuiltIn().equals(Store.BUILTIN_MYDOCUMENTS)) {
 			return lookupResource(locale, VfsLocale.STORE_MYDOCUMENTS);
@@ -309,6 +304,11 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		} else {
 			return store.getName();
 		}
+	}
+	
+	@Override
+	public List<Store> listStores() throws WTException {
+		return listStores(getTargetProfileId());
 	}
 	
 	private List<Store> listStores(UserProfileId pid) throws WTException {
@@ -328,6 +328,29 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			throw new WTException(ex, "DB error");
 		} catch(URISyntaxException ex) {
 			throw new WTException(ex, "Bad store URI");
+		} finally {
+			DbUtils.closeQuietly(con);
+		}
+	}
+	
+	@Override
+	public Integer getMyDocumentsStoreId() throws WTException {
+		StoreDAO dao = StoreDAO.getInstance();
+		Connection con = null;
+		
+		try {
+			con = WT.getConnection(SERVICE_ID);
+			
+			List<Integer> oids = dao.selectIdByDomainUserBuiltIn(con, getTargetProfileId().getDomainId(), getTargetProfileId().getUserId(), Store.BUILTIN_MYDOCUMENTS);
+			if (!oids.isEmpty()) {
+				logger.debug("MyDocuments built-in store not found");
+				return null;
+			}
+			
+			return oids.get(0);
+			
+		} catch(SQLException | DAOException ex) {
+			throw new WTException(ex, "DB error");
 		} finally {
 			DbUtils.closeQuietly(con);
 		}
@@ -358,8 +381,8 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		Connection con = null;
 		
 		try {
-			checkRightsOnStoreRoot(item.getProfileId(), "MANAGE"); // Rights check!
-			checkRightsOnStoreSchema(item.getUri()); // Rights check!
+			checkRightsOnStoreRoot(item.getProfileId(), "MANAGE");
+			checkRightsOnStoreSchema(item.getUri());
 			
 			con = WT.getConnection(SERVICE_ID, false);
 			item.setBuiltIn(Store.BUILTIN_NO);
@@ -386,7 +409,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		Connection con = null;
 		
 		try {
-			checkRightsOnStoreRoot(getTargetProfileId(), "MANAGE"); // Rights check!
+			checkRightsOnStoreRoot(getTargetProfileId(), "MANAGE");
 			con = WT.getConnection(SERVICE_ID, false);
 			
 			List<OStore> oitems = dao.selectByDomainUserBuiltIn(con, getTargetProfileId().getDomainId(), getTargetProfileId().getUserId(), Store.BUILTIN_MYDOCUMENTS);
@@ -431,7 +454,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 				ensureUserDomain(domainId);
 			}
 			
-			checkRightsOnStoreRoot(getTargetProfileId(), "MANAGE"); // Rights check!
+			checkRightsOnStoreRoot(getTargetProfileId(), "MANAGE");
 			con = WT.getConnection(SERVICE_ID, false);
 			
 			URI uri = Store.buildURI(IMAGES_URI_SCHEME, domainId, null, null, null, null);
@@ -472,7 +495,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		Connection con = null;
 		
 		try {
-			checkRightsOnStoreFolder(item.getStoreId(), "UPDATE"); // Rights check!
+			checkRightsOnStoreFolder(item.getStoreId(), "UPDATE");
 			con = WT.getConnection(SERVICE_ID, false);
 			doStoreUpdate(false, con, item);
 			DbUtils.commitQuietly(con);
@@ -496,7 +519,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		Connection con = null;
 		
 		try {
-			checkRightsOnStoreFolder(storeId, "DELETE"); // Rights check!
+			checkRightsOnStoreFolder(storeId, "DELETE");
 			con = WT.getConnection(SERVICE_ID, false);
 			doStoreDelete(con, storeId);
 			DbUtils.commitQuietly(con);
