@@ -32,7 +32,57 @@
  * the words "Powered by Sonicle WebTop".
  */
 Ext.define('Sonicle.webtop.vfs.ServiceApi', {
-	extend: 'WTA.sdk.ServiceApi'
+	extend: 'WTA.sdk.ServiceApi',
 	
+	buildFileId: function(shareId, storeId, path) {
+		return shareId + '|' + storeId + '|' + path;
+	},
 	
+	/**
+	 * Adds new sharing link (download).
+	 * @param {Object} data An object containing link data.
+	 * @param {String} [data.fileId] The file ID.
+	 * @param {Object} opts An object containing configuration.
+	 * @param {Function} [opts.callback] Callback method for 'xxx' event.
+	 * @param {Object} [opts.scope] The callback method scope.
+	 */
+	addSharingLinkForDownload: function(data, opts) {
+		opts = opts || {};
+		this.service.setupLink('D', data.fileId, {
+			callback: opts.callback,
+			scope: opts.scope
+		});
+	},
+	
+	/**
+	 * Adds new sharing link (upload).
+	 * @param {Object} data An object containing link data.
+	 * @param {String} [data.fileId] The file ID.
+	 * @param {Object} opts An object containing configuration.
+	 * @param {Function} [opts.callback] Callback method for 'xxx' event.
+	 * @param {Object} [opts.scope] The callback method scope.
+	 */
+	addSharingLinkForUpload: function(data, opts) {
+		opts = opts || {};
+		this.service.setupLink('U', data.fileId, {
+			callback: opts.callback,
+			scope: opts.scope
+		});
+	},
+	
+	/**
+	 * Deletes the specified sharing link.
+	 * @param {Object} data An object containing link data.
+	 * @param {String} [data.fileId] The file ID.
+	 * @param {Object} opts An object containing configuration.
+	 * @param {Function} [opts.callback] Callback method for 'xxx' event.
+	 * @param {Object} [opts.scope] The callback method scope.
+	 */
+	deleteSharingLink: function(data, opts) {
+		opts = opts || {};
+		this.service.deleteLink(data.linkId, {
+			callback: opts.callback,
+			scope: opts.scope
+		});
+	}
 });

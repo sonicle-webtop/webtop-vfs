@@ -598,7 +598,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 	@Override
 	public FileObject getStoreFile(int storeId, String path) throws FileSystemException, WTException {
 		try {
-			checkRightsOnStoreFolder(storeId, "READ"); // Rights check!
+			checkRightsOnStoreFolder(storeId, "READ");
 			return getTargetFileObject(storeId, path);
 			
 		} catch(Exception ex) {
@@ -619,10 +619,10 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		OutputStream os = null;
 		
 		try {
-			checkRightsOnStoreElements(storeId, "UPDATE"); // Rights check!
+			checkRightsOnStoreElements(storeId, "UPDATE");
 			
 			tfo = getTargetFileObject(storeId, parentPath);
-			if(!tfo.isFolder()) throw new IllegalArgumentException("Please provide a valid parentPath");
+			if (!tfo.isFolder()) throw new IllegalArgumentException("Please provide a valid parentPath");
 			
 			ntf = getNewTargetFileObject(storeId, parentPath, name, overwrite);
 			logger.debug("Creating store file from stream [{}, {}]", storeId, ntf.path);
@@ -650,15 +650,15 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		FileObject tfo = null, ntfo = null;
 		
 		try {
-			checkRightsOnStoreElements(storeId, "UPDATE"); // Rights check!
+			checkRightsOnStoreElements(storeId, "UPDATE"); 
 			
 			tfo = getTargetFileObject(storeId, parentPath);
-			if(!tfo.isFolder()) throw new IllegalArgumentException("Please provide a valid parentPath");
+			if (!tfo.isFolder()) throw new IllegalArgumentException("Please provide a valid parentPath");
 			
 			String newPath = FilenameUtils.separatorsToUnix(FilenameUtils.concat(parentPath, name));
 			ntfo = getTargetFileObject(storeId, newPath);
 			logger.debug("Creating store file [{}, {}]", storeId, newPath);
-			if(fileType.equals(StoreFileType.FOLDER)) {
+			if (fileType.equals(StoreFileType.FOLDER)) {
 				ntfo.createFolder();
 			} else {
 				ntfo.createFile();
@@ -677,7 +677,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 	@Override
 	public String renameStoreFile(int storeId, String path, String newName) throws FileSystemException, WTException {
 		try {
-			checkRightsOnStoreElements(storeId, "UPDATE"); // Rights check!
+			checkRightsOnStoreElements(storeId, "UPDATE");
 			
 			return doRenameStoreFile(storeId, path, newName);
 			
@@ -689,7 +689,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 	@Override
 	public void deleteStoreFile(int storeId, String path) throws FileSystemException, WTException {
 		try {
-			checkRightsOnStoreElements(storeId, "DELETE"); // Rights check!
+			checkRightsOnStoreElements(storeId, "DELETE");
 			
 			doDeleteStoreFile(storeId, path);
 			
