@@ -342,7 +342,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			con = WT.getConnection(SERVICE_ID);
 			
 			List<Integer> oids = dao.selectIdByDomainUserBuiltIn(con, getTargetProfileId().getDomainId(), getTargetProfileId().getUserId(), Store.BUILTIN_MYDOCUMENTS);
-			if (!oids.isEmpty()) {
+			if (oids.isEmpty()) {
 				logger.debug("MyDocuments built-in store not found");
 				return null;
 			}
