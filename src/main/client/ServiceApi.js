@@ -43,7 +43,11 @@ Ext.define('Sonicle.webtop.vfs.ServiceApi', {
 	 * @param {Object} data An object containing link data.
 	 * @param {String} [data.fileId] The file ID.
 	 * @param {Object} opts An object containing configuration.
-	 * @param {Function} [opts.callback] Callback method for 'xxx' event.
+	 * @param {Function} [opts.callback] A function to be called when the link is succesfully created.
+	 * Will be called with the following config parameters:
+	 * 
+	 * - success - True if result is not null.
+	 * - result - The result object.
 	 * @param {Object} [opts.scope] The callback method scope.
 	 */
 	addSharingLinkForDownload: function(data, opts) {
@@ -59,7 +63,11 @@ Ext.define('Sonicle.webtop.vfs.ServiceApi', {
 	 * @param {Object} data An object containing link data.
 	 * @param {String} [data.fileId] The file ID.
 	 * @param {Object} opts An object containing configuration.
-	 * @param {Function} [opts.callback] Callback method for 'xxx' event.
+	 * @param {Function} [opts.callback] A function to be called when the link is succesfully created.
+	 * Will be called with the following config parameters:
+	 * 
+	 * - success - True if result is not null.
+	 * - result - The result object.
 	 * @param {Object} [opts.scope] The callback method scope.
 	 */
 	addSharingLinkForUpload: function(data, opts) {
@@ -75,7 +83,10 @@ Ext.define('Sonicle.webtop.vfs.ServiceApi', {
 	 * @param {Object} data An object containing link data.
 	 * @param {String} [data.fileId] The file ID.
 	 * @param {Object} opts An object containing configuration.
-	 * @param {Function} [opts.callback] Callback method for 'xxx' event.
+	 * @param {Function} [opts.callback] A function to be called when the link is succesfully deleted.
+	 * Will be called with the following config parameters:
+	 * 
+	 * - success - True if successful operation.
 	 * @param {Object} [opts.scope] The callback method scope.
 	 */
 	deleteSharingLink: function(data, opts) {
