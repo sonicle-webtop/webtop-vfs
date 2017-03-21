@@ -55,6 +55,14 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		//'WTA.mixin.FoldersTree'
 	],
 	
+	api: null,
+	
+	getApiInstance: function() {
+		var me = this;
+		if (!me.api) me.api = Ext.create('Sonicle.webtop.vfs.ServiceApi', {service: me});
+		return me.api;
+	},
+	
 	needsReload: true,
 	curNode: null,
 	curFile: null,
@@ -942,10 +950,10 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		var me = this,
 				linkId = (type === 'D') ? sel.getFDlLink() : sel.getFUlLink();
 		me.getLinkEmbedCode(linkId, {
-			callback: function(success, html) {
+			callback: function(success, json) {
 				if (success) {
-					html = '<br>' + html + '<br>';
-					var mapi = WT.getServiceApi('com.sonicle.webtop.mail');
+					var html = '<br>' + json + '<br>',
+							mapi = WT.getServiceApi('com.sonicle.webtop.mail');
 					if (mapi) {
 						mapi.newMessage({
 							format: 'html',
@@ -1123,7 +1131,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		var me = this;
 		WT.ajaxReq(me.ID, 'GetLinkEmbedCode', {
 			params: {
-				id: linkId
+				linkId: linkId
 			},
 			callback: function(success, json) {
 				Ext.callback(opts.callback, opts.scope || me, [success, json.data, json]);

@@ -786,12 +786,10 @@ public class Service extends BaseService {
 			}
 		
 		} catch(Exception ex) {
-			logger.error("Error in action ManageGridFiles", ex);
+			logger.error("Error in ManageGridFiles", ex);
 			new JsonResult(false, "Error").printTo(out);
 		}
 	}
-	
-	
 	
 	public void processManageFiles(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		
@@ -879,6 +877,7 @@ public class Service extends BaseService {
 	
 	public void processWizardDownloadLink(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		UserProfile up = getEnv().getProfile();
+		CoreUserSettings cus = getEnv().getCoreUserSettings();
 		
 		try {
 			String crud = ServletUtils.getStringParameter(request, "crud", true);
@@ -905,8 +904,12 @@ public class Service extends BaseService {
 				dl = manager.addDownloadLink(dl);
 				
 				String servicePublicUrl = WT.getServicePublicUrl(up.getDomainId(), SERVICE_ID);
+				String[] urls = VfsManager.generateLinkPublicURLs(servicePublicUrl, dl);
+				String html = VfsManager.generateLinkEmbedCode(up.getLocale(), cus.getShortDateFormat(), servicePublicUrl, dl);
+				
 				JsWizardData data = new JsWizardData();
-				data.put("urls", VfsManager.generateLinkPublicURLs(servicePublicUrl, dl));
+				data.put("urls", urls);
+				data.put("embed", html);
 				new JsonResult(data).printTo(out);
 			}
 			
@@ -918,6 +921,7 @@ public class Service extends BaseService {
 	
 	public void processWizardUploadLink(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		UserProfile up = getEnv().getProfile();
+		CoreUserSettings cus = getEnv().getCoreUserSettings();
 		
 		try {
 			String crud = ServletUtils.getStringParameter(request, "crud", true);
@@ -944,14 +948,38 @@ public class Service extends BaseService {
 				ul = manager.addUploadLink(ul);
 				
 				String servicePublicUrl = WT.getServicePublicUrl(up.getDomainId(), SERVICE_ID);
+				String[] urls = VfsManager.generateLinkPublicURLs(servicePublicUrl, ul);
+				String html = VfsManager.generateLinkEmbedCode(up.getLocale(), cus.getShortDateFormat(), servicePublicUrl, ul);
+				
 				JsWizardData data = new JsWizardData();
-				data.put("urls", VfsManager.generateLinkPublicURLs(servicePublicUrl, ul));
+				data.put("urls", urls);
+				data.put("embed", html);
 				new JsonResult(data).printTo(out);
 			}
 			
 		} catch (Exception ex) {
 			logger.error("Error in WizardUploadLink", ex);
 			new JsonResult(false, ex.getMessage()).printTo(out);
+		}
+	}
+	
+	public void processGetLinkEmbedCode(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		UserProfile up = getEnv().getProfile();
+		CoreUserSettings cus = getEnv().getCoreUserSettings();
+		SharingLink item = null;
+		
+		try {
+			String linkId = ServletUtils.getStringParameter(request, "linkId", true);
+			
+			item = manager.getSharingLink(linkId);
+			String servicePublicUrl = WT.getServicePublicUrl(up.getDomainId(), SERVICE_ID);
+			String html = VfsManager.generateLinkEmbedCode(up.getLocale(), cus.getShortDateFormat(), servicePublicUrl, item);
+			
+			new JsonResult(html).printTo(out);
+			
+		} catch(Exception ex) {
+			logger.error("Error in GetLinkEmbedCode", ex);
+			new JsonResult(false, "Error").printTo(out);
 		}
 	}
 	
@@ -963,8 +991,8 @@ public class Service extends BaseService {
 		try {
 			String crud = ServletUtils.getStringParameter(request, "crud", true);
 			if(crud.equals(Crud.READ)) {
-				String id = ServletUtils.getStringParameter(request, "id", null);
-				if(id == null) {
+				String linkId = ServletUtils.getStringParameter(request, "id", null);
+				if(linkId == null) {
 					List<JsGridSharingLink> items = new ArrayList<>();
 					for(StoreShareRoot root : getRootsFromCache()) {
 						for(StoreShareFolder folder : getFoldersFromCache(root.getShareId())) {
@@ -992,7 +1020,7 @@ public class Service extends BaseService {
 					}
 					new JsonResult("sharingLinks", items, items.size()).printTo(out);
 				} else {
-					item = manager.getSharingLink(id);
+					item = manager.getSharingLink(linkId);
 					
 					String servicePublicUrl = WT.getServicePublicUrl(up.getDomainId(), SERVICE_ID);
 					String[] urls = VfsManager.generateLinkPublicURLs(servicePublicUrl, item);
@@ -1006,34 +1034,14 @@ public class Service extends BaseService {
 				new JsonResult().printTo(out);
 				
 			} else if(crud.equals(Crud.DELETE)) {
-				String id = ServletUtils.getStringParameter(request, "id", true);
+				String linkId = ServletUtils.getStringParameter(request, "id", true);
 				
-				manager.deleteSharingLink(id);
+				manager.deleteSharingLink(linkId);
 				new JsonResult().printTo(out);
 			}
 			
 		} catch(Exception ex) {
 			logger.error("Error in ManageSharingLink", ex);
-			new JsonResult(false, "Error").printTo(out);
-		}
-	}
-	
-	public void processGetLinkEmbedCode(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-		UserProfile up = getEnv().getProfile();
-		CoreUserSettings cus = getEnv().getCoreUserSettings();
-		SharingLink item = null;
-		
-		try {
-			String id = ServletUtils.getStringParameter(request, "id", true);
-			
-			item = manager.getSharingLink(id);
-			String servicePublicUrl = WT.getServicePublicUrl(up.getDomainId(), SERVICE_ID);
-			String html = VfsManager.generateLinkEmbedCode(up.getLocale(), cus.getShortDateFormat(), servicePublicUrl, item);
-			
-			new JsonResult(html).printTo(out);
-			
-		} catch(Exception ex) {
-			logger.error("Error in GetLinkEmbedCode", ex);
 			new JsonResult(false, "Error").printTo(out);
 		}
 	}
