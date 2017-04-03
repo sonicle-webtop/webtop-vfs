@@ -49,6 +49,7 @@ import com.sonicle.webtop.core.sdk.BasePublicService;
 import com.sonicle.webtop.core.sdk.UploadException;
 import com.sonicle.webtop.core.sdk.WTException;
 import com.sonicle.webtop.core.sdk.interfaces.IServiceUploadStreamListener;
+import com.sonicle.webtop.core.servlet.ServletHelper;
 import com.sonicle.webtop.vfs.bol.js.JsPubGridFile;
 import com.sonicle.webtop.vfs.model.SharingLink;
 import com.sonicle.webtop.vfs.model.StoreFileType;
@@ -354,14 +355,14 @@ public class PublicService extends BasePublicService {
 		vars.put("view", view);
 		vars.put("linkId", link.getLinkId());
 		vars.put("linkName", PathUtils.getFileName(link.getFilePath()));
-		writePage(response, wts, vars, ServletUtils.getBaseURL(request));
+		writePage(response, wts, vars, ServletHelper.getBaseUrl(request));
 	}
 	
 	private void writeErrorPage(HttpServletRequest request, HttpServletResponse response, WebTopSession wts, String reskey) throws IOException, TemplateException {
 		JsWTSPublic.Vars vars = new JsWTSPublic.Vars();
 		vars.put("view", "Error");
 		vars.put("reskey", reskey);
-		writePage(response, wts, vars, ServletUtils.getBaseURL(request));
+		writePage(response, wts, vars, ServletHelper.getBaseUrl(request));
 	}
 	
 	private String buildPublicLinkPathGetUrl(String publicBaseUrl, SharingLink link, String outFileName, String path) {
