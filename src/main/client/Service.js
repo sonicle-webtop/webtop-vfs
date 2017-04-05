@@ -290,12 +290,20 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 					dataIndex: 'dlLink',
 					header: WTF.headerWithGlyphIcon('fa fa-cloud-download'),
 					getIconCls: function(v,rec) {
-						var exp = rec.get('dlLinkExp') ? 'Exp' : '';
-						return Ext.isEmpty(v) ? '' : me.cssIconCls('downloadLink'+exp, 'xs');
+						if (Ext.isEmpty(v)) {
+							return '';
+						} else {
+							var exp = rec.get('dlLinkExp') ? 'Exp' : '';
+							return me.cssIconCls('downloadLink'+exp, 'xs');
+						}
 					},
 					getTip: function(v,rec) {
-						var exp = rec.get('dlLinkExp') ? '.exp' : '';
-						return me.res('gpfiles.dlLink'+exp);
+						if (Ext.isEmpty(v)) {
+							return '';
+						} else {
+							var exp = rec.get('dlLinkExp') ? '.exp' : '';
+							return me.res('gpfiles.dlLink'+exp);
+						}
 					},
 					iconSize: WTU.imgSizeToPx('xs'),
 					width: 40
@@ -304,12 +312,20 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 					dataIndex: 'ulLink',
 					header: WTF.headerWithGlyphIcon('fa fa-cloud-upload'),
 					getIconCls: function(v,rec) {
-						var exp = rec.get('ulLinkExp') ? 'Exp' : '';
-						return Ext.isEmpty(v) ? '' : me.cssIconCls('uploadLink'+exp, 'xs');
+						if (Ext.isEmpty(v)) {
+							return '';
+						} else {
+							var exp = rec.get('ulLinkExp') ? 'Exp' : '';
+							return me.cssIconCls('uploadLink'+exp, 'xs');
+						}
 					},
 					getTip: function(v,rec) {
-						var exp = rec.get('dlLinkExp') ? '.exp' : '';
-						return me.res('gpfiles.ulLink'+exp);
+						if (Ext.isEmpty(v)) {
+							return '';
+						} else {
+							var exp = rec.get('ulLinkExp') ? '.exp' : '';
+							return me.res('gpfiles.ulLink'+exp);
+						}
 					},
 					iconSize: WTU.imgSizeToPx('xs'),
 					width: 40
