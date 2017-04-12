@@ -1315,12 +1315,11 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			String subject = TplHelper.buildLinkUsageEmailSubject(ud.getLocale(), bodyHeader);
 			String customBody = TplHelper.buildLinkUsageBodyTpl(ud.getLocale(), olink.getSharingLinkId(), PathUtils.getFileName(olink.getFilePath()), path, ipAddress, userAgent);
 			String html = NotificationHelper.buildCustomBodyTplForNoReplay(ud.getLocale(), source, bodyHeader, customBody);
-
-			//InternetAddress from = WT.buildDomainInternetAddress(pid.getDomainId(), "webtop-notification", null);
-			//if(from == null) throw new WTException("Error building sender address");
+			
 			InternetAddress from = WT.getNotificationAddress(pid.getDomainId());
+			if (from == null) throw new WTException("Error building sender address");
 			InternetAddress to = ud.getEmail();
-			if(to == null) throw new WTException("Error building destination address");
+			if (to == null) throw new WTException("Error building destination address");
 			WT.sendEmail(getMailSession(), true, from, to, subject, html);
 
 		} catch(IOException | TemplateException ex) {
