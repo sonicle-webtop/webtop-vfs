@@ -110,12 +110,14 @@ public class PublicService extends BasePublicService {
 	
 	@Override
 	public void processDefaultAction(HttpServletRequest request, HttpServletResponse response) throws Exception {
-		String internetName = ServletUtils.getInternetName(request);
 		PublicPath path = new PublicPath(request.getPathInfo());
 		WebTopSession wts = getWts();
 		
 		try {
 			try {
+				String domainId = WT.findDomainIdByPublicName(path.getDomainPublicName());
+				if (domainId == null) throw new WTException("Invalid domain public name [{0}]", path.getDomainPublicName());
+				
 				if(path.getContext().equals(PUBPATH_CONTEXT_LINK)) {
 					FileUrlPath fileUrlPath = new FileUrlPath(path.getRemainingPath());
 
@@ -189,7 +191,6 @@ public class PublicService extends BasePublicService {
 						}
 						
 					} else if(link.getType().equals(SharingLink.TYPE_UPLOAD)) {
-						String domainId = WT.findDomainByInternetName(internetName);
 						CoreServiceSettings css = new CoreServiceSettings(CoreManifest.ID, StringUtils.defaultString(domainId));
 						Integer maxUpload = css.getUploadMaxFileSize();
 						VfsUserSettings us = new VfsUserSettings(SERVICE_ID, link.getProfileId());
@@ -205,8 +206,8 @@ public class PublicService extends BasePublicService {
 				}
 				
 			} catch(Exception ex) {
+				logger.trace("Error", ex);
 				writeErrorPage(request, response, wts, "badrequest");
-				//logger.trace("Error", t);
 			}
 		} catch(Throwable t) {
 			logger.error("Unexpected error", t);
