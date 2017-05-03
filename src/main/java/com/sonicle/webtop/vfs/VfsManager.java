@@ -61,6 +61,7 @@ import com.sonicle.webtop.core.sdk.WTRuntimeException;
 import com.sonicle.webtop.core.util.NotificationHelper;
 import com.sonicle.webtop.vfs.bol.OSharingLink;
 import com.sonicle.webtop.vfs.bol.OStore;
+import com.sonicle.webtop.vfs.bol.model.MyStoreRoot;
 import com.sonicle.webtop.vfs.model.SharingLink;
 import com.sonicle.webtop.vfs.model.StoreFileType;
 import com.sonicle.webtop.vfs.model.StoreShareFolder;
@@ -282,6 +283,29 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			}
 		}
 		return folders;
+	}
+	
+	public String buildStoreFolderShareId(int storeId) throws WTException {
+		UserProfileId targetPid = getTargetProfileId();
+		
+		UserProfileId ownerPid = storeToOwner(storeId);
+		if (ownerPid == null) throw new WTException("storeToOwner({0}) -> null", storeId);
+		
+		String rootShareId = null;
+		if (ownerPid.equals(targetPid)) {
+			rootShareId = MyStoreRoot.SHARE_ID;
+		} else {
+			for(StoreShareRoot root : listIncomingStoreRoots()) {
+				HashMap<Integer, StoreShareFolder> folders = listIncomingStoreFolders(root.getShareId());
+				if (folders.containsKey(storeId)) {
+					rootShareId = root.getShareId();
+					break;
+				}
+			}
+		}
+		
+		if (rootShareId == null) throw new WTException("Unable to find a root share [{0}]", storeId);
+		return new CompositeId().setTokens(rootShareId, storeId).toString();
 	}
 	
 	public Sharing getSharing(String shareId) throws WTException {
@@ -520,10 +544,25 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		
 		try {
 			checkRightsOnStoreFolder(storeId, "DELETE");
+			
+			// Retrieve sharing status (for later)
+			String shareId = buildStoreFolderShareId(storeId);
+			Sharing sharing = getSharing(shareId);
+			
 			con = WT.getConnection(SERVICE_ID, false);
 			doStoreDelete(con, storeId);
+			
+			// Cleanup sharing, if necessary
+			if ((sharing != null) && !sharing.getRights().isEmpty()) {
+				logger.debug("Removing {} active sharing [{}]", sharing.getRights().size(), sharing.getId());
+				sharing.getRights().clear();
+				updateSharing(sharing);
+			}
+			
 			DbUtils.commitQuietly(con);
-			writeLog("STORE_DELETE", String.valueOf(storeId));
+			
+			final String ref = String.valueOf(storeId);
+			writeLog("STORE_DELETE", ref);
 			removeStoreFileSystemFromCache(storeId);
 			
 		} catch(SQLException | DAOException ex) {
@@ -963,7 +1002,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			} else {
 				try {
 					UserProfileId owner = findStoreOwner(storeId);
-					cacheOwnerByStore.put(storeId, owner);
+					if (owner != null) cacheOwnerByStore.put(storeId, owner);
 					return owner;
 				} catch(WTException ex) {
 					throw new WTRuntimeException(ex.getMessage());
@@ -979,8 +1018,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			con = WT.getConnection(SERVICE_ID);
 			StoreDAO dao = StoreDAO.getInstance();
 			Owner owner = dao.selectOwnerById(con, storeId);
-			if(owner == null) throw new WTException("Store not found [{0}]", storeId);
-			return new UserProfileId(owner.getDomainId(), owner.getUserId());
+			return (owner == null) ? null : new UserProfileId(owner.getDomainId(), owner.getUserId());
 			
 		} catch(SQLException | DAOException ex) {
 			throw new WTException(ex, "DB error");
@@ -1052,60 +1090,75 @@ public class VfsManager extends BaseManager implements IVfsManager {
 	private void checkRightsOnStoreRoot(UserProfileId ownerPid, String action) throws WTException {
 		UserProfileId targetPid = getTargetProfileId();
 		
-		if(RunContext.isWebTopAdmin()) return;
-		if(ownerPid.equals(targetPid)) return;
+		if (RunContext.isWebTopAdmin()) return;
+		if (ownerPid.equals(targetPid)) return;
 		
 		String shareId = ownerToRootShareId(ownerPid);
-		if(shareId == null) throw new WTException("ownerToRootShareId({0}) -> null", ownerPid);
+		if (shareId == null) throw new WTException("ownerToRootShareId({0}) -> null", ownerPid);
 		CoreManager core = WT.getCoreManager(targetPid);
-		if(core.isShareRootPermitted(shareId, action)) return;
+		if (core.isShareRootPermitted(shareId, action)) return;
 		
 		throw new AuthException("Action not allowed on root share [{0}, {1}, {2}, {3}]", shareId, action, GROUPNAME_STORE, targetPid.toString());
 	}
 	
+	private boolean quietlyCheckRightsOnStoreFolder(int storeId, String action) {
+		try {
+			checkRightsOnStoreFolder(storeId, action);
+			return true;
+		} catch(AuthException ex1) {
+			return false;
+		} catch(WTException ex1) {
+			logger.warn("Unable to check rights [{}]", storeId);
+			return false;
+		}
+	}
+	
 	private void checkRightsOnStoreFolder(int storeId, String action) throws WTException {
-		if(RunContext.isWebTopAdmin()) return;
+		if (RunContext.isWebTopAdmin()) return;
 		UserProfileId targetPid = getTargetProfileId();
+		
 		// Skip rights check if running user is resource's owner
 		UserProfileId ownerPid = storeToOwner(storeId);
-		if(ownerPid.equals(targetPid)) return;
+		if (ownerPid == null) throw new WTException("storeToOwner({0}) -> null", storeId);
+		if (ownerPid.equals(targetPid)) return;
 		
 		// Checks rights on the wildcard instance (if present)
 		CoreManager core = WT.getCoreManager(targetPid);
 		String wildcardShareId = ownerToWildcardFolderShareId(ownerPid);
-		if(wildcardShareId != null) {
-			if(core.isShareFolderPermitted(wildcardShareId, action)) return;
+		if (wildcardShareId != null) {
+			if (core.isShareFolderPermitted(wildcardShareId, action)) return;
 		}
 		
 		// Checks rights on store instance
 		String shareId = storeToFolderShareId(storeId);
-		if(shareId == null) throw new WTException("storeToFolderShareId({0}) -> null", storeId);
-		if(core.isShareFolderPermitted(shareId, action)) return;
+		if (shareId == null) throw new WTException("storeToFolderShareId({0}) -> null", storeId);
+		if (core.isShareFolderPermitted(shareId, action)) return;
 		
 		throw new AuthException("Action not allowed on folder share [{0}, {1}, {2}, {3}]", shareId, action, GROUPNAME_STORE, targetPid.toString());
 	}
 	
 	private void checkRightsOnStoreElements(int storeId, String action) throws WTException {
+		if (RunContext.isWebTopAdmin()) return;
 		UserProfileId targetPid = getTargetProfileId();
 		
-		if(RunContext.isWebTopAdmin()) return;
 		// Skip rights check if running user is resource's owner
 		UserProfileId ownerPid = storeToOwner(storeId);
-		if(ownerPid.equals(getTargetProfileId())) return;
+		if (ownerPid == null) throw new WTException("storeToOwner({0}) -> null", storeId);
+		if (ownerPid.equals(targetPid)) return;
 		
 		// Checks rights on the wildcard instance (if present)
 		CoreManager core = WT.getCoreManager(targetPid);
 		String wildcardShareId = ownerToWildcardFolderShareId(ownerPid);
-		if(wildcardShareId != null) {
-			if(core.isShareElementsPermitted(wildcardShareId, action)) return;
-			//if(core.isShareElementsPermitted(SERVICE_ID, RESOURCE_CATEGORY, action, wildcardShareId)) return;
+		if (wildcardShareId != null) {
+			if (core.isShareElementsPermitted(wildcardShareId, action)) return;
+			//if (core.isShareElementsPermitted(SERVICE_ID, RESOURCE_CATEGORY, action, wildcardShareId)) return;
 		}
 		
 		// Checks rights on calendar instance
 		String shareId = storeToFolderShareId(storeId);
-		if(shareId == null) throw new WTException("storeToLeafShareId({0}) -> null", storeId);
-		if(core.isShareElementsPermitted(shareId, action)) return;
-		//if(core.isShareElementsPermitted(SERVICE_ID, RESOURCE_CATEGORY, action, shareId)) return;
+		if (shareId == null) throw new WTException("storeToLeafShareId({0}) -> null", storeId);
+		if (core.isShareElementsPermitted(shareId, action)) return;
+		//if (core.isShareElementsPermitted(SERVICE_ID, RESOURCE_CATEGORY, action, shareId)) return;
 		
 		throw new AuthException("Action not allowed on folderEls share [{0}, {1}, {2}, {3}]", shareId, action, GROUPNAME_STORE, targetPid.toString());
 	}
