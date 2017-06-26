@@ -42,36 +42,3 @@
 
 .wtvfs-gpfiles .x-grid-empty {text-align: center;}
 .wtvfs-gplinks-row-expired { color: #E60D35; }
-
-.so-filedrop {
-	position: absolute;
-	top: 0 !important;
-	bottom: 0 !important;
-	left: 0 !important;
-	right: 0 !important;
-	background: transparent !important;
-}
-
-.so-filedrop:before {
-	position: absolute;
-	top: 5px;
-	bottom: 5px;
-	left: 5px;
-	right: 5px;
-	border: 4px dashed #cfcfcf;
-	content: '';
-}
-
-.so-filedrop .x-mask-msg-inner {
-	position: absolute;
-    top: 50%;
-    width: 100%;
-    color: #cfcfcf;
-    font-size: 30px;
-    text-align: center;
-}
-
-.so-filedrop .x-mask-msg-inner .x-mask-msg-text  {
-	padding: 0px;
-	background-image: none;
-}

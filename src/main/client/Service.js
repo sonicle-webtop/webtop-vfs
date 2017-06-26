@@ -38,18 +38,17 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		'Sonicle.grid.column.Bytes',
 		'Sonicle.grid.column.Icon',
 		'Sonicle.grid.column.Link',
+		'Sonicle.plugin.FileDrop',
 		'Sonicle.toolbar.Breadcrumb',
 		'Sonicle.upload.Button',
 		'WTA.ux.data.EmptyModel',
 		'WTA.ux.data.SimpleModel',
+		'WTA.ux.UploadBar',
 		'Sonicle.webtop.vfs.model.StoreNode',
 		'Sonicle.webtop.vfs.model.GridFile',
+		'Sonicle.webtop.vfs.model.SharingLink',
 		'Sonicle.webtop.vfs.view.Sharing',
-		'Sonicle.webtop.vfs.view.SharingLinks',
-		
-		'Sonicle.plugin.FileDrop',
-		'Sonicle.webtop.vfs.ux.UploadToolbar',
-		'Sonicle.webtop.vfs.model.SharingLink'
+		'Sonicle.webtop.vfs.view.SharingLinks'
 	],
 	mixins: [
 		//'WTA.mixin.FoldersTree'
@@ -351,9 +350,12 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 					}
 				],
 				bbar: {
-					xtype: 'wtvfsuploadtoolbar',
+					xtype: 'wtuploadbar',
 					reference: 'tbupload',
-					mys: me,
+					sid: me.ID,
+					uploadContext: 'UploadStoreFile',
+					maxFileSize: me.getVar('privateUploadMaxFileSize'),
+					buttonIconCls: me.cssIconCls('uploadFile', 'xs'),
 					dropElement: gpId,
 					fileExtraParams: function() {
 						return {
