@@ -1,3 +1,4 @@
+@DataSource[default@com.sonicle.webtop.vfs]
 
 CREATE SCHEMA "vfs";
 
@@ -71,3 +72,10 @@ CREATE INDEX "stores_ak2" ON "vfs"."stores" USING btree ("domain_id", "user_id",
 -- Primary Key structure for table stores
 -- ----------------------------
 ALTER TABLE "vfs"."stores" ADD PRIMARY KEY ("store_id");
+
+-- ----------------------------
+-- Align service version
+-- ----------------------------
+@DataSource[default@com.sonicle.webtop.core]
+DELETE FROM "core"."settings" WHERE ("settings"."service_id" = 'com.sonicle.webtop.vfs') AND ("settings"."key" = 'manifest.version');
+INSERT INTO "core"."settings" ("service_id", "key", "value") VALUES ('com.sonicle.webtop.vfs', 'manifest.version', '5.0.0');
