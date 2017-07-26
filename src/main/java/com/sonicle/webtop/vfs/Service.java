@@ -134,6 +134,8 @@ public class Service extends BaseService {
 		co.put("privateUploadMaxFileSize", LangUtils.coalesce(us.getPrivateUploadMaxFileSize(), maxUpload));
 		co.put("uploadLinkExpiration", ss.getUploadLinkExpiration());
 		co.put("downloadLinkExpiration", ss.getDownloadLinkExpiration());
+		co.put("nextcloudDefaultHost", ss.getNextcloudDefaultHost());
+		co.put("nextcloudDefaultPath", ss.getNextcloudDefaultPath());
 		return co;
 	}
 	
@@ -292,6 +294,7 @@ public class Service extends BaseService {
 	}
 	
 	private String storeIcon(Store store) {
+		
 		if (store.getBuiltIn().equals(Store.BUILTIN_MYDOCUMENTS)) {
 			return "storeMyDocs";
 		} else if (store.getBuiltIn().equals(Store.BUILTIN_DOMAINIMAGES)) {
@@ -315,7 +318,7 @@ public class Service extends BaseService {
 			} else if(StringUtils.equals(scheme, "smb")) {
 				return "storeSmb";
 			}  else {
-				return "store-xs";
+				return "store";
 			}
 		}
 	}
@@ -656,6 +659,59 @@ public class Service extends BaseService {
 			
 		} catch (Exception ex) {
 			logger.error("Error in SetupStoreGoogleDrive", ex);
+			new JsonResult(false, ex.getMessage()).printTo(out);
+		}
+	}
+	
+	public void processSetupStoreNextcloud(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		WebTopSession wts = RunContext.getWebTopSession();
+		String PROPERTY = "SETUP_NEXTCLOUD";
+		
+		try {
+			String crud = ServletUtils.getStringParameter(request, "crud", true);
+			if(crud.equals("s1")) {
+				String profileId = ServletUtils.getStringParameter(request, "profileId", true);
+				String scheme = ServletUtils.getStringParameter(request, "scheme", true);
+				String host = ServletUtils.getStringParameter(request, "host", true);
+				Integer port = ServletUtils.getIntParameter(request, "port", null);
+				String username = ServletUtils.getStringParameter(request, "username", true);
+				String password = ServletUtils.getStringParameter(request, "password", null);
+				String path = ServletUtils.getStringParameter(request, "path", null);
+				
+				SetupDataNextcloud setup = new SetupDataNextcloud();
+				setup.profileId = profileId;
+				setup.scheme = scheme;
+				setup.host = host;
+				setup.port = port;
+				setup.username = username;
+				setup.password = password;
+				setup.path = path;
+				setup.updateName();
+				wts.setProperty(SERVICE_ID, PROPERTY, setup);
+				//TODO: controllo connessione
+				
+				new JsonResult(setup).printTo(out);
+				
+			} else if(crud.equals("s2")) {
+				String name = ServletUtils.getStringParameter(request, "name", true);
+				if(!wts.hasProperty(SERVICE_ID, PROPERTY)) throw new WTException();
+				SetupDataNextcloud setup = (SetupDataNextcloud) wts.getProperty(SERVICE_ID, PROPERTY);
+				
+				Store store = new Store();
+				store.setProfileId(new UserProfileId(setup.profileId));
+				store.setName(StringUtils.defaultIfBlank(name, setup.name));
+				store.setUri(setup.generateURI());
+				store.setParameters(setup.generateParameters());
+				manager.addStore(store);
+				
+				wts.clearProperty(SERVICE_ID, PROPERTY);
+				updateFoldersCache();
+				
+				new JsonResult().printTo(out);
+			}
+			
+		} catch (Exception ex) {
+			logger.error("Error in SetupStoreNextcloud", ex);
 			new JsonResult(false, ex.getMessage()).printTo(out);
 		}
 	}
@@ -1070,4 +1126,6 @@ public class Service extends BaseService {
 		
 		return sb.toString();
 	}
+	
+	
 }

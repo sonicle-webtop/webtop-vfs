@@ -506,6 +506,13 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				if(node) me.addStoreUI('goodrive', node);
 			}
 		});
+		me.addAct('addStoreNextcloud', {
+			tooltip: null,
+			handler: function() {
+				var node = me.getCurrentFileNode();
+				if(node) me.addStoreUI('nextcloud', node);
+			}
+		});
 		me.addAct('addStoreFile', {
 			tooltip: null,
 			handler: function() {
@@ -754,6 +761,12 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 			});
 		} else if(type === 'goodrive') {
 			me.setupStoreGoogleDrive(pid, {
+				callback: function(success) {
+					if(success) me.loadTreeRootNode(pid);
+				}
+			});
+		} else if(type === 'nextcloud') {
+			me.setupStoreNextcloud(pid, {
 				callback: function(success) {
 					if(success) me.loadTreeRootNode(pid);
 				}
@@ -1202,6 +1215,24 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		vct.show();
 	},
 	
+	setupStoreNextcloud: function(profileId, opts) {
+		opts = opts || {};
+		var me = this,
+			vct = WT.createView(me.ID, 'view.NextcloudWiz', {
+				viewCfg: {
+					profileId: profileId,
+					scheme: 'webdav',
+					host: me.getVar('nextcloudDefaultHost'),
+					path: me.getVar('nextcloudDefaultPath')
+				}
+			});
+		
+		vct.getView().on('viewclose', function(s) {
+			Ext.callback(opts.callback, opts.scope || me, [true, s.getVMData()]);
+		});
+		vct.show();
+	},
+	
 	setupStoreFile: function(profileId, opts) {
 		opts = opts || {};
 		var me = this,
@@ -1256,6 +1287,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 						me.getAct('addStoreFtp'),
 						me.getAct('addStoreDropbox'),
 						me.getAct('addStoreGooDrive'),
+						me.getAct('addStoreNextcloud'),
 						me.getAct('addStoreFile'),
 						me.getAct('addStoreOther')
 					]
@@ -1269,6 +1301,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 					me.updateDisabled('addStoreFtp');
 					me.updateDisabled('addStoreDropbox');
 					me.updateDisabled('addStoreGooDrive');
+					me.updateDisabled('addStoreNextcloud');
 					me.updateDisabled('addStoreFile'),
 					me.updateDisabled('addStoreOther');
 				}
@@ -1286,6 +1319,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 						me.getAct('addStoreFtp'),
 						me.getAct('addStoreDropbox'),
 						me.getAct('addStoreGooDrive'),
+						me.getAct('addStoreNextcloud'),
 						me.getAct('addStoreFile'),
 						me.getAct('addStoreOther')
 					]
@@ -1301,6 +1335,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 					me.updateDisabled('addStoreFtp');
 					me.updateDisabled('addStoreDropbox');
 					me.updateDisabled('addStoreGooDrive');
+					me.updateDisabled('addStoreNextcloud');
 					me.updateDisabled('addStoreFile'),
 					me.updateDisabled('addStoreOther');
 					me.updateDisabled('editStore');
@@ -1552,6 +1587,14 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 					return true;
 				}
 			case 'addStoreGooDrive':
+				if (!me.isPermitted('STORE_CLOUD', 'CREATE')) return true;
+				sel = me.getCurrentFileNode();
+				if (sel) {
+					return !sel.getRPerms().MANAGE;
+				} else {
+					return true;
+				}
+			case 'addStoreNextcloud':
 				if (!me.isPermitted('STORE_CLOUD', 'CREATE')) return true;
 				sel = me.getCurrentFileNode();
 				if (sel) {

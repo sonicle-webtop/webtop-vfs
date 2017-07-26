@@ -32,59 +32,38 @@
  */
 package com.sonicle.webtop.vfs;
 
-import com.sonicle.commons.PathUtils;
-import com.sonicle.webtop.core.sdk.BaseServiceSettings;
-import static com.sonicle.webtop.vfs.VfsSettings.*;
+import com.sonicle.webtop.vfs.model.Store;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.text.MessageFormat;
 import org.apache.commons.lang3.StringUtils;
 
 /**
  *
  * @author malbinola
  */
-public class VfsServiceSettings extends BaseServiceSettings {
+public class SetupDataNextcloud extends SetupData {
+	public String scheme = null;
+	public String host = null;
+	public Integer port = null;
+	public String username = null;
+	public String password = null;
+	public String path = null;
+	
+	public SetupDataNextcloud() {}
 
-	public VfsServiceSettings(String serviceId, String domainId) {
-		super(serviceId, domainId);
+	@Override
+	public URI generateURI() throws URISyntaxException {
+		return Store.buildNextcloudURI(scheme,host, port, username, password, path);
 	}
 	
-	public Integer getPrivateUploadMaxFileSize() {
-		return getInteger(UPLOAD_PRIVATE_MAXFILESIZE, null);
+	@Override
+	public String generateParameters() {
+		return null;
 	}
 	
-	public Integer getPublicUploadMaxFileSize() {
-		return getInteger(UPLOAD_PUBLIC_MAXFILESIZE, null);
-	}
-	
-	public String getStoreFileBasepath(StoreFileBasepathTemplateValues tpl) {
-		String value = getString(STORE_FILE_BASEPATH, null);
-		value = StringUtils.replace(value, "{SERVICE_HOME}", tpl.SERVICE_HOME);
-		value = StringUtils.replace(value, "{SERVICE_ID}", tpl.SERVICE_ID);
-		value = StringUtils.replace(value, "{DOMAIN_ID}", tpl.DOMAIN_ID);
-		return PathUtils.ensureTrailingSeparator(value);
-	}
-	
-	public String getMyDocumentsUri(MyDocumentsUriTemplateValues tpl) {
-		String value = getString(MYDOCUMENTS_URI, null);
-		value = StringUtils.replace(value, "{SERVICE_HOME}", tpl.SERVICE_HOME);
-		value = StringUtils.replace(value, "{SERVICE_ID}", tpl.SERVICE_ID);
-		value = StringUtils.replace(value, "{DOMAIN_ID}", tpl.DOMAIN_ID);
-		value = StringUtils.replace(value, "{USER_ID}", tpl.USER_ID);
-		return PathUtils.ensureTrailingSeparator(value);
-	}
-	
-	public Integer getUploadLinkExpiration() {
-		return getInteger(LINK_UPLOAD_EXPIRATION, 3);
-	}
-	
-	public Integer getDownloadLinkExpiration() {
-		return getInteger(LINK_UPLOAD_EXPIRATION, 3);
-	}
-	
-	public String getNextcloudDefaultHost() {
-		return getString(NEXTCLOUD_DEFAULT_HOST,null);
-	}
-	
-	public String getNextcloudDefaultPath() {
-		return getString(NEXTCLOUD_DEFAULT_PATH,null);
+	@Override
+	public void updateName() {
+		name = MessageFormat.format("{0} ({1})", host, username);
 	}
 }

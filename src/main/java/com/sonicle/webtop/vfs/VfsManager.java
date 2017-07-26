@@ -33,9 +33,11 @@
 package com.sonicle.webtop.vfs;
 
 import com.sonicle.commons.PathUtils;
+import com.sonicle.commons.URIUtils;
 import com.sonicle.commons.db.DbUtils;
 import com.sonicle.commons.time.DateTimeUtils;
 import com.sonicle.commons.web.json.CompositeId;
+import com.sonicle.security.Principal;
 import com.sonicle.vfs2.FileSelector;
 import com.sonicle.vfs2.TypeNameComparator;
 import com.sonicle.vfs2.VfsURI;
@@ -1038,7 +1040,13 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		sto.setUserId(ostore.getUserId());
 		sto.setBuiltIn(ostore.getBuiltIn());
 		sto.setName(!StringUtils.isBlank(newName) ? newName : ostore.getName());
-		sto.setUri(new URI(ostore.getUri()));
+		URI uri=new URI(ostore.getUri());
+		if (uri.getUserInfo()==null) {
+			Principal principal=RunContext.getPrincipal();
+			String newUserInfo=principal.getUserId()+":"+new String(principal.getPassword());
+			uri = new URI(uri.getScheme(), newUserInfo, uri.getHost(), uri.getPort(), uri.getPath(), uri.getQuery(), uri.getFragment());
+		}
+		sto.setUri(uri);
 		sto.setParameters(ostore.getParameters());
 		return sto;
 	}

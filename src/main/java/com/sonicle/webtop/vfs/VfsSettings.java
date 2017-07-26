@@ -97,4 +97,18 @@ public class VfsSettings {
 	 * True to display hidden files and dotfiles (file's name start with .) in results
 	 */
 	public static final String HIDDENFILES_SHOW = "hiddenfiles.show";
+	
+	/**
+	 * [domain+system]
+	 * [string]
+	 * Nextcloud default host
+	 */
+	public static final String NEXTCLOUD_DEFAULT_HOST = "nextcloud.default.host";
+	
+	/**
+	 * [domain+system]
+	 * [string]
+	 * Nextcloud default path
+	 */
+	public static final String NEXTCLOUD_DEFAULT_PATH = "nextcloud.default.path";
 }
