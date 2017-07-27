@@ -1041,13 +1041,14 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		sto.setBuiltIn(ostore.getBuiltIn());
 		sto.setName(!StringUtils.isBlank(newName) ? newName : ostore.getName());
 		URI uri=new URI(ostore.getUri());
-		if (uri.getUserInfo()==null) {
+		if (ostore.getBuiltIn()==Store.BUILTIN_NO && StringUtils.isBlank(uri.getUserInfo())) {
 			Principal principal=RunContext.getPrincipal();
 			String newUserInfo=principal.getUserId()+":"+new String(principal.getPassword());
 			uri = new URI(uri.getScheme(), newUserInfo, uri.getHost(), uri.getPort(), uri.getPath(), uri.getQuery(), uri.getFragment());
 		}
 		sto.setUri(uri);
 		sto.setParameters(ostore.getParameters());
+		sto.setProvider(ostore.getProvider());
 		return sto;
 	}
 	
@@ -1061,6 +1062,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		ostore.setName(store.getName());
 		ostore.setUri(store.getUri().toString());
 		ostore.setParameters(store.getParameters());
+		ostore.setProvider(store.getProvider());
 		return ostore;
 	}
 	

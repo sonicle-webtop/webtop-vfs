@@ -300,23 +300,21 @@ public class Service extends BaseService {
 		} else if (store.getBuiltIn().equals(Store.BUILTIN_DOMAINIMAGES)) {
 			return "storeDomainImages";
 		} else {
-			String scheme = store.getUri().getScheme();
-			if(StringUtils.equals(scheme, "dropbox")) {
+			String provider = store.getProvider();
+			if(StringUtils.equals(provider, SetupDataDropbox.PROVIDER)) {
 				return "storeDropbox";
-			} else if(StringUtils.equals(scheme, "file")) {
+			} else if(StringUtils.equals(provider, SetupDataFile.PROVIDER)) {
 				return "storeFile";
-			} else if(StringUtils.equals(scheme, "ftp")) {
+			} else if(StringUtils.equals(provider, SetupDataFtp.PROVIDER)) {
 				return "storeFtp";
-			} else if(StringUtils.equals(scheme, "ftps")) {
-				return "storeFtp";
-			} else if(StringUtils.equals(scheme, "googledrive")) {
+			} else if(StringUtils.equals(provider, SetupDataGoogleDrive.PROVIDER)) {
 				return "storeGooDrive";
-			} else if(StringUtils.equals(scheme, "sftp")) {
-				return "storeFtp";
-			} else if(StringUtils.equals(scheme, "webdav")) {
-				return "storeWebdav";
-			} else if(StringUtils.equals(scheme, "smb")) {
+			} else if(StringUtils.equals(provider, SetupDataNextcloud.PROVIDER)) {
+				return "storeNextcloud";
+			} else if(StringUtils.equals(provider, SetupDataOther.PROVIDER_SMB)) {
 				return "storeSmb";
+			} else if(StringUtils.equals(provider, SetupDataOther.PROVIDER_WEBDAV)) {
+				return "storeWebdav";
 			}  else {
 				return "store";
 			}
@@ -529,6 +527,7 @@ public class Service extends BaseService {
 				store.setName(StringUtils.defaultIfBlank(name, setup.name));
 				store.setUri(setup.generateURI());
 				store.setParameters(setup.generateParameters());
+				store.setProvider(setup.getProvider());
 				manager.addStore(store);
 				
 				wts.clearProperty(SERVICE_ID, PROPERTY);
@@ -589,6 +588,7 @@ public class Service extends BaseService {
 				store.setName(StringUtils.defaultIfBlank(name, setup.name));
 				store.setUri(setup.generateURI());
 				store.setParameters(setup.generateParameters());
+				store.setProvider(setup.getProvider());
 				manager.addStore(store);
 				
 				wts.clearProperty(SERVICE_ID, PROPERTY);
@@ -649,6 +649,7 @@ public class Service extends BaseService {
 				store.setName(StringUtils.defaultIfBlank(name, setup.name));
 				store.setUri(setup.generateURI());
 				store.setParameters(setup.generateParameters());
+				store.setProvider(setup.getProvider());
 				manager.addStore(store);
 				
 				wts.clearProperty(SERVICE_ID, PROPERTY);
@@ -674,7 +675,7 @@ public class Service extends BaseService {
 				String scheme = ServletUtils.getStringParameter(request, "scheme", true);
 				String host = ServletUtils.getStringParameter(request, "host", true);
 				Integer port = ServletUtils.getIntParameter(request, "port", null);
-				String username = ServletUtils.getStringParameter(request, "username", true);
+				String username = ServletUtils.getStringParameter(request, "username", null);
 				String password = ServletUtils.getStringParameter(request, "password", null);
 				String path = ServletUtils.getStringParameter(request, "path", null);
 				
@@ -702,6 +703,7 @@ public class Service extends BaseService {
 				store.setName(StringUtils.defaultIfBlank(name, setup.name));
 				store.setUri(setup.generateURI());
 				store.setParameters(setup.generateParameters());
+				store.setProvider(setup.getProvider());
 				manager.addStore(store);
 				
 				wts.clearProperty(SERVICE_ID, PROPERTY);
@@ -744,6 +746,7 @@ public class Service extends BaseService {
 				store.setName(StringUtils.defaultIfBlank(name, setup.name));
 				store.setUri(setup.generateURI());
 				store.setParameters(setup.generateParameters());
+				store.setProvider(setup.getProvider());
 				manager.addStore(store);
 				
 				wts.clearProperty(SERVICE_ID, PROPERTY);
@@ -781,6 +784,7 @@ public class Service extends BaseService {
 				setup.username = username;
 				setup.password = password;
 				setup.path = path;
+				setup.provider = scheme;
 				setup.updateName();
 				wts.setProperty(SERVICE_ID, PROPERTY, setup);
 				//TODO: controllo connessione
@@ -797,6 +801,7 @@ public class Service extends BaseService {
 				store.setName(StringUtils.defaultIfBlank(name, setup.name));
 				store.setUri(setup.generateURI());
 				store.setParameters(setup.generateParameters());
+				store.setProvider(setup.getProvider());
 				manager.addStore(store);
 				
 				wts.clearProperty(SERVICE_ID, PROPERTY);

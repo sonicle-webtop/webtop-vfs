@@ -16,7 +16,7 @@ package com.sonicle.webtop.vfs.jooq.tables;
 @java.lang.SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class Stores extends org.jooq.impl.TableImpl<com.sonicle.webtop.vfs.jooq.tables.records.StoresRecord> {
 
-	private static final long serialVersionUID = 53311304;
+	private static final long serialVersionUID = -218487705;
 
 	/**
 	 * The reference instance of <code>vfs.stores</code>
@@ -65,6 +65,11 @@ public class Stores extends org.jooq.impl.TableImpl<com.sonicle.webtop.vfs.jooq.
 	 * The column <code>vfs.stores.parameters</code>.
 	 */
 	public final org.jooq.TableField<com.sonicle.webtop.vfs.jooq.tables.records.StoresRecord, java.lang.String> PARAMETERS = createField("parameters", org.jooq.impl.SQLDataType.CLOB, this, "");
+
+	/**
+	 * The column <code>vfs.stores.provider</code>.
+	 */
+	public final org.jooq.TableField<com.sonicle.webtop.vfs.jooq.tables.records.StoresRecord, java.lang.String> PROVIDER = createField("provider", org.jooq.impl.SQLDataType.VARCHAR.length(255).nullable(false), this, "");
 
 	/**
 	 * Create a <code>vfs.stores</code> table reference

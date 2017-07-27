@@ -43,6 +43,10 @@ import org.apache.commons.lang3.StringUtils;
  * @author malbinola
  */
 public class SetupDataOther extends SetupData {
+	
+	public static final String PROVIDER_SMB = "smb";
+	public static final String PROVIDER_WEBDAV = "webdav";
+	
 	public String scheme = null;
 	public String host = null;
 	public Integer port = null;

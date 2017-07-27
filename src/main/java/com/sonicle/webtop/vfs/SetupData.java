@@ -42,8 +42,13 @@ import java.net.URISyntaxException;
 public abstract class SetupData {
 	public String profileId = null;
 	public String name = null;
+	public String provider = null;
 	
 	public abstract URI generateURI() throws URISyntaxException;
 	public abstract String generateParameters();
 	public abstract void updateName();
+	
+	public String getProvider() {
+		return provider;
+	}
 }

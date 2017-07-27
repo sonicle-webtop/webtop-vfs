@@ -39,23 +39,35 @@ import com.sonicle.webtop.vfs.model.Store;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.text.MessageFormat;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  *
  * @author malbinola
  */
 public class SetupDataGoogleDrive extends SetupData {
+	
+	public static final String SCHEME="googledrive";
+	public static final String PROVIDER=SCHEME;
+	
 	public String accountEmail = null;
 	public String accountName = null;
 	public String authUrl = null;
 	public String refreshToken = null;
 	public String accessToken = null;
 	
-	public SetupDataGoogleDrive() {}
+	public SetupDataGoogleDrive() {
+		provider=PROVIDER;
+	}
 
+	public static URI buildGoogleDriveURI(String accountEmail, String accessToken) throws URISyntaxException {
+		String[] tokens = StringUtils.split(accountEmail, "@");
+		return Store.buildURI(SCHEME, tokens[1], null, tokens[0], accessToken, null);
+	}	
+	
 	@Override
 	public URI generateURI() throws URISyntaxException {
-		return Store.buildGoogleDriveURI(accountEmail, accessToken);
+		return buildGoogleDriveURI(accountEmail, accessToken);
 	}
 	
 	@Override

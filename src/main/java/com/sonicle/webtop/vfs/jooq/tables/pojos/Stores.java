@@ -16,7 +16,7 @@ package com.sonicle.webtop.vfs.jooq.tables.pojos;
 @java.lang.SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class Stores implements java.io.Serializable {
 
-	private static final long serialVersionUID = 1378956827;
+	private static final long serialVersionUID = -1457966727;
 
 	private java.lang.Integer storeId;
 	private java.lang.String  domainId;
@@ -25,6 +25,7 @@ public class Stores implements java.io.Serializable {
 	private java.lang.String  name;
 	private java.lang.String  uri;
 	private java.lang.String  parameters;
+	private java.lang.String  provider;
 
 	public Stores() {}
 
@@ -35,7 +36,8 @@ public class Stores implements java.io.Serializable {
 		java.lang.Short   builtIn,
 		java.lang.String  name,
 		java.lang.String  uri,
-		java.lang.String  parameters
+		java.lang.String  parameters,
+		java.lang.String  provider
 	) {
 		this.storeId = storeId;
 		this.domainId = domainId;
@@ -44,6 +46,7 @@ public class Stores implements java.io.Serializable {
 		this.name = name;
 		this.uri = uri;
 		this.parameters = parameters;
+		this.provider = provider;
 	}
 
 	public java.lang.Integer getStoreId() {
@@ -100,5 +103,13 @@ public class Stores implements java.io.Serializable {
 
 	public void setParameters(java.lang.String parameters) {
 		this.parameters = parameters;
+	}
+
+	public java.lang.String getProvider() {
+		return this.provider;
+	}
+
+	public void setProvider(java.lang.String provider) {
+		this.provider = provider;
 	}
 }

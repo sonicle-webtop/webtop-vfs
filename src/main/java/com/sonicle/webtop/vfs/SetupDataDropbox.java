@@ -45,16 +45,26 @@ import java.text.MessageFormat;
  * @author malbinola
  */
 public class SetupDataDropbox extends SetupData {
+
+	public static final String SCHEME="dropbox";
+	public static final String PROVIDER=SCHEME;
+	
 	public String accountId = null;
 	public String accountName = null;
 	public String authUrl = null;
 	public String accessToken = null;
 	
-	public SetupDataDropbox() {}
+	public SetupDataDropbox() {
+		provider=PROVIDER;
+	}
 
+	public static URI buildDropboxURI(String accountId, String accessToken) throws URISyntaxException {
+		return Store.buildURI(SCHEME, "dropbox.com", null, accountId, accessToken, null);
+	}
+	
 	@Override
 	public URI generateURI() throws URISyntaxException {
-		return Store.buildDropboxURI(accountId, accessToken);
+		return buildDropboxURI(accountId, accessToken);
 	}
 	
 	@Override

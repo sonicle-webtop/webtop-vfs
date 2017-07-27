@@ -38,6 +38,7 @@ import com.sonicle.vfs2.util.GoogleDriveApiUtils;
 import com.sonicle.vfs2.util.GoogleDriveAppInfo;
 import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.sdk.WTException;
+import com.sonicle.webtop.vfs.SetupDataGoogleDrive;
 import com.sonicle.webtop.vfs.model.ParamsGoogleDrive;
 import com.sonicle.webtop.vfs.model.Store;
 import java.io.IOException;
@@ -84,7 +85,7 @@ public class GoogleDriveSFS extends StoreFileSystem {
 			ParamsGoogleDrive params = readParams();
 			String newAccessToken = GoogleDriveApiUtils.refreshTokenIfNecessary(params.accessToken, params.refreshToken, appInfo);
 			if (!StringUtils.isBlank(newAccessToken)) {
-				uri = Store.buildGoogleDriveURI(params.accountEmail, newAccessToken);
+				uri = SetupDataGoogleDrive.buildGoogleDriveURI(params.accountEmail, newAccessToken);
 				params.accessToken = newAccessToken;
 				writeParams(params);
 				int ret = updateStore();

@@ -42,13 +42,23 @@ import org.apache.commons.io.FilenameUtils;
  * @author malbinola
  */
 public class SetupDataFile extends SetupData {
+	
+	public static final String SCHEME="file";
+	public static final String PROVIDER=SCHEME;
+	
 	public String path = null;
 	
-	public SetupDataFile() {}
+	public SetupDataFile() {
+		provider=PROVIDER;
+	}
+	
+	public static URI buildFileURI(String path) throws URISyntaxException {
+		return Store.buildURI(SCHEME, null, null, null, null, path);
+	}	
 
 	@Override
 	public URI generateURI() throws URISyntaxException {
-		return Store.buildFileURI(path);
+		return buildFileURI(path);
 	}
 	
 	@Override
