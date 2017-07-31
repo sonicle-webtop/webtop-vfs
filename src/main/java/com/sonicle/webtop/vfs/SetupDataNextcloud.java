@@ -45,9 +45,6 @@ import org.apache.commons.lang3.StringUtils;
  * @author malbinola
  */
 public class SetupDataNextcloud extends SetupData {
-	
-	public static final String PROVIDER = "nextcloud";
-	
 	public String scheme = null;
 	public String host = null;
 	public Integer port = null;
@@ -56,23 +53,23 @@ public class SetupDataNextcloud extends SetupData {
 	public String path = null;
 	
 	public SetupDataNextcloud() {
-		provider=PROVIDER;
+		provider = Store.PROVIDER_NEXTCLOUD;
 	}
 
 	public static URI buildNextcloudURI(String scheme, String host, Integer port, String username, String password, String path) throws URISyntaxException {
 		return new VfsURI.Builder()
-				.scheme(scheme)
-				.host(host)
-				.port(port)
-				.username(username)
-				.password(password)
-				.path(path)
-				.build();
+			.scheme(scheme)
+			.host(host)
+			.port(port)
+			.username(username)
+			.password(password)
+			.path(path)
+			.build();
 	}
 	
 	@Override
 	public URI generateURI() throws URISyntaxException {
-		return buildNextcloudURI(scheme,host, port, username, password, path);
+		return buildNextcloudURI(scheme, host, port, username, password, path);
 	}
 	
 	@Override
@@ -82,8 +79,6 @@ public class SetupDataNextcloud extends SetupData {
 	
 	@Override
 	public void updateName() {
-		name = MessageFormat.format("{0} ({1})", 
-				host, 
-				StringUtils.isBlank(username)?RunContext.getPrincipal().getUserId():username);
+		name = MessageFormat.format("{0} ({1})", host, StringUtils.isBlank(username)?RunContext.getPrincipal().getUserId():username);
 	}
 }

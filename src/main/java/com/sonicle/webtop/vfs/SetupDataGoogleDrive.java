@@ -46,9 +46,7 @@ import org.apache.commons.lang3.StringUtils;
  * @author malbinola
  */
 public class SetupDataGoogleDrive extends SetupData {
-	
-	public static final String SCHEME="googledrive";
-	public static final String PROVIDER=SCHEME;
+	public static final String SCHEME = "googledrive";
 	
 	public String accountEmail = null;
 	public String accountName = null;
@@ -57,7 +55,7 @@ public class SetupDataGoogleDrive extends SetupData {
 	public String accessToken = null;
 	
 	public SetupDataGoogleDrive() {
-		provider=PROVIDER;
+		provider = Store.PROVIDER_GOOGLEDRIVE;
 	}
 
 	public static URI buildGoogleDriveURI(String accountEmail, String accessToken) throws URISyntaxException {

@@ -45,9 +45,7 @@ import java.text.MessageFormat;
  * @author malbinola
  */
 public class SetupDataDropbox extends SetupData {
-
-	public static final String SCHEME="dropbox";
-	public static final String PROVIDER=SCHEME;
+	public static final String SCHEME = "dropbox";
 	
 	public String accountId = null;
 	public String accountName = null;
@@ -55,7 +53,7 @@ public class SetupDataDropbox extends SetupData {
 	public String accessToken = null;
 	
 	public SetupDataDropbox() {
-		provider=PROVIDER;
+		provider = Store.PROVIDER_DROPBOX;
 	}
 
 	public static URI buildDropboxURI(String accountId, String accessToken) throws URISyntaxException {

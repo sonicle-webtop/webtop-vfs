@@ -43,9 +43,6 @@ import org.apache.commons.lang3.StringUtils;
  * @author malbinola
  */
 public class SetupDataFtp extends SetupData {
-	
-	public static final String PROVIDER="ftp";
-	
 	public String scheme = null;
 	public String host = null;
 	public Integer port = null;
@@ -54,7 +51,7 @@ public class SetupDataFtp extends SetupData {
 	public String path = null;
 	
 	public SetupDataFtp() {
-		provider=PROVIDER;
+		provider = Store.PROVIDER_FTP;
 	}
 
 	@Override

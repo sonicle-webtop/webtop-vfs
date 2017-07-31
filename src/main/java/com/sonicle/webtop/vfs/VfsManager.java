@@ -33,7 +33,6 @@
 package com.sonicle.webtop.vfs;
 
 import com.sonicle.commons.PathUtils;
-import com.sonicle.commons.URIUtils;
 import com.sonicle.commons.db.DbUtils;
 import com.sonicle.commons.time.DateTimeUtils;
 import com.sonicle.commons.web.json.CompositeId;
@@ -112,8 +111,8 @@ public class VfsManager extends BaseManager implements IVfsManager {
 	private static final Logger logger = WT.getLogger(VfsManager.class);
 	private static final String GROUPNAME_STORE = "STORE";
 	private static final String MYDOCUMENTS_FOLDER = "mydocuments";
-	private static final String MYDOCUMENTS_URI_SCHEME = "mydocs";
-	private static final String IMAGES_URI_SCHEME = "images";
+	public static final String URI_SCHEME_MYDOCUMENTS = "mydocs";
+	public static final String URI_SCHEME_DOMAINIMAGES = "images";
 	
 	private final HashMap<Integer, UserProfileId> cacheOwnerByStore = new HashMap<>();
 	private final Object shareCacheLock = new Object();
@@ -449,7 +448,8 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			item.setUserId(getTargetProfileId().getUserId());
 			item.setBuiltIn(Store.BUILTIN_MYDOCUMENTS);
 			item.setName("");
-			item.setUri(Store.buildURI(MYDOCUMENTS_URI_SCHEME, getTargetProfileId().getUserId(), null, null, null, null));
+			item.setProvider(Store.PROVIDER_MYDOCUMENTS);
+			item.setUri(Store.buildURI(URI_SCHEME_MYDOCUMENTS, getTargetProfileId().getUserId(), null, null, null, null));
 			item = doStoreUpdate(true, con, item);
 			
 			DbUtils.commitQuietly(con);
@@ -483,7 +483,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			checkRightsOnStoreRoot(getTargetProfileId(), "MANAGE");
 			con = WT.getConnection(SERVICE_ID, false);
 			
-			URI uri = Store.buildURI(IMAGES_URI_SCHEME, domainId, null, null, null, null);
+			URI uri = Store.buildURI(URI_SCHEME_DOMAINIMAGES, domainId, null, null, null, null);
 			
 			List<OStore> oitems = dao.selectByDomainUserBuiltInUri(con, getTargetProfileId().getDomainId(), getTargetProfileId().getUserId(), Store.BUILTIN_DOMAINIMAGES, uri.toString());
 			if (!oitems.isEmpty()) {
@@ -496,6 +496,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			item.setUserId(getTargetProfileId().getUserId());
 			item.setBuiltIn(Store.BUILTIN_DOMAINIMAGES);
 			item.setName("");
+			item.setProvider(Store.PROVIDER_DOMAINIMAGES);
 			item.setUri(uri);
 			item = doStoreUpdate(true, con, item);
 			DbUtils.commitQuietly(con);
@@ -1040,15 +1041,15 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		sto.setUserId(ostore.getUserId());
 		sto.setBuiltIn(ostore.getBuiltIn());
 		sto.setName(!StringUtils.isBlank(newName) ? newName : ostore.getName());
-		URI uri=new URI(ostore.getUri());
-		if (ostore.getBuiltIn()==Store.BUILTIN_NO && StringUtils.isBlank(uri.getUserInfo())) {
-			Principal principal=RunContext.getPrincipal();
-			String newUserInfo=principal.getUserId()+":"+new String(principal.getPassword());
+		URI uri = new URI(ostore.getUri());
+		if (ostore.getBuiltIn().equals(Store.BUILTIN_NO) && StringUtils.isBlank(uri.getUserInfo())) {
+			Principal principal = RunContext.getPrincipal();
+			String newUserInfo = principal.getUserId()+":"+new String(principal.getPassword());
 			uri = new URI(uri.getScheme(), newUserInfo, uri.getHost(), uri.getPort(), uri.getPath(), uri.getQuery(), uri.getFragment());
 		}
+		sto.setProvider(ostore.getProvider());
 		sto.setUri(uri);
 		sto.setParameters(ostore.getParameters());
-		sto.setProvider(ostore.getProvider());
 		return sto;
 	}
 	
@@ -1060,9 +1061,9 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		ostore.setUserId(store.getUserId());
 		ostore.setBuiltIn(store.getBuiltIn());
 		ostore.setName(store.getName());
+		ostore.setProvider(store.getProvider());
 		ostore.setUri(store.getUri().toString());
 		ostore.setParameters(store.getParameters());
-		ostore.setProvider(store.getProvider());
 		return ostore;
 	}
 	

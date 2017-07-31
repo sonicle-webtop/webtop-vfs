@@ -294,28 +294,32 @@ public class Service extends BaseService {
 	}
 	
 	private String storeIcon(Store store) {
+		String provider = store.getProvider();
 		
-		if (store.getBuiltIn().equals(Store.BUILTIN_MYDOCUMENTS)) {
-			return "storeMyDocs";
-		} else if (store.getBuiltIn().equals(Store.BUILTIN_DOMAINIMAGES)) {
-			return "storeDomainImages";
-		} else {
-			String provider = store.getProvider();
-			if(StringUtils.equals(provider, SetupDataDropbox.PROVIDER)) {
-				return "storeDropbox";
-			} else if(StringUtils.equals(provider, SetupDataFile.PROVIDER)) {
-				return "storeFile";
-			} else if(StringUtils.equals(provider, SetupDataFtp.PROVIDER)) {
+		if (store.getBuiltIn().equals(Store.BUILTIN_NO)) {
+			if(StringUtils.equals(provider, Store.PROVIDER_FTP)) {
 				return "storeFtp";
-			} else if(StringUtils.equals(provider, SetupDataGoogleDrive.PROVIDER)) {
+			} else if(StringUtils.equals(provider, Store.PROVIDER_DROPBOX)) {
+				return "storeDropbox";
+			} else if(StringUtils.equals(provider, Store.PROVIDER_GOOGLEDRIVE)) {
 				return "storeGooDrive";
-			} else if(StringUtils.equals(provider, SetupDataNextcloud.PROVIDER)) {
+			} else if(StringUtils.equals(provider, Store.PROVIDER_NEXTCLOUD)) {
 				return "storeNextcloud";
-			} else if(StringUtils.equals(provider, SetupDataOther.PROVIDER_SMB)) {
+			} else if(StringUtils.equals(provider, Store.PROVIDER_FILE)) {
+				return "storeFile";
+			} else if(StringUtils.equals(provider, Store.PROVIDER_SMB)) {
 				return "storeSmb";
-			} else if(StringUtils.equals(provider, SetupDataOther.PROVIDER_WEBDAV)) {
+			} else if(StringUtils.equals(provider, Store.PROVIDER_WEBDAV)) {
 				return "storeWebdav";
-			}  else {
+			} else {
+				return "store";
+			}
+		} else {
+			if(StringUtils.equals(provider, Store.PROVIDER_MYDOCUMENTS)) {
+				return "storeMyDocs";
+			} else if(StringUtils.equals(provider, Store.PROVIDER_DOMAINIMAGES)) {
+				return "storeDomainImages";
+			} else {
 				return "store";
 			}
 		}
