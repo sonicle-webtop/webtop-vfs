@@ -32,6 +32,7 @@
  */
 package com.sonicle.webtop.vfs;
 
+import com.sonicle.commons.EnumUtils;
 import com.sonicle.commons.PathUtils;
 import com.sonicle.commons.db.DbUtils;
 import com.sonicle.commons.time.DateTimeUtils;
@@ -664,7 +665,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			checkRightsOnStoreElements(storeId, "UPDATE");
 			
 			tfo = getTargetFileObject(storeId, parentPath);
-			if (!tfo.isFolder()) throw new IllegalArgumentException("Please provide a valid parentPath");
+			if (!tfo.isFolder()) throw new IllegalArgumentException("Please provide a valid parentPath [" + parentPath + "]");
 			
 			ntf = getNewTargetFileObject(storeId, parentPath, name, overwrite);
 			logger.debug("Creating store file from stream [{}, {}]", storeId, ntf.path);
@@ -752,12 +753,12 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		
 		try {
 			if(StringUtils.isBlank(path)) return items;
-			ensureUser(); // Rights check!
+			ensureUser();
 			con = WT.getConnection(SERVICE_ID, false);
 			
 			logger.debug("path starts with {}", path);
 			
-			List<OSharingLink> olinks = dao.selectByProfileTypeStorePath(con, getTargetProfileId(), SharingLink.TYPE_DOWNLOAD, storeId, path);
+			List<OSharingLink> olinks = dao.selectByProfileTypeStorePath(con, getTargetProfileId(), SharingLink.LinkType.DOWNLOAD, storeId, path);
 			for(OSharingLink olink : olinks) {
 				final SharingLink dl = createSharingLink(olink);
 				items.put(dl.getFileHash(), createSharingLink(olink));
@@ -780,10 +781,10 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		
 		try {
 			if(StringUtils.isBlank(path)) return items;
-			ensureUser(); // Rights check!
+			ensureUser();
 			con = WT.getConnection(SERVICE_ID, false);
 			
-			List<OSharingLink> olinks = dao.selectByProfileTypeStorePath(con, getTargetProfileId(), SharingLink.TYPE_UPLOAD, storeId, path);
+			List<OSharingLink> olinks = dao.selectByProfileTypeStorePath(con, getTargetProfileId(), SharingLink.LinkType.UPLOAD, storeId, path);
 			for(OSharingLink olink : olinks) {
 				final SharingLink ul = createSharingLink(olink);
 				items.put(ul.getFileHash(), ul);
@@ -808,7 +809,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			OSharingLink olink = dao.selectById(con, linkId);
 			if(olink == null) return null;
 			
-			checkRightsOnStoreElements(olink.getStoreId(), "READ"); // Rights check!
+			checkRightsOnStoreElements(olink.getStoreId(), "READ");
 			
 			return createSharingLink(olink);
 			
@@ -828,10 +829,10 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		Connection con = null;
 		
 		try {
-			checkRightsOnStoreElements(link.getStoreId(), "CREATE"); // Rights check!
+			checkRightsOnStoreElements(link.getStoreId(), "CREATE");
 			
 			con = WT.getConnection(SERVICE_ID, false);
-			link.setType(SharingLink.TYPE_DOWNLOAD);
+			link.setLinkType(SharingLink.LinkType.DOWNLOAD);
 			link = createSharingLink(doSharingLinkUpdate(true, con, link));
 			DbUtils.commitQuietly(con);
 			writeLog("DOWNLOADLINK_INSERT", link.getLinkId());
@@ -853,10 +854,10 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		Connection con = null;
 		
 		try {
-			checkRightsOnStoreElements(link.getStoreId(), "CREATE"); // Rights check!
+			checkRightsOnStoreElements(link.getStoreId(), "CREATE");
 			
 			con = WT.getConnection(SERVICE_ID, false);
-			link.setType(SharingLink.TYPE_UPLOAD);
+			link.setLinkType(SharingLink.LinkType.UPLOAD);
 			link = createSharingLink(doSharingLinkUpdate(true, con, link));
 			DbUtils.commitQuietly(con);
 			writeLog("UPLOADLINK_INSERT", link.getLinkId());
@@ -881,9 +882,9 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		try {
 			con = WT.getConnection(SERVICE_ID, false);
 			OSharingLink olink = dao.selectById(con, link.getLinkId());
-			if(olink == null) throw new WTException("Unable to retrieve sharing link [{0}]", link.getLinkId());
+			if (olink == null) throw new WTException("Unable to retrieve sharing link [{0}]", link.getLinkId());
 			
-			checkRightsOnStoreElements(olink.getStoreId(), "READ"); // Rights check!
+			checkRightsOnStoreElements(olink.getStoreId(), "READ");
 			
 			doSharingLinkUpdate(false, con, link);
 			DbUtils.commitQuietly(con);
@@ -910,7 +911,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			OSharingLink olink = dao.selectById(con, linkId);
 			if(olink == null) throw new WTException("Unable to retrieve sharing link [{0}]", linkId);
 			
-			checkRightsOnStoreElements(olink.getStoreId(), "READ"); // Rights check!
+			checkRightsOnStoreElements(olink.getStoreId(), "READ");
 			
 			doSharingLinkDelete(con, linkId);
 			DbUtils.commitQuietly(con);
@@ -927,6 +928,18 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		}
 	}
 	
+	@Override
+	public String[] getSharingLinkPublicURLs(SharingLink link) {
+		String servicePublicUrl = WT.getServicePublicUrl(getTargetProfileId().getDomainId(), SERVICE_ID);
+		return generateLinkPublicURLs(servicePublicUrl, link);
+	}
+	
+	@Override
+	public String getSharingLinkEmbedCode(SharingLink link, Locale locale, String dateFormat) {
+		String servicePublicUrl = WT.getServicePublicUrl(getTargetProfileId().getDomainId(), SERVICE_ID);
+		return generateLinkEmbedCode(locale, dateFormat, servicePublicUrl, link);
+	}
+	
 	public void notifySharingLinkUsage(String linkId, String path, String ipAddress, String userAgent) throws WTException {
 		SharingLinkDAO dao = SharingLinkDAO.getInstance();
 		Connection con = null;
@@ -934,14 +947,14 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		try {
 			con = WT.getConnection(SERVICE_ID);
 			OSharingLink olink = dao.selectById(con, linkId);
-			if(olink == null) throw new WTException("Unable to retrieve sharing link [{0}]", linkId);
+			if (olink == null) throw new WTException("Unable to retrieve sharing link [{0}]", linkId);
 			
-			if(olink.getLinkType().equals(SharingLink.TYPE_DOWNLOAD)) {
-				checkRightsOnStoreFolder(olink.getStoreId(), "READ"); // Rights check!
+			if (olink.getLinkType().equals(EnumUtils.toSerializedName(SharingLink.LinkType.DOWNLOAD))) {
+				checkRightsOnStoreFolder(olink.getStoreId(), "READ");
 				sendLinkUsageEmail(olink, path, ipAddress, userAgent);
 				
-			} else if(olink.getLinkType().equals(SharingLink.TYPE_UPLOAD)) {
-				checkRightsOnStoreElements(olink.getStoreId(), "UPDATE"); // Rights check!
+			} else if(olink.getLinkType().equals(EnumUtils.toSerializedName(SharingLink.LinkType.UPLOAD))) {
+				checkRightsOnStoreElements(olink.getStoreId(), "UPDATE");
 				sendLinkUsageEmail(olink, path, ipAddress, userAgent);
 			}
 			
@@ -964,7 +977,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			for(StoreShareRoot root : listIncomingStoreRoots()) {
 				cacheShareRootByOwner.put(root.getOwnerProfileId(), root.getShareId());
 				for(OShare folder : core.listIncomingShareFolders(root.getShareId(), GROUPNAME_STORE)) {
-					if(folder.hasWildcard()) {
+					if (folder.hasWildcard()) {
 						UserProfileId ownerId = core.userUidToProfileId(folder.getUserUid());
 						cacheWildcardShareFolderByOwner.put(ownerId, folder.getShareId().toString());
 					} else {
@@ -979,28 +992,28 @@ public class VfsManager extends BaseManager implements IVfsManager {
 	
 	private String ownerToRootShareId(UserProfileId owner) {
 		synchronized(shareCacheLock) {
-			if(!cacheShareRootByOwner.containsKey(owner)) buildShareCache();
+			if (!cacheShareRootByOwner.containsKey(owner)) buildShareCache();
 			return cacheShareRootByOwner.get(owner);
 		}
 	}
 	
 	private String ownerToWildcardFolderShareId(UserProfileId ownerPid) {
 		synchronized(shareCacheLock) {
-			if(!cacheWildcardShareFolderByOwner.containsKey(ownerPid) && cacheShareRootByOwner.isEmpty()) buildShareCache();
+			if (!cacheWildcardShareFolderByOwner.containsKey(ownerPid) && cacheShareRootByOwner.isEmpty()) buildShareCache();
 			return cacheWildcardShareFolderByOwner.get(ownerPid);
 		}
 	}
 	
 	private String storeToFolderShareId(int storeId) {
 		synchronized(shareCacheLock) {
-			if(!cacheShareFolderByStore.containsKey(storeId)) buildShareCache();
+			if (!cacheShareFolderByStore.containsKey(storeId)) buildShareCache();
 			return cacheShareFolderByStore.get(storeId);
 		}
 	}
 	
 	private UserProfileId storeToOwner(int storeId) {
 		synchronized(cacheOwnerByStore) {
-			if(cacheOwnerByStore.containsKey(storeId)) {
+			if (cacheOwnerByStore.containsKey(storeId)) {
 				return cacheOwnerByStore.get(storeId);
 			} else {
 				try {
@@ -1029,9 +1042,6 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			DbUtils.closeQuietly(con);
 		}
 	}
-	
-	
-	
 	
 	private Store createStore(OStore ostore, String newName) throws URISyntaxException {
 		if (ostore == null) return null;
@@ -1072,16 +1082,35 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		SharingLink link = new SharingLink();
 		link.setLinkId(oslink.getSharingLinkId());
 		link.setDomainId(oslink.getDomainId());
-		link.setType(oslink.getLinkType());
+		link.setLinkType(EnumUtils.forSerializedName(oslink.getLinkType(), SharingLink.LinkType.class));
 		link.setUserId(oslink.getUserId());
 		link.setStoreId(oslink.getStoreId());
 		link.setFilePath(oslink.getFilePath());
 		link.setFileHash(oslink.getFileHash());
 		link.setCreatedOn(oslink.getCreatedOn());
 		link.setExpiresOn(oslink.getExpiresOn());
-		link.setAuthMode(oslink.getAuthMode());
+		link.setAuthMode(EnumUtils.forSerializedName(oslink.getAuthMode(), SharingLink.AuthMode.class));
 		link.setPassword(oslink.getPassword());
+		link.setNotify(oslink.getNotify());
 		return link;
+	}
+	
+	private OSharingLink createSharingLink(SharingLink slink) {
+		if (slink == null) return null;
+		OSharingLink oslink = new OSharingLink();
+		oslink.setSharingLinkId(slink.getLinkId());
+		oslink.setDomainId(slink.getDomainId());
+		oslink.setLinkType(EnumUtils.toSerializedName(slink.getLinkType()));
+		oslink.setUserId(slink.getUserId());
+		oslink.setStoreId(slink.getStoreId());
+		oslink.setFilePath(slink.getFilePath());
+		oslink.setFileHash(slink.getFileHash());
+		oslink.setCreatedOn(slink.getCreatedOn());
+		oslink.setExpiresOn(slink.getExpiresOn());
+		oslink.setAuthMode(EnumUtils.toSerializedName(slink.getAuthMode()));
+		oslink.setPassword(slink.getPassword());
+		oslink.setNotify(slink.getNotify());
+		return oslink;
 	}
 	
 	private void checkRightsOnStoreSchema(URI uri) {
@@ -1329,12 +1358,13 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		
 		sl.validate(insert);
 		
-		OSharingLink o = new OSharingLink(sl);
-		if(o.getDomainId() == null) o.setDomainId(pid.getDomainId());
-		if(o.getUserId() == null) o.setUserId(pid.getUserId());
+		OSharingLink o = createSharingLink(sl);
+		if (o.getDomainId() == null) o.setDomainId(pid.getDomainId());
+		if (o.getUserId() == null) o.setUserId(pid.getUserId());
+		if (o.getNotify() == null) o.setNotify(true);
 		
-		if(insert) {
-			o.setSharingLinkId(generateLinkId(pid, sl.getType(), o.getStoreId(), o.getFilePath()));
+		if (insert) {
+			o.setSharingLinkId(generateLinkId(pid, EnumUtils.toSerializedName(sl.getLinkType()), o.getStoreId(), o.getFilePath()));
 			o.setFileHash(generateStoreFileHash(o.getStoreId(), o.getFilePath()));
 			o.setCreatedOn(DateTimeUtils.now());
 			dao.insert(con, o);
@@ -1368,7 +1398,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 	}
 	
 	private void sendLinkUsageEmail(OSharingLink olink, String path, String ipAddress, String userAgent) throws WTException {
-		final String BHD_KEY = (olink.getLinkType().equals(SharingLink.TYPE_DOWNLOAD)) ? VfsLocale.TPL_EMAIL_SHARINGLINKUSAGE_BODY_HEADER_DL : VfsLocale.TPL_EMAIL_SHARINGLINKUSAGE_BODY_HEADER_UL;
+		final String BHD_KEY = (olink.getLinkType().equals(EnumUtils.toSerializedName(SharingLink.LinkType.DOWNLOAD))) ? VfsLocale.TPL_EMAIL_SHARINGLINKUSAGE_BODY_HEADER_DL : VfsLocale.TPL_EMAIL_SHARINGLINKUSAGE_BODY_HEADER_UL;
 		UserProfileId pid = olink.getProfileId();
 		
 		//TODO: rendere relativa la path del file rispetto allo Store???
@@ -1400,9 +1430,9 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			
 			String url = (urls[1] != null) ? urls[1] : urls[0];
 			String expiration = (link.getExpiresOn() != null) ? DateTimeUtils.createFormatter(dateFormat).print(link.getExpiresOn()) : null;
-			String password = (link.getAuthMode().equals(SharingLink.AUTH_MODE_PASSWORD)) ? link.getPassword() : null;
+			String password = (link.getAuthMode().equals(SharingLink.AuthMode.PASSWORD)) ? link.getPassword() : null;
 			
-			return TplHelper.buildLinkEmbedCodeTpl(locale, link.getType(), url, PathUtils.getFileName(link.getFilePath()), expiration, password);
+			return TplHelper.buildLinkEmbedCodeTpl(locale, link.getLinkType(), url, PathUtils.getFileName(link.getFilePath()), expiration, password);
 			
 		} catch(IOException | TemplateException ex) {
 			logger.error("Unable to build embed template", ex);
@@ -1411,7 +1441,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 	}
 	
 	public static String[] generateLinkPublicURLs(String publicBaseUrl, SharingLink link) {
-		if(link.getType().equals(SharingLink.TYPE_DOWNLOAD)) {
+		if(link.getLinkType().equals(SharingLink.LinkType.DOWNLOAD)) {
 			String url = null, durl = null;
 			if(PathUtils.isFolder(link.getFilePath())) {
 				url = buildLinkPublicUrl(publicBaseUrl, link, false);

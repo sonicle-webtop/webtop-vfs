@@ -32,12 +32,14 @@
  */
 package com.sonicle.webtop.vfs.dal;
 
+import com.sonicle.commons.EnumUtils;
 import com.sonicle.webtop.core.dal.BaseDAO;
 import com.sonicle.webtop.core.dal.DAOException;
 import com.sonicle.webtop.core.sdk.UserProfileId;
 import com.sonicle.webtop.vfs.bol.OSharingLink;
 import static com.sonicle.webtop.vfs.jooq.tables.SharingLinks.SHARING_LINKS;
 import com.sonicle.webtop.vfs.jooq.tables.records.SharingLinksRecord;
+import com.sonicle.webtop.vfs.model.SharingLink;
 import java.sql.Connection;
 import java.util.List;
 import org.jooq.DSLContext;
@@ -75,7 +77,7 @@ public class SharingLinkDAO extends BaseDAO {
 			.fetchOneInto(OSharingLink.class);
 	}
 	
-	public List<OSharingLink> selectByProfileTypeStorePath(Connection con, UserProfileId profileId, String linkType, int storeId, String filePathStartsWith) throws DAOException {
+	public List<OSharingLink> selectByProfileTypeStorePath(Connection con, UserProfileId profileId, SharingLink.LinkType type, int storeId, String filePathStartsWith) throws DAOException {
 		DSLContext dsl = getDSL(con);
 		return dsl
 			.select()
@@ -83,7 +85,7 @@ public class SharingLinkDAO extends BaseDAO {
 			.where(
 					SHARING_LINKS.DOMAIN_ID.equal(profileId.getDomain())
 					.and(SHARING_LINKS.USER_ID.equal(profileId.getUser())
-					.and(SHARING_LINKS.LINK_TYPE.equal(linkType)
+					.and(SHARING_LINKS.LINK_TYPE.equal(EnumUtils.toSerializedName(type))
 					.and(SHARING_LINKS.STORE_ID.equal(storeId)
 					.and(SHARING_LINKS.FILE_PATH.startsWith(filePathStartsWith)))))
 			)
@@ -110,6 +112,7 @@ public class SharingLinkDAO extends BaseDAO {
 			.set(SHARING_LINKS.EXPIRES_ON, item.getExpiresOn())
 			.set(SHARING_LINKS.AUTH_MODE, item.getAuthMode())
 			.set(SHARING_LINKS.PASSWORD, item.getPassword())
+			.set(SHARING_LINKS.NOTIFY, item.getNotify())
 			.where(
 				SHARING_LINKS.SHARING_LINK_ID.equal(item.getSharingLinkId())
 			)

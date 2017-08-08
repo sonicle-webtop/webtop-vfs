@@ -33,7 +33,6 @@
 package com.sonicle.webtop.vfs.bol;
 
 import com.sonicle.webtop.core.sdk.UserProfileId;
-import com.sonicle.webtop.vfs.model.SharingLink;
 import com.sonicle.webtop.vfs.jooq.tables.pojos.SharingLinks;
 
 /**
@@ -43,21 +42,6 @@ import com.sonicle.webtop.vfs.jooq.tables.pojos.SharingLinks;
 public class OSharingLink extends SharingLinks {
 	
 	public OSharingLink() {}
-	
-	public OSharingLink(SharingLink o) {
-		if(o == null) return;
-		setSharingLinkId(o.getLinkId());
-		setDomainId(o.getDomainId());
-		setUserId(o.getUserId());
-		setLinkType(o.getType());
-		setStoreId(o.getStoreId());
-		setFilePath(o.getFilePath());
-		setFileHash(o.getFileHash());
-		setCreatedOn(o.getCreatedOn());
-		setExpiresOn(o.getExpiresOn());
-		setAuthMode(o.getAuthMode());
-		setPassword(o.getPassword());
-	}
 	
 	public UserProfileId getProfileId() {
 		return new UserProfileId(getDomainId(), getUserId());

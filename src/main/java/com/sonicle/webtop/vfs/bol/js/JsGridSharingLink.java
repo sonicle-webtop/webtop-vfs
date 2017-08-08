@@ -32,6 +32,7 @@
  */
 package com.sonicle.webtop.vfs.bol.js;
 
+import com.sonicle.commons.EnumUtils;
 import com.sonicle.commons.PathUtils;
 import com.sonicle.commons.time.DateTimeUtils;
 import com.sonicle.webtop.vfs.Service.StoreNodeId;
@@ -67,7 +68,7 @@ public class JsGridSharingLink {
 		this.linkId = sl.getLinkId();
 		this.userId = sl.getUserId();
 		this.userDescription = userDescription;
-		this.linkType = sl.getType();
+		this.linkType = EnumUtils.toSerializedName(sl.getLinkType());
 		this.storeId = sl.getStoreId();
 		this.storeName = storeName;
 		this.storeIcon = storeIcon;
@@ -82,6 +83,6 @@ public class JsGridSharingLink {
 		this.parentFileId = baseFileId.toString(true);
 		this.expireOn = DateTimeUtils.printYmdHmsWithZone(sl.getExpiresOn(), profileTz);
 		this.expired = sl.isExpired(DateTimeUtils.now());
-		this.authMode = sl.getAuthMode();
+		this.authMode = EnumUtils.toSerializedName(sl.getAuthMode());
 	}
 }

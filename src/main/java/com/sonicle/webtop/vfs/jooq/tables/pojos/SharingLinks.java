@@ -16,7 +16,7 @@ package com.sonicle.webtop.vfs.jooq.tables.pojos;
 @java.lang.SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class SharingLinks implements java.io.Serializable {
 
-	private static final long serialVersionUID = 558394116;
+	private static final long serialVersionUID = -1290027882;
 
 	private java.lang.String       sharingLinkId;
 	private java.lang.String       domainId;
@@ -29,6 +29,7 @@ public class SharingLinks implements java.io.Serializable {
 	private org.joda.time.DateTime expiresOn;
 	private java.lang.String       authMode;
 	private java.lang.String       password;
+	private java.lang.Boolean      notify;
 
 	public SharingLinks() {}
 
@@ -43,7 +44,8 @@ public class SharingLinks implements java.io.Serializable {
 		org.joda.time.DateTime createdOn,
 		org.joda.time.DateTime expiresOn,
 		java.lang.String       authMode,
-		java.lang.String       password
+		java.lang.String       password,
+		java.lang.Boolean      notify
 	) {
 		this.sharingLinkId = sharingLinkId;
 		this.domainId = domainId;
@@ -56,6 +58,7 @@ public class SharingLinks implements java.io.Serializable {
 		this.expiresOn = expiresOn;
 		this.authMode = authMode;
 		this.password = password;
+		this.notify = notify;
 	}
 
 	public java.lang.String getSharingLinkId() {
@@ -144,5 +147,13 @@ public class SharingLinks implements java.io.Serializable {
 
 	public void setPassword(java.lang.String password) {
 		this.password = password;
+	}
+
+	public java.lang.Boolean getNotify() {
+		return this.notify;
+	}
+
+	public void setNotify(java.lang.Boolean notify) {
+		this.notify = notify;
 	}
 }

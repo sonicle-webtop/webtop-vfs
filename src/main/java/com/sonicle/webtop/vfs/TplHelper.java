@@ -71,11 +71,11 @@ public class TplHelper {
 		return WT.buildTemplate(SERVICE_ID, "tpl/email/linkUsage-body.html", map);
 	}
 	
-	public static String buildLinkEmbedCodeTpl(Locale locale, String linkType, String linkUrl, String linkName, String linkExpiration, String password) throws IOException, TemplateException {
+	public static String buildLinkEmbedCodeTpl(Locale locale, SharingLink.LinkType linkType, String linkUrl, String linkName, String linkExpiration, String password) throws IOException, TemplateException {
 		MapItem i18n = new MapItem();
-		if (linkType.equals(SharingLink.TYPE_DOWNLOAD)) {
+		if (linkType.equals(SharingLink.LinkType.DOWNLOAD)) {
 			i18n.put("type", WT.lookupResource(SERVICE_ID, locale, VfsLocale.TPL_EMAIL_LINKEMBEDCODE_TYPE_DL));
-		} else if (linkType.equals(SharingLink.TYPE_UPLOAD)) {
+		} else if (linkType.equals(SharingLink.LinkType.UPLOAD)) {
 			i18n.put("type", WT.lookupResource(SERVICE_ID, locale, VfsLocale.TPL_EMAIL_LINKEMBEDCODE_TYPE_UL));
 		}
 		i18n.put("expiration", WT.lookupResource(SERVICE_ID, locale, VfsLocale.TPL_EMAIL_LINKEMBEDCODE_EXPIRATION));

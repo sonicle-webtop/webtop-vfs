@@ -137,7 +137,7 @@ public class PublicService extends BasePublicService {
 					} else if(!isLinkAuthorized(link)) { // Link not authorized
 						writeLinkPage(request, response, wts, "Authorize", link);
 
-					} else if(link.getType().equals(SharingLink.TYPE_DOWNLOAD)) {
+					} else if(link.getLinkType().equals(SharingLink.LinkType.DOWNLOAD)) {
 						if(PathUtils.isFolder(link.getFilePath())) {
 							Integer dl = ServletUtils.getIntParameter(request, "dl", 0);
 
@@ -166,7 +166,9 @@ public class PublicService extends BasePublicService {
 								
 								String filePath = PathUtils.concatPaths(link.getFilePath(), p);
 								writeStoreFile(response, link, fileUrlPath.getOutFileName());
-								manager.notifySharingLinkUsage(link.getLinkId(), filePath, wts.getRemoteIP(), wts.getPlainUserAgent());
+								if (link.getNotify()) {
+									manager.notifySharingLinkUsage(link.getLinkId(), filePath, wts.getRemoteIP(), wts.getPlainUserAgent());
+								}
 
 							} else {
 								writeLinkPage(request, response, wts, "DownloadLink", link);
@@ -182,7 +184,9 @@ public class PublicService extends BasePublicService {
 								
 							} else if(fileUrlPath.isGet()) { // Real binary stream
 								writeStoreFile(response, link, fileUrlPath.getOutFileName());
-								manager.notifySharingLinkUsage(link.getLinkId(), link.getFilePath(), wts.getRemoteIP(), wts.getPlainUserAgent());
+								if (link.getNotify()) {
+									manager.notifySharingLinkUsage(link.getLinkId(), link.getFilePath(), wts.getRemoteIP(), wts.getPlainUserAgent());
+								}
 								
 							} else {
 								logger.trace("Invalid request");
@@ -190,7 +194,7 @@ public class PublicService extends BasePublicService {
 							}
 						}
 						
-					} else if(link.getType().equals(SharingLink.TYPE_UPLOAD)) {
+					} else if(link.getLinkType().equals(SharingLink.LinkType.UPLOAD)) {
 						CoreServiceSettings css = new CoreServiceSettings(CoreManifest.ID, StringUtils.defaultString(domainId));
 						Integer maxUpload = css.getUploadMaxFileSize();
 						VfsUserSettings us = new VfsUserSettings(SERVICE_ID, link.getProfileId());
@@ -227,7 +231,7 @@ public class PublicService extends BasePublicService {
 				new JsonResult().printTo(out);
 			} else {
 				boolean check = true;
-				if(link.getAuthMode().equals(SharingLink.AUTH_MODE_PASSWORD)) {
+				if(link.getAuthMode().equals(SharingLink.AuthMode.PASSWORD)) {
 					check = StringUtils.equals(password, link.getPassword());
 				}
 
@@ -287,12 +291,14 @@ public class PublicService extends BasePublicService {
 
 				SharingLink link = manager.getSharingLink(linkId);
 				if(link == null) throw new UploadException("Link not found [{0}]", linkId);
-				if(!link.getType().equals(SharingLink.TYPE_UPLOAD)) throw new UploadException("Wrong link type [{0}]", linkId);
+				if(!link.getLinkType().equals(SharingLink.LinkType.UPLOAD)) throw new UploadException("Wrong link type [{0}]", linkId);
 
 				VfsManager vfsMgr = (VfsManager)WT.getServiceManager(SERVICE_ID, link.getProfileId());
 				String newPath = vfsMgr.addStoreFileFromStream(link.getStoreId(), link.getFilePath(), file.getFilename(), is);
-				WebTopSession wts = getWts();
-				vfsMgr.notifySharingLinkUsage(link.getLinkId(), link.relativizePath(newPath), wts.getRemoteIP(), wts.getPlainUserAgent());
+				if (link.getNotify()) {
+					WebTopSession wts = getWts();
+					vfsMgr.notifySharingLinkUsage(link.getLinkId(), link.relativizePath(newPath), wts.getRemoteIP(), wts.getPlainUserAgent());
+				}
 				
 			} catch(UploadException ex) {
 				logger.trace("Upload failure", ex);
@@ -305,7 +311,7 @@ public class PublicService extends BasePublicService {
 	}
 	
 	private boolean isLinkAuthorized(SharingLink link) {
-		if(link.getAuthMode().equals(SharingLink.AUTH_MODE_PASSWORD)) {
+		if(link.getAuthMode().equals(SharingLink.AuthMode.PASSWORD)) {
 			return getAuthedLinks().contains(link.getLinkId());
 		} else {
 			return true;

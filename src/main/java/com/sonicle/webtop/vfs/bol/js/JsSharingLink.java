@@ -32,6 +32,7 @@
  */
 package com.sonicle.webtop.vfs.bol.js;
 
+import com.sonicle.commons.EnumUtils;
 import com.sonicle.commons.PathUtils;
 import com.sonicle.commons.time.DateTimeUtils;
 import com.sonicle.webtop.vfs.model.SharingLink;
@@ -59,13 +60,13 @@ public class JsSharingLink {
 	
 	public JsSharingLink(SharingLink o, String[] publicLinks, DateTimeZone profileTz) {
 		this.linkId = o.getLinkId();
-		this.type = o.getType();
+		this.type = EnumUtils.toSerializedName(o.getLinkType());
 		this.publicUrl = publicLinks[0];
 		this.rawPublicUrl = publicLinks[1];
 		this.filePath = o.getFilePath();
 		this.fileName = PathUtils.getFileName(o.getFilePath());
 		this.expirationDate = DateTimeUtils.printYmdHmsWithZone(o.getExpiresOn(), profileTz);
-		this.authMode = o.getAuthMode();
+		this.authMode = EnumUtils.toSerializedName(o.getAuthMode());
 		this.password = o.getPassword();
 	}
 	
@@ -74,12 +75,12 @@ public class JsSharingLink {
 		
 		SharingLink bean = new SharingLink();
 		bean.setLinkId(js.linkId);
-		bean.setType(js.type);
+		bean.setLinkType(EnumUtils.forSerializedName(js.type, SharingLink.LinkType.class));
 		if(!StringUtils.isBlank(js.expirationDate)) {
 			DateTime dt = ymdHmsFmt.parseDateTime(js.expirationDate);
 			bean.setExpiresOn(dt.withTimeAtStartOfDay());
 		}
-		bean.setAuthMode(js.authMode);
+		bean.setAuthMode(EnumUtils.forSerializedName(js.authMode, SharingLink.AuthMode.class));
 		bean.setPassword(js.password);
 		return bean;
 	}

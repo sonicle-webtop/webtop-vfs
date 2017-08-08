@@ -38,6 +38,7 @@ import com.dropbox.core.DbxAuthFinish;
 import com.dropbox.core.DbxRequestConfig;
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.services.oauth2.model.Userinfoplus;
+import com.sonicle.commons.EnumUtils;
 import com.sonicle.commons.LangUtils;
 import com.sonicle.commons.PathUtils;
 import com.sonicle.commons.time.DateTimeUtils;
@@ -957,15 +958,16 @@ public class Service extends BaseService {
 				
 				DateTimeFormatter ymdHmsFmt = DateTimeUtils.createYmdHmsFormatter(up.getTimeZone());
 				SharingLink dl = new SharingLink();
-				dl.setType(SharingLink.TYPE_DOWNLOAD);
+				dl.setLinkType(SharingLink.LinkType.DOWNLOAD);
 				dl.setStoreId(storeId);
 				dl.setFilePath(nodeId.getPath());
 				if(!StringUtils.isBlank(expirationDate)) {
 					DateTime dt = ymdHmsFmt.parseDateTime(expirationDate);
 					dl.setExpiresOn(dt.withTimeAtStartOfDay());
 				}
-				dl.setAuthMode(authMode);
+				dl.setAuthMode(EnumUtils.forSerializedName(authMode, SharingLink.AuthMode.class));
 				dl.setPassword(password);
+				dl.setNotify(true);
 				dl = manager.addDownloadLink(dl);
 				
 				String servicePublicUrl = WT.getServicePublicUrl(up.getDomainId(), SERVICE_ID);
@@ -1001,15 +1003,16 @@ public class Service extends BaseService {
 				
 				DateTimeFormatter ymdHmsFmt = DateTimeUtils.createYmdHmsFormatter(up.getTimeZone());
 				SharingLink ul = new SharingLink();
-				ul.setType(SharingLink.TYPE_UPLOAD);
+				ul.setLinkType(SharingLink.LinkType.UPLOAD);
 				ul.setStoreId(storeId);
 				ul.setFilePath(nodeId.getPath());
 				if (!StringUtils.isBlank(expirationDate)) {
 					DateTime dt = ymdHmsFmt.parseDateTime(expirationDate);
 					ul.setExpiresOn(dt.withTimeAtStartOfDay());
 				}
-				ul.setAuthMode(authMode);
+				ul.setAuthMode(EnumUtils.forSerializedName(authMode, SharingLink.AuthMode.class));
 				ul.setPassword(password);
+				ul.setNotify(true);
 				ul = manager.addUploadLink(ul);
 				
 				String servicePublicUrl = WT.getServicePublicUrl(up.getDomainId(), SERVICE_ID);

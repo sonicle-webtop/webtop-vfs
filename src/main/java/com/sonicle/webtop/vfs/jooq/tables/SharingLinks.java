@@ -16,7 +16,7 @@ package com.sonicle.webtop.vfs.jooq.tables;
 @java.lang.SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class SharingLinks extends org.jooq.impl.TableImpl<com.sonicle.webtop.vfs.jooq.tables.records.SharingLinksRecord> {
 
-	private static final long serialVersionUID = 177176232;
+	private static final long serialVersionUID = -1972805954;
 
 	/**
 	 * The reference instance of <code>vfs.sharing_links</code>
@@ -85,6 +85,11 @@ public class SharingLinks extends org.jooq.impl.TableImpl<com.sonicle.webtop.vfs
 	 * The column <code>vfs.sharing_links.password</code>.
 	 */
 	public final org.jooq.TableField<com.sonicle.webtop.vfs.jooq.tables.records.SharingLinksRecord, java.lang.String> PASSWORD = createField("password", org.jooq.impl.SQLDataType.VARCHAR.length(128), this, "");
+
+	/**
+	 * The column <code>vfs.sharing_links.notify</code>.
+	 */
+	public final org.jooq.TableField<com.sonicle.webtop.vfs.jooq.tables.records.SharingLinksRecord, java.lang.Boolean> NOTIFY = createField("notify", org.jooq.impl.SQLDataType.BOOLEAN.nullable(false).defaulted(true), this, "");
 
 	/**
 	 * Create a <code>vfs.sharing_links</code> table reference
