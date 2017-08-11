@@ -34,6 +34,7 @@ package com.sonicle.webtop.vfs;
 
 import com.sonicle.commons.EnumUtils;
 import com.sonicle.commons.PathUtils;
+import com.sonicle.commons.URIUtils;
 import com.sonicle.commons.db.DbUtils;
 import com.sonicle.commons.time.DateTimeUtils;
 import com.sonicle.commons.web.json.CompositeId;
@@ -102,6 +103,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.vfs2.FileObject;
 import org.apache.commons.vfs2.FileSystemException;
 import org.apache.commons.vfs2.Selectors;
+import org.apache.http.client.utils.URIBuilder;
 import org.slf4j.Logger;
 
 /**
@@ -929,9 +931,13 @@ public class VfsManager extends BaseManager implements IVfsManager {
 	}
 	
 	@Override
-	public String[] getSharingLinkPublicURLs(SharingLink link) {
-		String servicePublicUrl = WT.getServicePublicUrl(getTargetProfileId().getDomainId(), SERVICE_ID);
-		return generateLinkPublicURLs(servicePublicUrl, link);
+	public URI[] getSharingLinkPublicURLs(SharingLink link) throws WTException {
+		try {
+			String servicePublicUrl = WT.getServicePublicUrl(getTargetProfileId().getDomainId(), SERVICE_ID);
+			return generateLinkPublicURLs(servicePublicUrl, link);
+		} catch(URISyntaxException ex) {
+			throw new WTException(ex);
+		}
 	}
 	
 	@Override
@@ -1424,60 +1430,69 @@ public class VfsManager extends BaseManager implements IVfsManager {
 	}
 	
 	public static String generateLinkEmbedCode(Locale locale, String dateFormat, String publicBaseUrl, SharingLink link) {
-		
 		try {
-			String[] urls = VfsManager.generateLinkPublicURLs(publicBaseUrl, link);
+			URI[] urls = VfsManager.generateLinkPublicURLs(publicBaseUrl, link);
 			
-			String url = (urls[1] != null) ? urls[1] : urls[0];
+			URI url = (urls[1] != null) ? urls[1] : urls[0];
 			String expiration = (link.getExpiresOn() != null) ? DateTimeUtils.createFormatter(dateFormat).print(link.getExpiresOn()) : null;
 			String password = (link.getAuthMode().equals(SharingLink.AuthMode.PASSWORD)) ? link.getPassword() : null;
 			
-			return TplHelper.buildLinkEmbedCodeTpl(locale, link.getLinkType(), url, PathUtils.getFileName(link.getFilePath()), expiration, password);
+			return TplHelper.buildLinkEmbedCodeTpl(locale, link.getLinkType(), url.toString(), PathUtils.getFileName(link.getFilePath()), expiration, password);
 			
-		} catch(IOException | TemplateException ex) {
+		} catch(IOException | TemplateException | URISyntaxException ex) {
 			logger.error("Unable to build embed template", ex);
 			return null;
 		}
 	}
 	
-	public static String[] generateLinkPublicURLs(String publicBaseUrl, SharingLink link) {
-		if(link.getLinkType().equals(SharingLink.LinkType.DOWNLOAD)) {
-			String url = null, durl = null;
-			if(PathUtils.isFolder(link.getFilePath())) {
-				url = buildLinkPublicUrl(publicBaseUrl, link, false);
+	public static URI[] generateLinkPublicURLs(String publicBaseUrl, SharingLink link) throws URISyntaxException {
+		if (link.getLinkType().equals(SharingLink.LinkType.DOWNLOAD)) {
+			if (PathUtils.isFolder(link.getFilePath())) {
 				//TODO: implementare nel pubblico la gestione link diretti per le cartelle
+				return new URI[]{
+					buildLinkPublicUrl(publicBaseUrl, link, false, false),
+					null,
+					null
+				};
 			} else {
 				//TODO: implementare nel pubblico l'anteprima dei file
-				durl = buildLinkPublicUrl(publicBaseUrl, link, true);
+				return new URI[]{
+					null,
+					buildLinkPublicUrl(publicBaseUrl, link, true, true),
+					buildLinkPublicUrl(publicBaseUrl, link, true, false)
+				};
 			}
-			return new String[]{url, durl};
-		} else {
-			String url = buildLinkPublicUrl(publicBaseUrl, link, false);
-			return new String[]{url, null};
+		} else { // Upload links have only the managed URL
+			return new URI[]{
+				buildLinkPublicUrl(publicBaseUrl, link, false, false),
+				null,
+				null
+			};
 		}
 	}
 	
 	/**
-	 * Builds an URL suitable for links that point to shared file.
-	 * @param publicBaseUrl The base URL up to the public servlet path (eg. http://localhost/webtop/public/cloud)
-	 * @param link Shared link
-	 * @param direct True to point directly to binary file (not suitable for folders)
-	 * @return Generated URL
+	 * 
+	 * @param publicBaseUrl The base URL up to the public servlet path (eg. http://localhost/webtop/public/{domain}/vfs)
+	 * @param link The link being shared.
+	 * @param directToStream Whether to point to file stream directly.
+	 * @param forceDownload In case of direct stream, forces the download without leaving the decision to the browser.
+	 * @return The generated URL.
+	 * @throws URISyntaxException 
 	 */
-	public static String buildLinkPublicUrl(String publicBaseUrl, SharingLink link, boolean direct) {
-		String s = PublicService.PUBPATH_CONTEXT_LINK + "/" + link.getLinkId() + (direct ? "?raw=1" : "");
-		return PathUtils.concatPaths(publicBaseUrl, s);
-	}
-	
-	/**
-	 * Builds an URL suitable for redirecting to public file download stream.
-	 * @param publicBaseUrl The base URL up to the public servlet path (eg. http://localhost/webtop/public/cloud)
-	 * @param link Shared link
-	 * @return Generated URL
-	 */
-	public static String buildLinkPublicGetUrl(String publicBaseUrl, SharingLink link) {
-		String s = PublicService.PUBPATH_CONTEXT_LINK + "/" + link.getLinkId() + "/get/" + PathUtils.getFileName(link.getFilePath());
-		return PathUtils.concatPaths(publicBaseUrl, s);
+	public static URI buildLinkPublicUrl(String publicBaseUrl, SharingLink link, boolean directToStream, boolean forceDownload) throws URISyntaxException {
+		URIBuilder builder = new URIBuilder(publicBaseUrl);
+		//TODO: Magari spostare il metodo in un builder dedicato nel progetto api
+		final String p = PublicService.PUBPATH_CONTEXT_LINK + "/" + link.getLinkId();
+		URIUtils.appendPath(builder, p);
+		if (directToStream) {
+			if (forceDownload) {
+				builder.addParameter("raw", "1");
+			} else {
+				builder.addParameter("raw", "2");
+			}
+		}
+		return builder.build();
 	}
 	
 	private class NewTargetFile {

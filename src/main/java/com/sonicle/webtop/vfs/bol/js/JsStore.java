@@ -64,7 +64,7 @@ public class JsStore {
 		this.scheme = store.getUri().getScheme();
 		this.host = store.getUri().getHost();
 		this.port = URIUtils.getPort(store.getUri());
-		String[] ui = URIUtils.parseUserInfo(store.getUri());
+		String[] ui = URIUtils.getUserInfo(store.getUri());
 		if(ui != null) {
 			this.username = ui[0];
 			this.password = ui[1];

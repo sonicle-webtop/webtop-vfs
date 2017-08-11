@@ -41,6 +41,7 @@ import com.google.api.services.oauth2.model.Userinfoplus;
 import com.sonicle.commons.EnumUtils;
 import com.sonicle.commons.LangUtils;
 import com.sonicle.commons.PathUtils;
+import com.sonicle.commons.URIUtils;
 import com.sonicle.commons.time.DateTimeUtils;
 import com.sonicle.commons.web.Crud;
 import com.sonicle.commons.web.ServletUtils;
@@ -83,6 +84,7 @@ import com.sonicle.webtop.vfs.sfs.StoreFileSystem;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -970,12 +972,12 @@ public class Service extends BaseService {
 				dl.setNotify(true);
 				dl = manager.addDownloadLink(dl);
 				
-				String servicePublicUrl = WT.getServicePublicUrl(up.getDomainId(), SERVICE_ID);
-				String[] urls = VfsManager.generateLinkPublicURLs(servicePublicUrl, dl);
-				String html = VfsManager.generateLinkEmbedCode(up.getLocale(), cus.getShortDateFormat(), servicePublicUrl, dl);
+				final String servicePublicUrl = WT.getServicePublicUrl(up.getDomainId(), SERVICE_ID);
+				final URI[] urls = VfsManager.generateLinkPublicURLs(servicePublicUrl, dl);
+				final String html = VfsManager.generateLinkEmbedCode(up.getLocale(), cus.getShortDateFormat(), servicePublicUrl, dl);
 				
 				JsWizardData data = new JsWizardData();
-				data.put("urls", urls);
+				data.put("urls", URIUtils.toURIStrings(urls, false));
 				data.put("embed", html);
 				new JsonResult(data).printTo(out);
 			}
@@ -1015,12 +1017,12 @@ public class Service extends BaseService {
 				ul.setNotify(true);
 				ul = manager.addUploadLink(ul);
 				
-				String servicePublicUrl = WT.getServicePublicUrl(up.getDomainId(), SERVICE_ID);
-				String[] urls = VfsManager.generateLinkPublicURLs(servicePublicUrl, ul);
-				String html = VfsManager.generateLinkEmbedCode(up.getLocale(), cus.getShortDateFormat(), servicePublicUrl, ul);
+				final String servicePublicUrl = WT.getServicePublicUrl(up.getDomainId(), SERVICE_ID);
+				final URI[] urls = VfsManager.generateLinkPublicURLs(servicePublicUrl, ul);
+				final String html = VfsManager.generateLinkEmbedCode(up.getLocale(), cus.getShortDateFormat(), servicePublicUrl, ul);
 				
 				JsWizardData data = new JsWizardData();
-				data.put("urls", urls);
+				data.put("urls", URIUtils.toURIStrings(urls, false));
 				data.put("embed", html);
 				new JsonResult(data).printTo(out);
 			}
@@ -1090,8 +1092,8 @@ public class Service extends BaseService {
 				} else {
 					item = manager.getSharingLink(linkId);
 					
-					String servicePublicUrl = WT.getServicePublicUrl(up.getDomainId(), SERVICE_ID);
-					String[] urls = VfsManager.generateLinkPublicURLs(servicePublicUrl, item);
+					final String servicePublicUrl = WT.getServicePublicUrl(up.getDomainId(), SERVICE_ID);
+					final URI[] urls = VfsManager.generateLinkPublicURLs(servicePublicUrl, item);
 					new JsonResult(new JsSharingLink(item, urls, up.getTimeZone())).printTo(out);
 				}
 				

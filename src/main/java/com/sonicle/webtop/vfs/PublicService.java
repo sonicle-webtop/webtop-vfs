@@ -34,6 +34,7 @@ package com.sonicle.webtop.vfs;
 
 import com.sonicle.commons.LangUtils;
 import com.sonicle.commons.PathUtils;
+import com.sonicle.commons.URIUtils;
 import com.sonicle.commons.time.DateTimeUtils;
 import com.sonicle.commons.web.DispositionType;
 import com.sonicle.commons.web.ServletUtils;
@@ -59,6 +60,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -68,6 +71,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.vfs2.FileObject;
+import org.apache.http.client.utils.URIBuilder;
 import org.slf4j.Logger;
 
 /**
@@ -122,31 +126,33 @@ public class PublicService extends BasePublicService {
 					FileUrlPath fileUrlPath = new FileUrlPath(path.getRemainingPath());
 
 					SharingLink link = null;
-					if(!StringUtils.isBlank(fileUrlPath.getLinkId())) {
+					if (!StringUtils.isBlank(fileUrlPath.getLinkId())) {
 						link = manager.getSharingLink(fileUrlPath.getLinkId());
 					}
 
-					if(link == null) { // Link not found
+					if (link == null) { // Link not found
 						logger.trace("Link not found [{}]", fileUrlPath.getLinkId());
+						response.setStatus(HttpServletResponse.SC_NOT_FOUND);
 						writeErrorPage(request, response, wts, "linknotfound");
 
-					} else if(link.isExpired(DateTimeUtils.now())) { // Link expired
+					} else if (link.isExpired(DateTimeUtils.now())) { // Link expired
 						logger.trace("Link expired [{}]", fileUrlPath.getLinkId());
+						response.setStatus(HttpServletResponse.SC_NOT_FOUND);
 						writeErrorPage(request, response, wts, "linkexpired");
 
-					} else if(!isLinkAuthorized(link)) { // Link not authorized
+					} else if (!isLinkAuthorized(link)) { // Link not authorized
 						writeLinkPage(request, response, wts, "Authorize", link);
 
-					} else if(link.getLinkType().equals(SharingLink.LinkType.DOWNLOAD)) {
-						if(PathUtils.isFolder(link.getFilePath())) {
+					} else if (link.getLinkType().equals(SharingLink.LinkType.DOWNLOAD)) {
+						if (PathUtils.isFolder(link.getFilePath())) {
 							Integer dl = ServletUtils.getIntParameter(request, "dl", 0);
 
-							if(dl == 1) { // Download file request
+							if (dl == 1) { // Download file request
 								String fileId = ServletUtils.getStringParameter(request, "fileId", true);
 								
 								String outName;
-								if(PathUtils.isFolder(fileId)) {
-									if(PathUtils.isRootFolder(fileId)) {
+								if (PathUtils.isFolder(fileId)) {
+									if (PathUtils.isRootFolder(fileId)) {
 										outName = StringUtils.defaultString(PathUtils.getFileName(link.getFilePath()), link.getLinkId());
 									} else {
 										outName = PathUtils.getFileName(fileId);
@@ -156,16 +162,16 @@ public class PublicService extends BasePublicService {
 									outName = PathUtils.getFileName(fileId);
 								}
 								
-								String servicePublicUrl = WT.getServicePublicUrl(link.getDomainId(), SERVICE_ID);
-								String url = buildPublicLinkPathGetUrl(servicePublicUrl, link, outName, fileId);
-								ServletUtils.setLocationHeader(response, url);
+								final String servicePublicUrl = WT.getServicePublicUrl(link.getDomainId(), SERVICE_ID);
+								final URI url = buildPublicLinkFolderGetUrl(servicePublicUrl, link, fileId, outName);
+								ServletUtils.setLocationHeader(response, url.toASCIIString());
 								response.setStatus(HttpServletResponse.SC_FOUND);
 
-							} else if(fileUrlPath.isGet()) { // Real binary stream
+							} else if (fileUrlPath.isGet()) { // Real binary stream
 								String p = ServletUtils.getStringParameter(request, "p", true);
 								
 								String filePath = PathUtils.concatPaths(link.getFilePath(), p);
-								writeStoreFile(response, link, fileUrlPath.getOutFileName());
+								writeStoreFile(response, link, fileUrlPath.getOutFileName(), false);
 								if (link.getNotify()) {
 									manager.notifySharingLinkUsage(link.getLinkId(), filePath, wts.getRemoteIP(), wts.getPlainUserAgent());
 								}
@@ -176,20 +182,24 @@ public class PublicService extends BasePublicService {
 							
 						} else {
 							Integer raw = ServletUtils.getIntParameter(request, "raw", 0);
-							if(raw == 1) { // Link points directly to raw data (no preview)
-								String servicePublicUrl = WT.getServicePublicUrl(link.getDomainId(), SERVICE_ID);
-								String url = VfsManager.buildLinkPublicGetUrl(servicePublicUrl, link);
-								ServletUtils.setLocationHeader(response, url);
+							if ((raw == 1) || (raw == 2)) { // Link points directly to file raw data (no preview page)
+								boolean inline = (raw == 2); // inline=2 to request an inline content-disposition
+								final String servicePublicUrl = WT.getServicePublicUrl(link.getDomainId(), SERVICE_ID);
+								final URI url = buildPublicLinkFileGetUrl(servicePublicUrl, link, inline);
+								ServletUtils.setLocationHeader(response, url.toString());
 								response.setStatus(HttpServletResponse.SC_FOUND);
 								
-							} else if(fileUrlPath.isGet()) { // Real binary stream
-								writeStoreFile(response, link, fileUrlPath.getOutFileName());
+							} else if (fileUrlPath.isGet()) { // Real binary stream
+								boolean inline = ServletUtils.getBooleanParameter(request, "inline", false);
+								
+								writeStoreFile(response, link, fileUrlPath.getOutFileName(), inline);
 								if (link.getNotify()) {
 									manager.notifySharingLinkUsage(link.getLinkId(), link.getFilePath(), wts.getRemoteIP(), wts.getPlainUserAgent());
 								}
 								
 							} else {
 								logger.trace("Invalid request");
+								response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 								writeErrorPage(request, response, wts, "badrequest");
 							}
 						}
@@ -206,11 +216,13 @@ public class PublicService extends BasePublicService {
 
 				} else {
 					logger.trace("Invalid context [{}]", path.getContext());
+					response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 					writeErrorPage(request, response, wts, "badrequest");
 				}
 				
 			} catch(Exception ex) {
 				logger.trace("Error", ex);
+				response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 				writeErrorPage(request, response, wts, "badrequest");
 			}
 		} catch(Throwable t) {
@@ -318,7 +330,7 @@ public class PublicService extends BasePublicService {
 		}
 	}
 	
-	private void writeStoreFile(HttpServletResponse response, SharingLink link, String outFileName) {
+	private void writeStoreFile(HttpServletResponse response, SharingLink link, String outFileName, boolean inline) {
 		try {
 			FileObject fo = null;
 			try {
@@ -328,7 +340,11 @@ public class PublicService extends BasePublicService {
 				if(fo.isFile()) {
 					//String mediaType = ServletHelper.guessMediaType(fo.getName().getBaseName(), true);
 					OutputStream os = response.getOutputStream();
-					ServletUtils.setFileStreamHeadersForceDownload(response, outFileName);
+					if (inline) {
+						ServletUtils.setFileStreamHeaders(response, outFileName);
+					} else {
+						ServletUtils.setFileStreamHeadersForceDownload(response, outFileName);
+					}
 					ServletUtils.setContentLengthHeader(response, fo.getContent().getSize());
 					IOUtils.copy(fo.getContent().getInputStream(), os);
 					
@@ -372,9 +388,20 @@ public class PublicService extends BasePublicService {
 		writePage(response, wts, vars, ServletHelper.getBaseUrl(request));
 	}
 	
-	private String buildPublicLinkPathGetUrl(String publicBaseUrl, SharingLink link, String outFileName, String path) {
-		String s = FileUrlPath.TOKEN_LINK + "/" + link.getLinkId() + "/" + FileUrlPath.TOKEN_GET + "/" + outFileName + "?p=" + path;
-		return PathUtils.concatPaths(publicBaseUrl, s);
+	private URI buildPublicLinkFileGetUrl(String publicBaseUrl, SharingLink link, boolean inline) throws URISyntaxException {
+		URIBuilder builder = new URIBuilder(publicBaseUrl);
+		final String p = PublicService.PUBPATH_CONTEXT_LINK + "/" + link.getLinkId() + "/" + FileUrlPath.TOKEN_GET + "/" + PathUtils.getFileName(link.getFilePath());
+		URIUtils.appendPath(builder, p);
+		if (inline) builder.addParameter("inline", "true");
+		return builder.build();
+	}
+	
+	private URI buildPublicLinkFolderGetUrl(String publicBaseUrl, SharingLink link, String path, String outFileName) throws URISyntaxException {
+		URIBuilder builder = new URIBuilder(publicBaseUrl);
+		final String p = FileUrlPath.TOKEN_LINK + "/" + link.getLinkId() + "/" + FileUrlPath.TOKEN_GET + "/" + outFileName;
+		URIUtils.appendPath(builder, p);
+		builder.addParameter("p", path);
+		return builder.build();
 	}
 	
 	public static class FileUrlPath extends UrlPathTokens {
