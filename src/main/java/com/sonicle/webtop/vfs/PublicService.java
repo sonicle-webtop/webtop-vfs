@@ -275,7 +275,7 @@ public class PublicService extends BasePublicService {
 			String path = PathUtils.concatPaths(link.getFilePath(), fileId);
 			if(!PathUtils.isFolder(path)) throw new WTException("Invalid file [{0}]", path);
 			
-			VfsManager vfsMgr = (VfsManager)WT.getServiceManager(SERVICE_ID, link.getProfileId());
+			VfsManager vfsMgr = (VfsManager)WT.getServiceManager(SERVICE_ID, true, link.getProfileId());
 			StoreFileSystem sfs = vfsMgr.getStoreFileSystem(link.getStoreId());
 			for(FileObject fo : vfsMgr.listStoreFiles(StoreFileType.FILE_OR_FOLDER, link.getStoreId(), path)) {
 				if(VfsUtils.isFileObjectHidden(fo)) continue;
@@ -305,7 +305,7 @@ public class PublicService extends BasePublicService {
 				if(link == null) throw new UploadException("Link not found [{0}]", linkId);
 				if(!link.getLinkType().equals(SharingLink.LinkType.UPLOAD)) throw new UploadException("Wrong link type [{0}]", linkId);
 
-				VfsManager vfsMgr = (VfsManager)WT.getServiceManager(SERVICE_ID, link.getProfileId());
+				VfsManager vfsMgr = (VfsManager)WT.getServiceManager(SERVICE_ID, true, link.getProfileId());
 				String newPath = vfsMgr.addStoreFileFromStream(link.getStoreId(), link.getFilePath(), file.getFilename(), is);
 				if (link.getNotify()) {
 					WebTopSession wts = getWts();
@@ -334,7 +334,7 @@ public class PublicService extends BasePublicService {
 		try {
 			FileObject fo = null;
 			try {
-				VfsManager vfsMgr = (VfsManager)WT.getServiceManager(SERVICE_ID, link.getProfileId());
+				VfsManager vfsMgr = (VfsManager)WT.getServiceManager(SERVICE_ID, true, link.getProfileId());
 				fo = vfsMgr.getStoreFile(link.getStoreId(), link.getFilePath());
 				
 				if(fo.isFile()) {
