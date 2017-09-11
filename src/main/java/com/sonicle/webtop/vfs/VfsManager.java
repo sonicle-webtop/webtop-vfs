@@ -1056,6 +1056,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		sto.setDomainId(ostore.getDomainId());
 		sto.setUserId(ostore.getUserId());
 		sto.setBuiltIn(ostore.getBuiltIn());
+		sto.setProvider(ostore.getProvider());
 		sto.setName(!StringUtils.isBlank(newName) ? newName : ostore.getName());
 		URI uri = new URI(ostore.getUri());
 		if (ostore.getBuiltIn().equals(Store.BUILTIN_NO) && StringUtils.isBlank(uri.getUserInfo())) {
@@ -1063,60 +1064,79 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			String newUserInfo = principal.getUserId()+":"+new String(principal.getPassword());
 			uri = new URI(uri.getScheme(), newUserInfo, uri.getHost(), uri.getPort(), uri.getPath(), uri.getQuery(), uri.getFragment());
 		}
-		sto.setProvider(ostore.getProvider());
 		sto.setUri(uri);
 		sto.setParameters(ostore.getParameters());
 		return sto;
 	}
 	
-	private OStore createOStore(Store store) {
-		if (store == null) return null;
-		OStore ostore = new OStore();
-		ostore.setStoreId(store.getStoreId());
-		ostore.setDomainId(store.getDomainId());
-		ostore.setUserId(store.getUserId());
-		ostore.setBuiltIn(store.getBuiltIn());
-		ostore.setName(store.getName());
-		ostore.setProvider(store.getProvider());
-		ostore.setUri(store.getUri().toString());
-		ostore.setParameters(store.getParameters());
-		return ostore;
+	private OStore createOStore(Store with) {
+		return fillOStore(new OStore(), with);
 	}
 	
-	private SharingLink createSharingLink(OSharingLink oslink) {
-		if (oslink == null) return null;
-		SharingLink link = new SharingLink();
-		link.setLinkId(oslink.getSharingLinkId());
-		link.setDomainId(oslink.getDomainId());
-		link.setLinkType(EnumUtils.forSerializedName(oslink.getLinkType(), SharingLink.LinkType.class));
-		link.setUserId(oslink.getUserId());
-		link.setStoreId(oslink.getStoreId());
-		link.setFilePath(oslink.getFilePath());
-		link.setFileHash(oslink.getFileHash());
-		link.setCreatedOn(oslink.getCreatedOn());
-		link.setExpiresOn(oslink.getExpiresOn());
-		link.setAuthMode(EnumUtils.forSerializedName(oslink.getAuthMode(), SharingLink.AuthMode.class));
-		link.setPassword(oslink.getPassword());
-		link.setNotify(oslink.getNotify());
-		return link;
+	private OStore fillOStore(OStore fill, Store with) {
+		if ((fill != null) && (with != null)) {
+			fill.setStoreId(with.getStoreId());
+			fill.setDomainId(with.getDomainId());
+			fill.setUserId(with.getUserId());
+			fill.setBuiltIn(with.getBuiltIn());
+			fill.setProvider(with.getProvider());
+			fill.setName(with.getName());
+			fill.setUri(with.getUri().toString());
+			fill.setParameters(with.getParameters());
+		}
+		return fill;
 	}
 	
-	private OSharingLink createSharingLink(SharingLink slink) {
-		if (slink == null) return null;
-		OSharingLink oslink = new OSharingLink();
-		oslink.setSharingLinkId(slink.getLinkId());
-		oslink.setDomainId(slink.getDomainId());
-		oslink.setLinkType(EnumUtils.toSerializedName(slink.getLinkType()));
-		oslink.setUserId(slink.getUserId());
-		oslink.setStoreId(slink.getStoreId());
-		oslink.setFilePath(slink.getFilePath());
-		oslink.setFileHash(slink.getFileHash());
-		oslink.setCreatedOn(slink.getCreatedOn());
-		oslink.setExpiresOn(slink.getExpiresOn());
-		oslink.setAuthMode(EnumUtils.toSerializedName(slink.getAuthMode()));
-		oslink.setPassword(slink.getPassword());
-		oslink.setNotify(slink.getNotify());
-		return oslink;
+	private SharingLink createSharingLink(OSharingLink with) {
+		return fillSharingLink(new SharingLink(), with);
+	}
+	
+	private SharingLink fillSharingLink(SharingLink fill, OSharingLink with) {
+		if ((fill != null) && (with != null)) {
+			fill.setLinkId(with.getSharingLinkId());
+			fill.setDomainId(with.getDomainId());
+			fill.setLinkType(EnumUtils.forSerializedName(with.getLinkType(), SharingLink.LinkType.class));
+			fill.setUserId(with.getUserId());
+			fill.setStoreId(with.getStoreId());
+			fill.setFilePath(with.getFilePath());
+			fill.setFileHash(with.getFileHash());
+			fill.setCreatedOn(with.getCreatedOn());
+			fill.setExpiresOn(with.getExpiresOn());
+			fill.setAuthMode(EnumUtils.forSerializedName(with.getAuthMode(), SharingLink.AuthMode.class));
+			fill.setPassword(with.getPassword());
+			fill.setNotify(with.getNotify());
+		}
+		return fill;
+	}
+	
+	private void fillSharingLinkWithDefaults(SharingLink fill) {
+		if (fill != null) {
+			if (fill.getDomainId() == null) fill.setDomainId(getTargetProfileId().getDomainId());
+			if (fill.getUserId() == null) fill.setUserId(getTargetProfileId().getUserId());
+			if (fill.getNotify() == null) fill.setNotify(true);
+		}
+	}
+	
+	private OSharingLink createSharingLink(SharingLink with) {
+		return fillOSharingLink(new OSharingLink(), with);
+	}
+	
+	private OSharingLink fillOSharingLink(OSharingLink fill, SharingLink with) {
+		if ((fill != null) && (with != null)) {
+			fill.setSharingLinkId(with.getLinkId());
+			fill.setDomainId(with.getDomainId());
+			fill.setLinkType(EnumUtils.toSerializedName(with.getLinkType()));
+			fill.setUserId(with.getUserId());
+			fill.setStoreId(with.getStoreId());
+			fill.setFilePath(with.getFilePath());
+			fill.setFileHash(with.getFileHash());
+			fill.setCreatedOn(with.getCreatedOn());
+			fill.setExpiresOn(with.getExpiresOn());
+			fill.setAuthMode(EnumUtils.toSerializedName(with.getAuthMode()));
+			fill.setPassword(with.getPassword());
+			fill.setNotify(with.getNotify());
+		}
+		return fill;
 	}
 	
 	private void checkRightsOnStoreSchema(URI uri) {
@@ -1358,24 +1378,21 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		return DigestUtils.md5Hex(new CompositeId(profileId.getDomainId(), profileId.getUserId(), linkType, storeId, path).toString());
 	}
 	
-	private OSharingLink doSharingLinkUpdate(boolean insert, Connection con, SharingLink sl) throws WTException {
-		SharingLinkDAO dao = SharingLinkDAO.getInstance();
+	private OSharingLink doSharingLinkUpdate(boolean insert, Connection con, SharingLink sl) throws DAOException {
+		SharingLinkDAO slDao = SharingLinkDAO.getInstance();
 		UserProfileId pid = getTargetProfileId();
 		
-		sl.validate(insert);
+		fillSharingLinkWithDefaults(sl);
+		sl.validate(!insert);
 		
 		OSharingLink o = createSharingLink(sl);
-		if (o.getDomainId() == null) o.setDomainId(pid.getDomainId());
-		if (o.getUserId() == null) o.setUserId(pid.getUserId());
-		if (o.getNotify() == null) o.setNotify(true);
-		
 		if (insert) {
 			o.setSharingLinkId(generateLinkId(pid, EnumUtils.toSerializedName(sl.getLinkType()), o.getStoreId(), o.getFilePath()));
 			o.setFileHash(generateStoreFileHash(o.getStoreId(), o.getFilePath()));
 			o.setCreatedOn(DateTimeUtils.now());
-			dao.insert(con, o);
+			slDao.insert(con, o);
 		} else {
-			dao.update(con, o);
+			slDao.update(con, o);
 		}
 		return o;
 	}

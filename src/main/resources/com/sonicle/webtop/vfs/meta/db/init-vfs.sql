@@ -39,8 +39,8 @@ CREATE TABLE "vfs"."stores" (
 "domain_id" varchar(20) NOT NULL,
 "user_id" varchar(100) NOT NULL,
 "built_in" int2 DEFAULT 0 NOT NULL,
+"provider" varchar(20) NOT NULL,
 "name" varchar(50) NOT NULL,
-"provider" varchar(255) NOT NULL,
 "uri" varchar(512),
 "parameters" text
 )
