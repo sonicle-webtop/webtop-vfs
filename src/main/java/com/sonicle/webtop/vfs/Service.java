@@ -133,7 +133,7 @@ public class Service extends BaseService {
 	@Override
 	public ServiceVars returnServiceVars() {
 		ServiceVars co = new ServiceVars();
-		Integer maxUpload = getEnv().getCoreServiceSettings().getUploadMaxFileSize();
+		final Long maxUpload = getEnv().getCoreServiceSettings().getUploadMaxFileSize();
 		co.put("privateUploadMaxFileSize", LangUtils.coalesce(us.getPrivateUploadMaxFileSize(), maxUpload));
 		co.put("uploadLinkExpiration", ss.getUploadLinkExpiration());
 		co.put("downloadLinkExpiration", ss.getDownloadLinkExpiration());

@@ -206,7 +206,7 @@ public class PublicService extends BasePublicService {
 						
 					} else if(link.getLinkType().equals(SharingLink.LinkType.UPLOAD)) {
 						CoreServiceSettings css = new CoreServiceSettings(CoreManifest.ID, StringUtils.defaultString(domainId));
-						Integer maxUpload = css.getUploadMaxFileSize();
+						final Long maxUpload = css.getUploadMaxFileSize();
 						VfsUserSettings us = new VfsUserSettings(SERVICE_ID, link.getProfileId());
 						
 						JsWTSPublic.Vars vars = new JsWTSPublic.Vars();

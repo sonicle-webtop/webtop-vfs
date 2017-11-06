@@ -48,24 +48,22 @@ public class VfsUserSettings extends BaseUserSettings {
 		ss = new VfsServiceSettings(serviceId, profileId.getDomainId());
 	}
 	
-	public Integer getPrivateUploadMaxFileSize() {
-		Integer value = getInteger(UPLOAD_PRIVATE_MAXFILESIZE, null);
-		if(value != null) return value;
-		return ss.getPrivateUploadMaxFileSize();
+	public Long getPrivateUploadMaxFileSize() {
+		final Long value = getLong(UPLOAD_PRIVATE_MAXFILESIZE, null);
+		return (value != null) ? value : ss.getPrivateUploadMaxFileSize();
 	}
 	
-	public boolean setPrivateUploadMaxFileSize(Integer value) {
-		return setInteger(UPLOAD_PRIVATE_MAXFILESIZE, value);
+	public boolean setPrivateUploadMaxFileSize(Long value) {
+		return setLong(UPLOAD_PRIVATE_MAXFILESIZE, value);
 	}
 	
-	public Integer getPublicUploadMaxFileSize() {
-		Integer value = getInteger(UPLOAD_PUBLIC_MAXFILESIZE, null);
-		if(value != null) return value;
-		return ss.getPrivateUploadMaxFileSize();
+	public Long getPublicUploadMaxFileSize() {
+		final Long value = getLong(UPLOAD_PUBLIC_MAXFILESIZE, null);
+		return (value != null) ? value : ss.getPublicUploadMaxFileSize();
 	}
 	
-	public boolean setPublicUploadMaxFileSize(Integer value) {
-		return setInteger(UPLOAD_PUBLIC_MAXFILESIZE, value);
+	public boolean setPublicUploadMaxFileSize(Long value) {
+		return setLong(UPLOAD_PUBLIC_MAXFILESIZE, value);
 	}
 	
 	public boolean getShowHiddenFiles() {

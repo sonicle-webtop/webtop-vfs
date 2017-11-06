@@ -47,12 +47,12 @@ public class VfsServiceSettings extends BaseServiceSettings {
 		super(serviceId, domainId);
 	}
 	
-	public Integer getPrivateUploadMaxFileSize() {
-		return getInteger(UPLOAD_PRIVATE_MAXFILESIZE, null);
+	public Long getPrivateUploadMaxFileSize() {
+		return getLong(UPLOAD_PRIVATE_MAXFILESIZE, null);
 	}
 	
-	public Integer getPublicUploadMaxFileSize() {
-		return getInteger(UPLOAD_PUBLIC_MAXFILESIZE, null);
+	public Long getPublicUploadMaxFileSize() {
+		return getLong(UPLOAD_PUBLIC_MAXFILESIZE, null);
 	}
 	
 	public String getStoreFileBasepath(StoreFileBasepathTemplateValues tpl) {
