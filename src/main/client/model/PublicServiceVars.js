@@ -35,6 +35,7 @@ Ext.define('Sonicle.webtop.vfs.model.PublicServiceVars', {
 	extend: 'WTA.sdk.model.PublicServiceVars',
 	
 	fields: [
+		WTF.roField('publicUploadMaxFileSize', 'int'),
 		WTF.roField('linkId', 'string')
 	]
 });

@@ -205,12 +205,10 @@ public class PublicService extends BasePublicService {
 						}
 						
 					} else if(link.getLinkType().equals(SharingLink.LinkType.UPLOAD)) {
-						CoreServiceSettings css = new CoreServiceSettings(CoreManifest.ID, StringUtils.defaultString(domainId));
-						final Long maxUpload = css.getUploadMaxFileSize();
 						VfsUserSettings us = new VfsUserSettings(SERVICE_ID, link.getProfileId());
 						
 						JsWTSPublic.Vars vars = new JsWTSPublic.Vars();
-						vars.put("uploadMaxFileSize", LangUtils.coalesce(us.getPublicUploadMaxFileSize(), maxUpload));
+						vars.put("publicUploadMaxFileSize", us.getPublicUploadMaxFileSize(true));
 						writeLinkPage(request, response, wts, "UploadLink", link, vars);
 					}
 

@@ -1221,7 +1221,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 			vct = WT.createView(me.ID, 'view.NextcloudWiz', {
 				viewCfg: {
 					profileId: profileId,
-					scheme: 'webdav',
+					scheme: 'webdavs',
 					host: me.getVar('nextcloudDefaultHost'),
 					path: me.getVar('nextcloudDefaultPath')
 				}

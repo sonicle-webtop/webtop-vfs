@@ -36,6 +36,7 @@ Ext.define('Sonicle.webtop.vfs.view.pub.UploadLink', {
 	requires: [
 		'Sonicle.plugin.FileDrop',
 		'Sonicle.upload.Button',
+		'WTA.ux.UploadBar',
 		'WTA.ux.panel.Panel',
 		'WTA.ux.panel.UploadedGrid'
 	],
@@ -47,8 +48,6 @@ Ext.define('Sonicle.webtop.vfs.view.pub.UploadLink', {
 	
 	initComponent: function() {
 		var me = this,
-				SoByt = Sonicle.Bytes,
-				maxUpSize = me.mys.getVar('uploadMaxFileSize'),
 				gpuploadsId = Ext.id(null, 'gridpanel'),
 				btnupl;
 		me.callParent(arguments);
@@ -59,8 +58,8 @@ Ext.define('Sonicle.webtop.vfs.view.pub.UploadLink', {
 			text: me.mys.res('pub.uploadLink.act-uploadFiles.lbl'),
 			iconCls: me.mys.cssIconCls('uploadFile', 'xs'),
 			uploaderConfig: WTF.uploader(me.mys.ID, 'UploadFile', {
-				maxFileSize: maxUpSize,
 				dropElement: gpuploadsId,
+				maxFileSize: me.mys.getVar('publicUploadMaxFileSize'),
 				autoRemoveUploaded: false,
 				fileExtraParams: function() {
 					return {
@@ -68,16 +67,13 @@ Ext.define('Sonicle.webtop.vfs.view.pub.UploadLink', {
 					};
 				},
 				listeners: {
-					invalidfilesize: function() {
-						WT.warn(WT.res(WT.ID, 'error.upload.sizeexceeded', SoByt.format(maxUpSize)));
-					},
-					uploaderror: function(s) {
-						WT.error('Upload error');
+					uploaderror: function(s, file, cause) {
+						WTA.ux.UploadBar.handleUploadError(s, file, cause);
 					},
 					overallprogress: function(s, perc, tot, succ, fail, pend, speed) {
-						var pro = me.proOverall();
-						if(pend > 0) {
-							pro.updateProgress(perc*0.01, me.mys.res('tbupload.progress.lbl', perc, pend, SoByt.format(speed || 0)));
+						var pro = me.pbOverall();
+						if (pend > 0) {
+							pro.updateProgress(perc*0.01, WT.res('wtuploadbar.progress.lbl', perc, pend, Sonicle.Bytes.format(speed || 0)));
 							pro.setHidden(false);
 						} else {
 							pro.reset();
@@ -104,7 +100,7 @@ Ext.define('Sonicle.webtop.vfs.view.pub.UploadLink', {
 				height: 30,
 				items: [{
 					xtype: 'progressbar',
-					reference: 'prooverall',
+					reference: 'pboverall',
 					anchor: '100%',
 					hidden: true
 				}]
@@ -124,7 +120,7 @@ Ext.define('Sonicle.webtop.vfs.view.pub.UploadLink', {
 		});
 	},
 	
-	proOverall: function() {
-		return this.lref('prooverall');
+	pbOverall: function() {
+		return this.lref('pboverall');
 	}
 });

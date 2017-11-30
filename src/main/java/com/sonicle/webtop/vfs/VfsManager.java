@@ -624,7 +624,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		try {
 			tfo = getTargetFileObject(storeId, path);
 			FileSelector selector = null;
-			if(fileType.equals(StoreFileType.FILE)) {
+			if (fileType.equals(StoreFileType.FILE)) {
 				selector = new FileSelector(false, true);
 			} else if(fileType.equals(StoreFileType.FOLDER)) {
 				selector = new FileSelector(true, false);

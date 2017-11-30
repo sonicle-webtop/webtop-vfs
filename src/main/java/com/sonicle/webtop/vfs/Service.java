@@ -133,8 +133,7 @@ public class Service extends BaseService {
 	@Override
 	public ServiceVars returnServiceVars() {
 		ServiceVars co = new ServiceVars();
-		final Long maxUpload = getEnv().getCoreServiceSettings().getUploadMaxFileSize();
-		co.put("privateUploadMaxFileSize", LangUtils.coalesce(us.getPrivateUploadMaxFileSize(), maxUpload));
+		co.put("privateUploadMaxFileSize", us.getPrivateUploadMaxFileSize(true));
 		co.put("uploadLinkExpiration", ss.getUploadLinkExpiration());
 		co.put("downloadLinkExpiration", ss.getDownloadLinkExpiration());
 		co.put("nextcloudDefaultHost", ss.getNextcloudDefaultHost());

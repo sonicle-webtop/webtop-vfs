@@ -47,12 +47,22 @@ public class VfsServiceSettings extends BaseServiceSettings {
 		super(serviceId, domainId);
 	}
 	
-	public Long getPrivateUploadMaxFileSize() {
-		return getLong(UPLOAD_PRIVATE_MAXFILESIZE, null);
+	public Long getPrivateUploadMaxFileSize(boolean fallbackOnDefault) {
+		final Long value = getLong(UPLOAD_PRIVATE_MAXFILESIZE, null);
+		if (fallbackOnDefault && (value == null)) {
+			return getDefaultPrivateUploadMaxFileSize();
+		} else {
+			return value;
+		}
 	}
 	
-	public Long getPublicUploadMaxFileSize() {
-		return getLong(UPLOAD_PUBLIC_MAXFILESIZE, null);
+	public Long getPublicUploadMaxFileSize(boolean fallbackOnDefault) {
+		final Long value = getLong(UPLOAD_PUBLIC_MAXFILESIZE, null);
+		if (fallbackOnDefault && (value == null)) {
+			return getDefaultPublicUploadMaxFileSize();
+		} else {
+			return value;
+		}
 	}
 	
 	public String getStoreFileBasepath(StoreFileBasepathTemplateValues tpl) {
@@ -81,10 +91,18 @@ public class VfsServiceSettings extends BaseServiceSettings {
 	}
 	
 	public String getNextcloudDefaultHost() {
-		return getString(NEXTCLOUD_DEFAULT_HOST,null);
+		return getString(NEXTCLOUD_DEFAULT_HOST, null);
 	}
 	
 	public String getNextcloudDefaultPath() {
-		return getString(NEXTCLOUD_DEFAULT_PATH,null);
+		return getString(NEXTCLOUD_DEFAULT_PATH, null);
+	}
+	
+	public long getDefaultPrivateUploadMaxFileSize() {
+		return getLong(DEFAULT_PREFIX + UPLOAD_PRIVATE_MAXFILESIZE, (long)524288000); // 500MB
+	}
+	
+	public long getDefaultPublicUploadMaxFileSize() {
+		return getLong(DEFAULT_PREFIX + UPLOAD_PUBLIC_MAXFILESIZE, (long)104857600); // 100MB
 	}
 }

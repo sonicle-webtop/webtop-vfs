@@ -66,8 +66,8 @@ public class UserOptionsService extends BaseUserOptionsService {
 				JsUserOptions jso = new JsUserOptions(getTargetProfileId().toString());
 				
 				// Main
-				jso.privateUploadMaxFileSize = us.getPrivateUploadMaxFileSize();
-				jso.publicUploadMaxFileSize = us.getPublicUploadMaxFileSize();
+				jso.privateUploadMaxFileSize = us.getPrivateUploadMaxFileSize(true);
+				jso.publicUploadMaxFileSize = us.getPublicUploadMaxFileSize(true);
 				jso.showHiddenFiles = us.getShowHiddenFiles();
 				
 				new JsonResult(jso).printTo(out);
@@ -76,15 +76,15 @@ public class UserOptionsService extends BaseUserOptionsService {
 				Payload<MapItem, JsUserOptions> pl = ServletUtils.getPayload(payload, JsUserOptions.class);
 				
 				// Main
-				if(pl.map.has("privateUploadMaxFileSize")) us.setPrivateUploadMaxFileSize(pl.data.privateUploadMaxFileSize);
-				if(pl.map.has("publicUploadMaxFileSize")) us.setPublicUploadMaxFileSize(pl.data.publicUploadMaxFileSize);
-				if(pl.map.has("showHiddenFiles")) us.setShowHiddenFiles(pl.data.showHiddenFiles);
+				if (pl.map.has("privateUploadMaxFileSize")) us.setPrivateUploadMaxFileSize(pl.data.privateUploadMaxFileSize);
+				if (pl.map.has("publicUploadMaxFileSize")) us.setPublicUploadMaxFileSize(pl.data.publicUploadMaxFileSize);
+				if (pl.map.has("showHiddenFiles")) us.setShowHiddenFiles(pl.data.showHiddenFiles);
 				
 				new JsonResult().printTo(out);
 			}
 			
 		} catch (Exception ex) {
-			logger.error("Error executing UserOptions", ex);
+			logger.error("Error in UserOptions", ex);
 			new JsonResult(false).printTo(out);
 		} finally {
 			DbUtils.closeQuietly(con);

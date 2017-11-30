@@ -39,6 +39,15 @@ Ext.define('Sonicle.webtop.vfs.ServiceApi', {
 	},
 	
 	/**
+	 * Gets the value of the specified variable.
+	 * @param {String} name The variable name.
+	 * @return {Mixed} Config value.
+	 */
+	getVar: function(name) {
+		return this.service.getVar(name);
+	},
+	
+	/**
 	 * Adds new sharing link (download).
 	 * @param {Object} data An object containing link data.
 	 * @param {String} [data.fileId] The file ID.

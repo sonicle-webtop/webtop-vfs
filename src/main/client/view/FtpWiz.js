@@ -64,13 +64,13 @@ Ext.define('Sonicle.webtop.vfs.view.FtpWiz', {
 	initComponent: function() {
 		var me = this,
 				ic = me.getInitialConfig();
-		if(!Ext.isEmpty(ic.profileId)) me.getVM().set('profileId', ic.profileId);
-		if(!Ext.isEmpty(ic.scheme)) me.getVM().set('scheme', ic.scheme);
-		if(!Ext.isEmpty(ic.host)) me.getVM().set('host', ic.host);
-		if(!Ext.isEmpty(ic.port)) me.getVM().set('port', ic.port);
-		if(!Ext.isEmpty(ic.username)) me.getVM().set('username', ic.username);
-		if(!Ext.isEmpty(ic.password)) me.getVM().set('password', ic.password);
-		if(!Ext.isEmpty(ic.path)) me.getVM().set('path', ic.path);
+		if (!Ext.isEmpty(ic.profileId)) me.getVM().set('profileId', ic.profileId);
+		if (!Ext.isEmpty(ic.scheme)) me.getVM().set('scheme', ic.scheme);
+		if (!Ext.isEmpty(ic.host)) me.getVM().set('host', ic.host);
+		if (!Ext.isEmpty(ic.port)) me.getVM().set('port', ic.port);
+		if (!Ext.isEmpty(ic.username)) me.getVM().set('username', ic.username);
+		if (!Ext.isEmpty(ic.password)) me.getVM().set('password', ic.password);
+		if (!Ext.isEmpty(ic.path)) me.getVM().set('path', ic.path);
 		me.callParent(arguments);
 		me.on('beforenavigate', me.onBeforeNavigate);
 	},
@@ -154,7 +154,7 @@ Ext.define('Sonicle.webtop.vfs.view.FtpWiz', {
 					xtype: 'textfield',
 					bind: '{path}',
 					fieldLabel: me.mys.res('ftpWiz.fld-path.lbl'),
-					width: 330
+					anchor: '100%'
 				}]
 			}]
 		}, {
@@ -201,15 +201,15 @@ Ext.define('Sonicle.webtop.vfs.view.FtpWiz', {
 	},
 	
 	onBeforeNavigate: function(s, dir, np, pp) {
-		if(dir === -1) return;
+		if (dir === -1) return;
 		var me = this,
 				ret = true,
 				ppcmp = me.getPageCmp(pp),
 				vm = me.getVM();
 		
-		if(pp === 's1') {
+		if (pp === 's1') {
 			ret = ppcmp.down('wtform').isValid();
-			if(!ret) return false;
+			if (!ret) return false;
 			
 			WT.ajaxReq(me.mys.ID, 'SetupStoreFtp', {
 				params: {
@@ -223,7 +223,7 @@ Ext.define('Sonicle.webtop.vfs.view.FtpWiz', {
 					path: vm.get('path')
 				},
 				callback: function(success, json) {
-					if(success) {
+					if (success) {
 						vm.set('name', json.data.name);
 						me.onNavigate(np);
 					} else {
@@ -233,9 +233,9 @@ Ext.define('Sonicle.webtop.vfs.view.FtpWiz', {
 			});
 			return false;
 			
-		} else if(pp === 's2') {
+		} else if (pp === 's2') {
 			ret = ppcmp.down('wtform').isValid();
-			if(!ret) return false;
+			if (!ret) return false;
 			
 			WT.ajaxReq(me.mys.ID, 'SetupStoreFtp', {
 				params: {
@@ -244,7 +244,7 @@ Ext.define('Sonicle.webtop.vfs.view.FtpWiz', {
 					name: vm.get('name')
 				},
 				callback: function(success, json) {
-					if(success) {
+					if (success) {
 						me.onNavigate(np);
 					} else {
 						WT.error(json.message);

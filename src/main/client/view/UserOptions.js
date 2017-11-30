@@ -55,7 +55,6 @@ Ext.define('Sonicle.webtop.vfs.view.UserOptions', {
 				xtype: 'sobytesfield',
 				bind: '{record.privateUploadMaxFileSize}',
 				disabled: !WT.isPermitted('WTADMIN', 'ACCESS'),
-				emptyText: Bytes.format(WT.getVar('wtUploadMaxFileSize')),
 				fieldLabel: WT.res(me.ID, 'opts.main.fld-privateUploadMaxFileSize.lbl'),
 				width: 280,
 				listeners: {
@@ -68,7 +67,6 @@ Ext.define('Sonicle.webtop.vfs.view.UserOptions', {
 				xtype: 'sobytesfield',
 				bind: '{record.publicUploadMaxFileSize}',
 				disabled: !WT.isPermitted('WTADMIN', 'ACCESS'),
-				emptyText: Bytes.format(WT.getVar('wtUploadMaxFileSize')),
 				fieldLabel: WT.res(me.ID, 'opts.main.fld-publicUploadMaxFileSize.lbl'),
 				width: 280,
 				listeners: {

@@ -36,7 +36,8 @@ Ext.define('Sonicle.webtop.vfs.store.NextcloudScheme', {
 	
 	model: 'WTA.model.Simple',
 	data: [
-		['webdav','']
+		['webdav',''],
+		['webdavs','']
 	],
 	
 	constructor: function(cfg) {

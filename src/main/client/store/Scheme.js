@@ -42,6 +42,7 @@ Ext.define('Sonicle.webtop.vfs.store.Scheme', {
 		['ftps',''],
 		['smb',''],
 		['webdav',''],
+		['webdavs',''],
 		['dropbox',''],
 		['googledrive','']
 	],

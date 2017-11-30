@@ -38,6 +38,7 @@ Ext.define('Sonicle.webtop.vfs.store.OtherScheme', {
 	data: [
 		['smb',''],
 		['webdav','']
+		['webdavs','']
 	],
 	
 	constructor: function(cfg) {

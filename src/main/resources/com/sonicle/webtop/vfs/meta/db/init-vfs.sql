@@ -80,4 +80,4 @@ ALTER TABLE "vfs"."stores" ADD PRIMARY KEY ("store_id");
 -- ----------------------------
 @DataSource[default@com.sonicle.webtop.core]
 DELETE FROM "core"."settings" WHERE ("settings"."service_id" = 'com.sonicle.webtop.vfs') AND ("settings"."key" = 'manifest.version');
-INSERT INTO "core"."settings" ("service_id", "key", "value") VALUES ('com.sonicle.webtop.vfs', 'manifest.version', '5.0.10');
+INSERT INTO "core"."settings" ("service_id", "key", "value") VALUES ('com.sonicle.webtop.vfs', 'manifest.version', '5.0.11');

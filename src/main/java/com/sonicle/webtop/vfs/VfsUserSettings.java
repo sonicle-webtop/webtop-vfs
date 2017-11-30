@@ -48,18 +48,18 @@ public class VfsUserSettings extends BaseUserSettings {
 		ss = new VfsServiceSettings(serviceId, profileId.getDomainId());
 	}
 	
-	public Long getPrivateUploadMaxFileSize() {
+	public Long getPrivateUploadMaxFileSize(boolean fallbackOnDefault) {
 		final Long value = getLong(UPLOAD_PRIVATE_MAXFILESIZE, null);
-		return (value != null) ? value : ss.getPrivateUploadMaxFileSize();
+		return (value != null) ? value : ss.getPrivateUploadMaxFileSize(fallbackOnDefault);
 	}
 	
 	public boolean setPrivateUploadMaxFileSize(Long value) {
 		return setLong(UPLOAD_PRIVATE_MAXFILESIZE, value);
 	}
 	
-	public Long getPublicUploadMaxFileSize() {
+	public Long getPublicUploadMaxFileSize(boolean fallbackOnDefault) {
 		final Long value = getLong(UPLOAD_PUBLIC_MAXFILESIZE, null);
-		return (value != null) ? value : ss.getPublicUploadMaxFileSize();
+		return (value != null) ? value : ss.getPublicUploadMaxFileSize(fallbackOnDefault);
 	}
 	
 	public boolean setPublicUploadMaxFileSize(Long value) {
