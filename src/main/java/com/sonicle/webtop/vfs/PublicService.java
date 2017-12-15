@@ -337,14 +337,13 @@ public class PublicService extends BasePublicService {
 				
 				if(fo.isFile()) {
 					//String mediaType = ServletHelper.guessMediaType(fo.getName().getBaseName(), true);
-					OutputStream os = response.getOutputStream();
 					if (inline) {
 						ServletUtils.setFileStreamHeaders(response, outFileName);
 					} else {
 						ServletUtils.setFileStreamHeadersForceDownload(response, outFileName);
 					}
 					ServletUtils.setContentLengthHeader(response, fo.getContent().getSize());
-					IOUtils.copy(fo.getContent().getInputStream(), os);
+					IOUtils.copy(fo.getContent().getInputStream(), response.getOutputStream());
 					
 				} else if(fo.isFolder()) {
 					OutputStream os = response.getOutputStream();

@@ -927,10 +927,9 @@ public class Service extends BaseService {
 				String filename = fo.getName().getBaseName();
 				//String mediaType = ServletHelper.guessMediaType(filename, true);
 				
-				OutputStream os = response.getOutputStream();
 				ServletUtils.setContentLengthHeader(response, fo.getContent().getSize());
 				ServletUtils.setFileStreamHeadersForceDownload(response, filename);
-				IOUtils.copy(fo.getContent().getInputStream(), os);
+				IOUtils.copy(fo.getContent().getInputStream(), response.getOutputStream());
 				
 			} finally {
 				IOUtils.closeQuietly(fo);
