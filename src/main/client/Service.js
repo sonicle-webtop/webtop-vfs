@@ -1285,7 +1285,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 					iconCls: me.cssIconCls('addStore', 'xs'),
 					menu: [
 						me.getAct('addStoreFtp'),
-						me.getAct('addStoreDropbox'),
+						//me.getAct('addStoreDropbox'),
 						me.getAct('addStoreGooDrive'),
 						me.getAct('addStoreNextcloud'),
 						me.getAct('addStoreFile'),
@@ -1299,7 +1299,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				beforeshow: function(s) {
 					me.updateDisabled('editSharing');
 					me.updateDisabled('addStoreFtp');
-					me.updateDisabled('addStoreDropbox');
+					//me.updateDisabled('addStoreDropbox');
 					me.updateDisabled('addStoreGooDrive');
 					me.updateDisabled('addStoreNextcloud');
 					me.updateDisabled('addStoreFile'),
