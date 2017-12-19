@@ -37,7 +37,7 @@ Ext.define('Sonicle.webtop.vfs.store.OtherScheme', {
 	model: 'WTA.model.Simple',
 	data: [
 		['smb',''],
-		['webdav','']
+		['webdav',''],
 		['webdavs','']
 	],
 	
