@@ -17,6 +17,9 @@
 		<!-- WEBTOP SERVICE CONFIGURATION -->
 		<webtop.service.package>com.sonicle.webtop.vfs</webtop.service.package>
 		<webtop.service.jsPackage>Sonicle.webtop.vfs</webtop.service.jsPackage>
+		<webtop.service.i18n.languages>en,it,es,de</webtop.service.i18n.languages>
+		<webtop.service.i18n.tx.push.languages>it</webtop.service.i18n.tx.push.languages>
+		<webtop.service.i18n.tx.pull.languages>es,de</webtop.service.i18n.tx.pull.languages>
 	</properties>
 	
 	<dependencies>
@@ -25,7 +28,6 @@
 			<artifactId>webtop-vfs-api</artifactId>
 			<version>${project.version}</version>
 		</dependency>
-
 		<dependency>
 			<groupId>com.jcraft</groupId>
 			<artifactId>jsch</artifactId>
