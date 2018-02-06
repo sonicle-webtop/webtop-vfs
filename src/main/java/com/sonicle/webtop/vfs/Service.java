@@ -495,7 +495,7 @@ public class Service extends BaseService {
 	}
 	
 	public void processSetupStoreFtp(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-		WebTopSession wts = RunContext.getWebTopSession();
+		WebTopSession wts = getEnv().getWebTopSession();
 		String PROPERTY = "SETUP_FTP";
 		
 		try {
@@ -549,7 +549,7 @@ public class Service extends BaseService {
 	}
 	
 	public void processSetupStoreDropbox(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-		WebTopSession wts = RunContext.getWebTopSession();
+		WebTopSession wts = getEnv().getWebTopSession();
 		String PROPERTY = "SETUP_DROPBOX";
 		String APP_NAME = WT.getPlatformName();
 		String DROPBOX_APP_KEY = getEnv().getCoreServiceSettings().getDropboxAppKey();
@@ -610,7 +610,7 @@ public class Service extends BaseService {
 	}
 	
 	public void processSetupStoreGoogleDrive(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-		WebTopSession wts = RunContext.getWebTopSession();
+		WebTopSession wts = getEnv().getWebTopSession();
 		String PROPERTY = "SETUP_GOOGLEDRIVE";
 		String APP_NAME = WT.getPlatformName();
 		String GDRIVE_CLIENT_ID = getEnv().getCoreServiceSettings().getGoogleDriveClientID();
@@ -671,7 +671,7 @@ public class Service extends BaseService {
 	}
 	
 	public void processSetupStoreNextcloud(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-		WebTopSession wts = RunContext.getWebTopSession();
+		WebTopSession wts = getEnv().getWebTopSession();
 		String PROPERTY = "SETUP_NEXTCLOUD";
 		
 		try {
@@ -725,7 +725,7 @@ public class Service extends BaseService {
 	}
 	
 	public void processSetupStoreFile(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-		WebTopSession wts = RunContext.getWebTopSession();
+		WebTopSession wts = getEnv().getWebTopSession();
 		String PROPERTY = "SETUP_FILE";
 		
 		try {
@@ -768,7 +768,7 @@ public class Service extends BaseService {
 	}
 	
 	public void processSetupStoreOther(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-		WebTopSession wts = RunContext.getWebTopSession();
+		WebTopSession wts = getEnv().getWebTopSession();
 		String PROPERTY = "SETUP_OTHER";
 		
 		try {
