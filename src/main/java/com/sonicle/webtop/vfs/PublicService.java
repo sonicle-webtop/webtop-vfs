@@ -171,9 +171,14 @@ public class PublicService extends BasePublicService {
 								String p = ServletUtils.getStringParameter(request, "p", true);
 								
 								String filePath = PathUtils.concatPaths(link.getFilePath(), p);
-								writeStoreFile(response, link, fileUrlPath.getOutFileName(), false);
-								if (link.getNotify()) {
-									manager.notifySharingLinkUsage(link.getLinkId(), filePath, wts.getRemoteIP(), wts.getPlainUserAgent());
+								boolean written = writeStoreFile(response, link, fileUrlPath.getOutFileName(), false);
+								if (!written) {
+									response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+									writeErrorPage(request, response, wts, "linknotfound");
+								} else {
+									if (link.getNotify()) {
+										manager.notifySharingLinkUsage(link.getLinkId(), filePath, wts.getRemoteIP(), wts.getPlainUserAgent());
+									}
 								}
 
 							} else {
@@ -192,9 +197,14 @@ public class PublicService extends BasePublicService {
 							} else if (fileUrlPath.isGet()) { // Real binary stream
 								boolean inline = ServletUtils.getBooleanParameter(request, "inline", false);
 								
-								writeStoreFile(response, link, fileUrlPath.getOutFileName(), inline);
-								if (link.getNotify()) {
-									manager.notifySharingLinkUsage(link.getLinkId(), link.getFilePath(), wts.getClientRemoteIP(), wts.getPlainUserAgent());
+								boolean written = writeStoreFile(response, link, fileUrlPath.getOutFileName(), inline);
+								if (!written) {
+									response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+									writeErrorPage(request, response, wts, "linknotfound");
+								} else {
+									if (link.getNotify()) {
+										manager.notifySharingLinkUsage(link.getLinkId(), link.getFilePath(), wts.getClientRemoteIP(), wts.getPlainUserAgent());
+									}
 								}
 								
 							} else {
@@ -204,7 +214,7 @@ public class PublicService extends BasePublicService {
 							}
 						}
 						
-					} else if(link.getLinkType().equals(SharingLink.LinkType.UPLOAD)) {
+					} else if (link.getLinkType().equals(SharingLink.LinkType.UPLOAD)) {
 						VfsUserSettings us = new VfsUserSettings(SERVICE_ID, link.getProfileId());
 						
 						JsWTSPublic.Vars vars = new JsWTSPublic.Vars();
@@ -328,14 +338,15 @@ public class PublicService extends BasePublicService {
 		}
 	}
 	
-	private void writeStoreFile(HttpServletResponse response, SharingLink link, String outFileName, boolean inline) {
+	private boolean writeStoreFile(HttpServletResponse response, SharingLink link, String outFileName, boolean inline) {
 		try {
 			FileObject fo = null;
 			try {
 				VfsManager vfsMgr = (VfsManager)WT.getServiceManager(SERVICE_ID, true, link.getProfileId());
 				fo = vfsMgr.getStoreFile(link.getStoreId(), link.getFilePath());
+				if (!fo.exists()) throw new WTException("File does not exist [{0}, {1}]", link.getStoreId(), link.getFilePath());
 				
-				if(fo.isFile()) {
+				if (fo.isFile()) {
 					//String mediaType = ServletHelper.guessMediaType(fo.getName().getBaseName(), true);
 					if (inline) {
 						ServletUtils.setFileStreamHeaders(response, outFileName);
@@ -344,7 +355,7 @@ public class PublicService extends BasePublicService {
 					}
 					ServletUtils.setContentLengthHeader(response, fo.getContent().getSize());
 					IOUtils.copy(fo.getContent().getInputStream(), response.getOutputStream());
-					
+
 				} else if(fo.isFolder()) {
 					OutputStream os = response.getOutputStream();
 					ServletUtils.setFileStreamHeadersForceDownload(response, outFileName); // Filename already contains .zip extension!
@@ -356,14 +367,14 @@ public class PublicService extends BasePublicService {
 						IOUtils.closeQuietly(zos);
 					}
 				}
-					
 			} finally {
 				IOUtils.closeQuietly(fo);
 			}
+			return true;
 			
 		} catch(Exception ex) {
-			logger.error("Error in DownloadFile", ex);
-			ServletUtils.sendError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+			logger.error("Unable to write file", ex);
+			return false;
 		}
 	}
 	
