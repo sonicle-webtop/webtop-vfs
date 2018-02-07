@@ -194,7 +194,7 @@ public class PublicService extends BasePublicService {
 								
 								writeStoreFile(response, link, fileUrlPath.getOutFileName(), inline);
 								if (link.getNotify()) {
-									manager.notifySharingLinkUsage(link.getLinkId(), link.getFilePath(), wts.getRemoteIP(), wts.getPlainUserAgent());
+									manager.notifySharingLinkUsage(link.getLinkId(), link.getFilePath(), wts.getClientRemoteIP(), wts.getPlainUserAgent());
 								}
 								
 							} else {

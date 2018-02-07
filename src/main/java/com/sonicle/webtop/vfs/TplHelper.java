@@ -65,8 +65,8 @@ public class TplHelper {
 		map.put("linkName", linkName);
 		map.put("filePath", filePath);
 		map.put("fileName", PathUtils.getFileName(filePath));
-		map.put("remoteIp", remoteIp);
-		map.put("userAgent", userAgent);
+		map.put("remoteIp", StringUtils.defaultString(remoteIp));
+		map.put("userAgent", StringUtils.defaultString(userAgent));
 		
 		return WT.buildTemplate(SERVICE_ID, "tpl/email/linkUsage-body.html", map);
 	}
