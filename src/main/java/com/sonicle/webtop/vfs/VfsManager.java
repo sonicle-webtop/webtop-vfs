@@ -1320,7 +1320,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		
 		try {
 			tfo = getTargetFileObject(storeId, path);
-			String newPath = FilenameUtils.separatorsToUnix(FilenameUtils.concat(FilenameUtils.getFullPath(path), newName));
+			String newPath = FilenameUtils.separatorsToUnix(FilenameUtils.concat(PathUtils.getFullParentPath(path), newName));
 			ntfo = getTargetFileObject(storeId, newPath);
 			
 			logger.debug("Renaming store file [{}, {} -> {}]", storeId, path, newPath);
