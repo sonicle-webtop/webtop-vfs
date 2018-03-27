@@ -44,8 +44,7 @@ Ext.define('Sonicle.webtop.vfs.view.UserOptions', {
 	},
 		
 	initComponent: function() {
-		var me = this,
-				Bytes = Sonicle.Bytes;
+		var me = this;
 		me.callParent(arguments);
 		
 		me.add({
@@ -54,7 +53,7 @@ Ext.define('Sonicle.webtop.vfs.view.UserOptions', {
 			items: [{
 				xtype: 'sobytesfield',
 				bind: '{record.privateUploadMaxFileSize}',
-				disabled: !WT.isPermitted('WTADMIN', 'ACCESS'),
+				disabled: !WT.isWTAdmin(),
 				fieldLabel: WT.res(me.ID, 'opts.main.fld-privateUploadMaxFileSize.lbl'),
 				width: 280,
 				listeners: {
@@ -66,7 +65,7 @@ Ext.define('Sonicle.webtop.vfs.view.UserOptions', {
 			}, {
 				xtype: 'sobytesfield',
 				bind: '{record.publicUploadMaxFileSize}',
-				disabled: !WT.isPermitted('WTADMIN', 'ACCESS'),
+				disabled: !WT.isWTAdmin(),
 				fieldLabel: WT.res(me.ID, 'opts.main.fld-publicUploadMaxFileSize.lbl'),
 				width: 280,
 				listeners: {
