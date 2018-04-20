@@ -698,6 +698,16 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				if(sel) me.sendFileLinkUI('U', sel);
 			}
 		});
+		me.addAct('refresh', {
+			tooltip:null,
+			iconCls: 'wt-icon-refresh-xs',
+			handler: function() {
+				var node = me.getCurrentFileNode();
+				me.trStores().getStore().load({ node: node });
+				me.setCurFile(node.getId());
+				me.reloadGridFiles();
+			}
+		});
 	},
 	
 	/*
@@ -1311,6 +1321,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 			xtype: 'menu',
 			items: [
 				me.getAct('editStore'),
+				me.getAct('refresh'),
 				me.getAct('deleteStore'),
 				{
 					text: me.res('act-addStore.lbl'),
@@ -1332,6 +1343,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 			listeners: {
 				beforeshow: function(s) {
 					me.updateDisabled('editSharing');
+					me.updateDisabled('refresh');
 					me.updateDisabled('addStoreFtp');
 					//me.updateDisabled('addStoreDropbox');
 					me.updateDisabled('addStoreGooDrive');
@@ -1348,6 +1360,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 			xtype: 'menu',
 			items: [
 				me.getAct('renameFileNode'),
+				me.getAct('refresh'),
 				me.getAct('deleteFileNode'),
 				'-',
 				me.getAct('createFileNode'),
@@ -1363,6 +1376,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 			listeners: {
 				beforeshow: function(s) {
 					me.updateDisabled('renameFileNode');
+					me.updateDisabled('refresh');
 					me.updateDisabled('deleteFileNode');
 					me.updateDisabled('createFileNode');
 					me.updateDisabled('addFileNodeDlLink');
