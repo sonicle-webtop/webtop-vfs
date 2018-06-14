@@ -53,9 +53,14 @@ Ext.define('Sonicle.webtop.vfs.view.UserOptions', {
 			items: [{
 				xtype: 'sobytesfield',
 				bind: '{record.privateUploadMaxFileSize}',
-				disabled: !WT.isWTAdmin(),
+				disabled: !(WT.isAdmin() || me.isAdminOnBehalf()),
 				fieldLabel: WT.res(me.ID, 'opts.main.fld-privateUploadMaxFileSize.lbl'),
 				width: 280,
+				permStatus: false,
+				plugins: [{
+					ptype: 'wtadminfieldpermstatus',
+					isAdmin: WT.isAdmin() || me.isAdminOnBehalf()
+				}],
 				listeners: {
 					blur: {
 						fn: me.onBlurAutoSave,
@@ -65,9 +70,14 @@ Ext.define('Sonicle.webtop.vfs.view.UserOptions', {
 			}, {
 				xtype: 'sobytesfield',
 				bind: '{record.publicUploadMaxFileSize}',
-				disabled: !WT.isWTAdmin(),
+				disabled: !(WT.isAdmin() || me.isAdminOnBehalf()),
 				fieldLabel: WT.res(me.ID, 'opts.main.fld-publicUploadMaxFileSize.lbl'),
 				width: 280,
+				permStatus: false,
+				plugins: [{
+					ptype: 'wtadminfieldpermstatus',
+					isAdmin: WT.isAdmin() || me.isAdminOnBehalf()
+				}],
 				listeners: {
 					blur: {
 						fn: me.onBlurAutoSave,
