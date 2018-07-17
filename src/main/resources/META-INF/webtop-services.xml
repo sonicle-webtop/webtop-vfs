@@ -12,8 +12,8 @@
 		<companyWebSite>http://www.sonicle.com</companyWebSite>
 		<supportEmail>sonicle@sonicle.com</supportEmail>
 		
-		<controllerClassName>VfsController</controllerClassName>
-		<managerClassName>VfsManager</managerClassName>
+		<controller className=".VfsController" />
+		<manager className=".VfsManager" />
 		<serviceClassName>Service</serviceClassName>
 		<publicServiceClassName>PublicService</publicServiceClassName>
 		
