@@ -700,7 +700,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		});
 		me.addAct('refresh', {
 			tooltip:null,
-			iconCls: 'wt-icon-refresh-xs',
+			iconCls: 'wt-icon-refresh',
 			handler: function() {
 				var node = me.getCurrentFileNode();
 				me.trStores().getStore().load({ node: node });
