@@ -49,22 +49,22 @@
 
 
 
-/*.wtvfs-icon-addStore-xs { background-image: url('store-add_16.png') !important; }*/
-/*.wtvfs-icon-addStoreFtp-xs { background-image: url('storeFtp_16.png') !important; }*/
-/*.wtvfs-icon-addStoreDropbox-xs { background-image: url('dropbox_16.png') !important; }*/
-/*.wtvfs-icon-addStoreGooDrive-xs { background-image: url('googledrive_16.png') !important; }*/
-/*.wtvfs-icon-addStoreNextcloud-xs { background-image: url('nextcloud_16.png') !important; }*/
-/*.wtvfs-icon-addStoreFile-xs { background-image: url('storeFile_16.png') !important; }*/
-/*.wtvfs-icon-editStore-xs { background-image: url('store-edit_16.png') !important; }*/
-/*.wtvfs-icon-deleteStore-xs { background-image: url('store-delete_16.png') !important; }*/
+.wtvfs-icon-addStore { background-image: url('store-add_16.svg') !important; background-size: contain; }
+.wtvfs-icon-addStoreFtp { background-image: url('store-ftp_16.svg') !important; background-size: contain; }
+.wtvfs-icon-addStoreDropbox { background-image: url('dropbox_16.svg') !important; background-size: contain; }
+.wtvfs-icon-addStoreGooDrive { background-image: url('googledrive_16.svg') !important; background-size: contain; }
+.wtvfs-icon-addStoreNextcloud { background-image: url('nextcloud_16.svg') !important; background-size: contain; }
+.wtvfs-icon-addStoreFile { background-image: url('store-file_16.svg') !important; background-size: contain; }
+.wtvfs-icon-editStore { background-image: url('store-edit_16.svg') !important; background-size: contain; }
+.wtvfs-icon-deleteStore { background-image: url('store-delete_16.svg') !important; background-size: contain; }
 .wtvfs-icon-goUp { background-image: url('file-goUp_16.svg') !important; background-size: contain; }
 .wtvfs-icon-uploadFile { background-image: url('file-upload_16.svg') !important; background-size: contain; }
 .wtvfs-icon-downloadFile { background-image: url('file-download_16.svg') !important; background-size: contain; }
 .wtvfs-icon-renameFile { background-image: url('file-rename_16.svg') !important; background-size: contain; }
 .wtvfs-icon-deleteFile { background-image: url('file-delete_16.svg') !important; background-size: contain; }
 .wtvfs-icon-createFileFolder { background-image: url('file-createFolder_16.svg') !important; background-size: contain; }
-/*.wtvfs-icon-addFileDlLink-xs { background-image: url('linkDownload_16.png') !important; }*/
-/*.wtvfs-icon-addFileUlLink-xs { background-image: url('linkUpload_16.png') !important; }*/
+.wtvfs-icon-addFileDlLink { background-image: url('linkDownload_16.svg') !important; background-size: contain; }
+.wtvfs-icon-addFileUlLink { background-image: url('linkUpload_16.svg') !important; background-size: contain; }
 .wtvfs-icon-store { background-image: url('store_16.svg') !important; background-size: contain; }
 .wtvfs-icon-storeMy { background-image: url('store-my_16.svg') !important; background-size: contain; }
 .wtvfs-icon-storeIncoming { background-image: url('store-incoming_16.svg') !important; background-size: contain; }
@@ -74,12 +74,12 @@
 .wtvfs-icon-storeFtp { background-image: url('store-ftp_16.svg') !important; background-size: contain; }
 .wtvfs-icon-storeWebdav { background-image: url('store-webdav_16.svg') !important; background-size: contain; }
 .wtvfs-icon-storeSmb { background-image: url('store-smb_16.svg') !important; background-size: contain; }
-/*.wtvfs-icon-storeDropbox-xs { background-image: url('dropbox_16.png') !important; }*/
-/*.wtvfs-icon-storeGooDrive-xs { background-image: url('googledrive_16.png') !important; }*/
-/*.wtvfs-icon-storeNextcloud-xs { background-image: url('nextcloud_16.png') !important; }*/
+.wtvfs-icon-storeDropbox { background-image: url('dropbox_16.svg') !important; background-size: contain; }
+.wtvfs-icon-storeGooDrive { background-image: url('googledrive_16.svg') !important; background-size: contain; }
+.wtvfs-icon-storeNextcloud { background-image: url('nextcloud_16.svg') !important; background-size: contain; }
 .wtvfs-icon-storeOther { background-image: url('store_16.svg') !important; background-size: contain; }
-/*.wtvfs-icon-downloadLink-xs { background-image: url('linkDownload_16.png') !important; }*/
-/*.wtvfs-icon-downloadLinkExp-xs { background-image: url('linkDownload-red_16.png') !important; }*/
-/*.wtvfs-icon-uploadLink-xs { background-image: url('linkUpload_16.png') !important; }*/
-/*.wtvfs-icon-uploadLinkExp-xs { background-image: url('linkUpload-red_16.png') !important; }*/
-/*.wtvfs-icon-sharingLink-xs { background-image: url('sharingLink_16.png') !important; }*/
+.wtvfs-icon-downloadLink { background-image: url('linkDownload_16.svg') !important; background-size: contain; }
+.wtvfs-icon-downloadLinkExp { background-image: url('linkDownload-orange_16.svg') !important; background-size: contain; }
+.wtvfs-icon-uploadLink { background-image: url('linkUpload_16.svg') !important; background-size: contain; }
+.wtvfs-icon-uploadLinkExp { background-image: url('linkUpload-orange_16.svg') !important; background-size: contain; }
+.wtvfs-icon-sharingLink { background-image: url('sharingLink_16.svg') !important; background-size: contain; }
