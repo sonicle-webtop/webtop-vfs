@@ -40,7 +40,7 @@ Ext.define('Sonicle.webtop.vfs.view.SharingLinks', {
 	
 	dockableConfig: {
 		title: '{sharingLinks.tit}',
-		iconCls: 'wtvfs-icon-sharingLink-xs',
+		iconCls: 'wtvfs-icon-sharingLinks',
 		width: 1000,
 		height: 450
 	},

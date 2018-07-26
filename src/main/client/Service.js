@@ -46,12 +46,11 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		'WTA.ux.UploadBar',
 		'Sonicle.webtop.vfs.model.StoreNode',
 		'Sonicle.webtop.vfs.model.GridFile',
-		'Sonicle.webtop.vfs.model.SharingLink',
+		'Sonicle.webtop.vfs.model.SharingLink'
+	],
+	uses: [
 		'Sonicle.webtop.vfs.view.Sharing',
 		'Sonicle.webtop.vfs.view.SharingLinks'
-	],
-	mixins: [
-		//'WTA.mixin.FoldersTree'
 	],
 	
 	api: null,
@@ -459,23 +458,9 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 	},
 	
 	initActions: function() {
-		var me = this;
-		me.addAct('showSharingLinks', {
-			tooltip: null,
-			iconCls: me.cssIconCls('sharingLink', 'xs'),
-			handler: function() {
-				me.showSharingLinks({
-					listeners: {
-						linkupdate: function(s, type, linkId, paFileId) {
-							var trsto = me.trStores().getStore(),
-									node = trsto.getNodeById(paFileId);
-							if(node) trsto.load({node: node});
-							me.reloadGridFilesIf(paFileId);
-						}
-					}
-				});
-			}
-		});
+		var me = this,
+				hdscale = WT.getHeaderScale();
+		
 		me.addAct('editSharing', {
 			text: WT.res('sharing.tit'),
 			tooltip: null,
@@ -706,6 +691,24 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				me.trStores().getStore().load({ node: node });
 				me.setCurFile(node.getId());
 				me.reloadGridFiles();
+			}
+		});
+		
+		me.addAct('showSharingLinks', {
+			scale: hdscale,
+			tooltip: null,
+			iconCls: me.cssIconCls('sharingLinks'),
+			handler: function() {
+				me.showSharingLinks({
+					listeners: {
+						linkupdate: function(s, type, linkId, paFileId) {
+							var trsto = me.trStores().getStore(),
+									node = trsto.getNodeById(paFileId);
+							if(node) trsto.load({node: node});
+							me.reloadGridFilesIf(paFileId);
+						}
+					}
+				});
 			}
 		});
 	},

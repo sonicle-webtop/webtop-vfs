@@ -1,7 +1,8 @@
-.wtvfs-icon-service-xs { background-image: url('service_16.png') !important; }
-.wtvfs-icon-service-s { background-image: url('service_24.png') !important; }
-.wtvfs-icon-service-m { background-image: url('service_32.png') !important; }
-.wtvfs-icon-service-l { background-image: url('service_48.png') !important; }
+.wtvfs-icon-service { background-image: url('service_16.svg') !important; background-size: contain; }
+.wtvfs-icon-service-xs { background-image: url('service_16.svg') !important; background-size: contain; }
+.wtvfs-icon-service-s { background-image: url('service_16.svg') !important; background-size: contain; }
+.wtvfs-icon-service-m { background-image: url('service_32.svg') !important; background-size: contain; }
+.wtvfs-icon-service-l { background-image: url('service_32.svg') !important; background-size: contain; }
 
 .wtvfs-icon-addStore-xs { background-image: url('store-add_16.png') !important; }
 .wtvfs-icon-addStoreFtp-xs { background-image: url('storeFtp_16.png') !important; }
@@ -41,6 +42,44 @@
 .wtvfs-icon-uploadLink-xs { background-image: url('linkUpload_16.png') !important; }
 .wtvfs-icon-uploadLinkExp-xs { background-image: url('linkUpload-red_16.png') !important; }
 .wtvfs-icon-sharingLink-xs { background-image: url('sharingLink_16.png') !important; }
-
+.wtvfs-icon-sharingLinks { background-image: url('sharingLinks_16.svg') !important; background-size: contain; }
 .wtvfs-gpfiles .x-grid-empty {text-align: center;}
 .wtvfs-gplinks-row-expired { color: #E60D35; }
+
+
+
+
+/*.wtvfs-icon-addStore-xs { background-image: url('store-add_16.png') !important; }*/
+/*.wtvfs-icon-addStoreFtp-xs { background-image: url('storeFtp_16.png') !important; }*/
+/*.wtvfs-icon-addStoreDropbox-xs { background-image: url('dropbox_16.png') !important; }*/
+/*.wtvfs-icon-addStoreGooDrive-xs { background-image: url('googledrive_16.png') !important; }*/
+/*.wtvfs-icon-addStoreNextcloud-xs { background-image: url('nextcloud_16.png') !important; }*/
+/*.wtvfs-icon-addStoreFile-xs { background-image: url('storeFile_16.png') !important; }*/
+/*.wtvfs-icon-editStore-xs { background-image: url('store-edit_16.png') !important; }*/
+/*.wtvfs-icon-deleteStore-xs { background-image: url('store-delete_16.png') !important; }*/
+.wtvfs-icon-goUp { background-image: url('file-goUp_16.svg') !important; background-size: contain; }
+.wtvfs-icon-uploadFile { background-image: url('file-upload_16.svg') !important; background-size: contain; }
+.wtvfs-icon-downloadFile { background-image: url('file-download_16.svg') !important; background-size: contain; }
+.wtvfs-icon-renameFile { background-image: url('file-rename_16.svg') !important; background-size: contain; }
+.wtvfs-icon-deleteFile { background-image: url('file-delete_16.svg') !important; background-size: contain; }
+.wtvfs-icon-createFileFolder { background-image: url('file-createFolder_16.svg') !important; background-size: contain; }
+/*.wtvfs-icon-addFileDlLink-xs { background-image: url('linkDownload_16.png') !important; }*/
+/*.wtvfs-icon-addFileUlLink-xs { background-image: url('linkUpload_16.png') !important; }*/
+.wtvfs-icon-store { background-image: url('store_16.svg') !important; background-size: contain; }
+.wtvfs-icon-storeMy { background-image: url('store-my_16.svg') !important; background-size: contain; }
+.wtvfs-icon-storeIncoming { background-image: url('store-incoming_16.svg') !important; background-size: contain; }
+.wtvfs-icon-storeMyDocs { background-image: url('store-myDocs_16.svg') !important; background-size: contain; }
+.wtvfs-icon-storeDomainImages { background-image: url('store-domainImages_16.svg') !important; background-size: contain; }
+.wtvfs-icon-storeFile { background-image: url('store-file_16.svg') !important; background-size: contain; }
+.wtvfs-icon-storeFtp { background-image: url('store-ftp_16.svg') !important; background-size: contain; }
+.wtvfs-icon-storeWebdav { background-image: url('store-webdav_16.svg') !important; background-size: contain; }
+.wtvfs-icon-storeSmb { background-image: url('store-smb_16.svg') !important; background-size: contain; }
+/*.wtvfs-icon-storeDropbox-xs { background-image: url('dropbox_16.png') !important; }*/
+/*.wtvfs-icon-storeGooDrive-xs { background-image: url('googledrive_16.png') !important; }*/
+/*.wtvfs-icon-storeNextcloud-xs { background-image: url('nextcloud_16.png') !important; }*/
+.wtvfs-icon-storeOther { background-image: url('store_16.svg') !important; background-size: contain; }
+/*.wtvfs-icon-downloadLink-xs { background-image: url('linkDownload_16.png') !important; }*/
+/*.wtvfs-icon-downloadLinkExp-xs { background-image: url('linkDownload-red_16.png') !important; }*/
+/*.wtvfs-icon-uploadLink-xs { background-image: url('linkUpload_16.png') !important; }*/
+/*.wtvfs-icon-uploadLinkExp-xs { background-image: url('linkUpload-red_16.png') !important; }*/
+/*.wtvfs-icon-sharingLink-xs { background-image: url('sharingLink_16.png') !important; }*/
