@@ -891,7 +891,6 @@ public class Service extends BaseService {
 				for(String fileId : fileIds) {
 					StoreNodeId nodeId = (StoreNodeId)new StoreNodeId().parse(fileId);
 					int storeId = Integer.valueOf(nodeId.getStoreId());
-					
 					manager.deleteStoreFile(storeId, nodeId.getPath());
 				}
 				new JsonResult().printTo(out);
@@ -908,7 +907,11 @@ public class Service extends BaseService {
 				final String fileHash = VfsManagerUtils.generateStoreFileHash(storeId, nodeId.getPath());
 				long lastModified = fo.getContent().getLastModifiedTime();
 				
-				StoreFileDocEditorDocumentHandler docHandler = new StoreFileDocEditorDocumentHandler(true, getEnv().getProfileId(), storeId, nodeId.getPath());
+				boolean writable = false;
+				StoreShareFolder folder = getFolderFromCache(storeId);
+				if ((folder != null) && folder.getElementsPerms().implies("UPDATE")) writable = true;
+				
+				StoreFileDocEditorDocumentHandler docHandler = new StoreFileDocEditorDocumentHandler(writable, getEnv().getProfileId(), storeId, nodeId.getPath());
 				DocEditorManager.DocumentConfig config = getWts().prepareDocumentEditing(filename, fileHash, lastModified, docHandler);
 				
 				new JsonResult(config).printTo(out);
@@ -1196,30 +1199,5 @@ public class Service extends BaseService {
 		}
 		
 		return sb.toString();
-	}
-	
-	public void processGetDocumentToEdit(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-		logger.debug("processGetDocumentToEdit");
-	}
-	
-	public void processGetDocumentEditor(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-		String html = "";
-		html += "<html>";
-		html += "<head>";
-		html += "<link rel=\"stylesheet\" property=\"stylesheet\" type=\"text/css\" href=\"resources/com.sonicle.webtop.core/0.0.0/resources/css/normalize.min.css\" />";
-		html += "<style>#header {display:none !important}</style>";
-		html += "</head>";
-		html += "<script type=\"text/javascript\" src=\"http://192.168.111.192/web-apps/apps/api/documents/api.js\"></script>";
-		html += "<script>";
-		html += "function run(){new DocsAPI.DocEditor(\"placeholder\",{document:{fileType:\"docx\",key:\"Khirz6zTPdfd7\",title:\"Example Document Title\",url:\"http://192.168.111.192/web-apps/docs/test.docx\"}})}";
-		html += "</script>";
-		html += "<body onload='run()'>";
-		html += "<div id=\"placeholder\"></div>";
-		html += "</body>";
-		html += "</html>";
-		
-		ServletUtils.setHtmlContentType(response);
-		ServletUtils.setCacheControlPrivate(response);
-		out.print(html);
 	}
 }

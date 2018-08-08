@@ -46,6 +46,7 @@ Ext.define('Sonicle.webtop.vfs.model.GridFile', {
 		WTF.roField('ext', 'string'),
 		WTF.roField('size', 'int'),
 		WTF.roField('lastModified', 'date', {dateFormat: 'Y-m-d H:i:s'}),
+		WTF.roField('openable', 'boolean'),
 		WTF.roField('dlLink', 'string'),
 		WTF.roField('dlLinkExp', 'boolean'),
 		WTF.roField('ulLink', 'string'),
@@ -83,5 +84,13 @@ Ext.define('Sonicle.webtop.vfs.model.GridFile', {
 	
 	getEPerms: function() {
 		return this.toPermsObj(this.get('eperms'));
+	},
+	
+	isFolder: function() {
+		return this.get('type') === 'folder';
+	},
+	
+	isOpenable: function() {
+		return this.get('openable') === true;
 	}
 });

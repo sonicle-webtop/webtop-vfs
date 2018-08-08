@@ -91,6 +91,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -729,13 +730,25 @@ public class VfsManager extends BaseManager implements IVfsManager {
 	
 	@Override
 	public void deleteStoreFile(int storeId, String path) throws FileSystemException, WTException {
+		deleteStoreFile(storeId, Arrays.asList(path));
+	}
+	
+	@Override
+	public void deleteStoreFile(int storeId, Collection<String> paths) throws FileSystemException, WTException {
+		Connection con = null;
+		
 		try {
-			checkRightsOnStoreElements(storeId, "DELETE");
+			con = WT.getConnection(SERVICE_ID, false);
 			
-			doDeleteStoreFile(storeId, path);
+			for (String path : paths) {
+				// Commit or rollback is done inside this method below
+				doDeleteStoreFile(con, storeId, path);
+			}
 			
-		} catch(SQLException | DAOException ex) {
-			throw new WTException(ex, "DB error");
+		} catch(SQLException | DAOException | WTException ex) {
+			throw wrapThrowable(ex);
+		} finally {
+			DbUtils.closeQuietly(con);
 		}
 	}
 	
@@ -1341,6 +1354,29 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		}
 	}
 	
+	private void doDeleteStoreFile(Connection con, int storeId, String path) throws FileSystemException, SQLException, DAOException, WTException {
+		SharingLinkDAO shaDao = SharingLinkDAO.getInstance();
+		FileObject tfo = null;
+		
+		try {
+			logger.debug("Deleting store file [{}, {}]", storeId, path);
+			tfo = getTargetFileObject(storeId, path);
+			
+			try {
+				shaDao.deleteByStorePath(con, storeId, path);
+				tfo.delete(Selectors.SELECT_ALL);
+				DbUtils.commitQuietly(con);
+				
+			} catch(FileSystemException ex1) {
+				DbUtils.rollbackQuietly(con);
+				throw ex1;
+			}
+		} finally {
+			IOUtils.closeQuietly(tfo);
+		}
+	}
+	
+	/*
 	private void doDeleteStoreFile(int storeId, String path) throws FileSystemException, SQLException, DAOException, WTException {
 		SharingLinkDAO dao = SharingLinkDAO.getInstance();
 		FileObject tfo = null;
@@ -1369,6 +1405,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			IOUtils.closeQuietly(tfo);
 		}
 	}
+	*/
 	
 	private String generateLinkId(UserProfileId profileId, String linkType, int storeId, String path) {
 		return AlgoUtils.md5Hex(new CompositeId(profileId.getDomainId(), profileId.getUserId(), linkType, storeId, path).toString());
