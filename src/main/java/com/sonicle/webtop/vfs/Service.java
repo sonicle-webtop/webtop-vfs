@@ -58,7 +58,6 @@ import com.sonicle.webtop.core.CoreUserSettings;
 import com.sonicle.webtop.core.app.AbstractDocEditorDocumentHandler;
 import com.sonicle.webtop.core.app.DocEditorManager;
 import com.sonicle.webtop.core.app.WT;
-import com.sonicle.webtop.core.app.WebTopApp;
 import com.sonicle.webtop.core.app.WebTopSession;
 import com.sonicle.webtop.core.bol.js.JsWizardData;
 import com.sonicle.webtop.core.model.SharePermsRoot;
@@ -909,9 +908,8 @@ public class Service extends BaseService {
 				final String fileHash = VfsManagerUtils.generateStoreFileHash(storeId, nodeId.getPath());
 				long lastModified = fo.getContent().getLastModifiedTime();
 				
-				WebTopApp wta = WebTopApp.get(request);
 				StoreFileDocEditorDocumentHandler docHandler = new StoreFileDocEditorDocumentHandler(true, getEnv().getProfileId(), storeId, nodeId.getPath());
-				DocEditorManager.DocumentConfig config = wta.getDocEditorManager().prepareEditing(filename, fileHash, lastModified, docHandler);
+				DocEditorManager.DocumentConfig config = getWts().prepareDocumentEditing(filename, fileHash, lastModified, docHandler);
 				
 				new JsonResult(config).printTo(out);
 			}
