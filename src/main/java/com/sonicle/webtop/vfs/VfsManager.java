@@ -32,6 +32,7 @@
  */
 package com.sonicle.webtop.vfs;
 
+import com.sonicle.commons.AlgoUtils;
 import com.sonicle.commons.EnumUtils;
 import com.sonicle.commons.PathUtils;
 import com.sonicle.commons.URIUtils;
@@ -96,7 +97,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import javax.mail.internet.InternetAddress;
-import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -611,10 +611,6 @@ public class VfsManager extends BaseManager implements IVfsManager {
 	
 	public StoreFileSystem getStoreFileSystem(int storeId) throws WTException {
 		return getStoreFileSystemFromCache(storeId);
-	}
-	
-	public String generateStoreFileHash(int storeId, String path) {
-		return DigestUtils.md5Hex(new CompositeId(storeId, path).toString());
 	}
 	
 	@Override
@@ -1375,7 +1371,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 	}
 	
 	private String generateLinkId(UserProfileId profileId, String linkType, int storeId, String path) {
-		return DigestUtils.md5Hex(new CompositeId(profileId.getDomainId(), profileId.getUserId(), linkType, storeId, path).toString());
+		return AlgoUtils.md5Hex(new CompositeId(profileId.getDomainId(), profileId.getUserId(), linkType, storeId, path).toString());
 	}
 	
 	private OSharingLink doSharingLinkUpdate(boolean insert, Connection con, SharingLink sl) throws DAOException {
@@ -1388,7 +1384,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		OSharingLink o = createSharingLink(sl);
 		if (insert) {
 			o.setSharingLinkId(generateLinkId(pid, EnumUtils.toSerializedName(sl.getLinkType()), o.getStoreId(), o.getFilePath()));
-			o.setFileHash(generateStoreFileHash(o.getStoreId(), o.getFilePath()));
+			o.setFileHash(VfsManagerUtils.generateStoreFileHash(o.getStoreId(), o.getFilePath()));
 			o.setCreatedOn(DateTimeUtils.now());
 			slDao.insert(con, o);
 		} else {

@@ -39,7 +39,6 @@ import com.dropbox.core.DbxRequestConfig;
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.services.oauth2.model.Userinfoplus;
 import com.sonicle.commons.EnumUtils;
-import com.sonicle.commons.LangUtils;
 import com.sonicle.commons.PathUtils;
 import com.sonicle.commons.URIUtils;
 import com.sonicle.commons.time.DateTimeUtils;
@@ -56,8 +55,10 @@ import com.sonicle.vfs2.util.DropboxApiUtils;
 import com.sonicle.vfs2.util.GoogleDriveApiUtils;
 import com.sonicle.vfs2.util.GoogleDriveAppInfo;
 import com.sonicle.webtop.core.CoreUserSettings;
-import com.sonicle.webtop.core.app.RunContext;
+import com.sonicle.webtop.core.app.AbstractDocEditorDocumentHandler;
+import com.sonicle.webtop.core.app.DocEditorManager;
 import com.sonicle.webtop.core.app.WT;
+import com.sonicle.webtop.core.app.WebTopApp;
 import com.sonicle.webtop.core.app.WebTopSession;
 import com.sonicle.webtop.core.bol.js.JsWizardData;
 import com.sonicle.webtop.core.model.SharePermsRoot;
@@ -81,8 +82,8 @@ import com.sonicle.webtop.vfs.bol.model.MyStoreRoot;
 import com.sonicle.webtop.vfs.model.StoreFileType;
 import com.sonicle.webtop.vfs.model.SharingLink;
 import com.sonicle.webtop.vfs.sfs.StoreFileSystem;
+import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.URI;
 import java.util.ArrayList;
@@ -417,7 +418,7 @@ public class Service extends BaseService {
 							// Relativize path and force trailing separator (it's a folder)
 							final String filePath = PathUtils.ensureTrailingSeparator(sfs.getRelativePath(fo), false);
 							//final String fileId = new StoreNodeId(nodeId.getShareId(), nodeId.getStoreId(), filePath).toString();
-							final String fileHash = manager.generateStoreFileHash(storeId, filePath);
+							final String fileHash = VfsManagerUtils.generateStoreFileHash(storeId, filePath);
 							
 							String dlLink = null, ulLink = null;
 							if(dls.containsKey(fileHash)) {
@@ -846,7 +847,7 @@ public class Service extends BaseService {
 					// Relativize path and force trailing separator if file is a folder
 					final String filePath = fo.isFolder() ? PathUtils.ensureTrailingSeparator(sfs.getRelativePath(fo), false) : sfs.getRelativePath(fo);
 					final String fileId = new StoreNodeId(parentNodeId.getShareId(), parentNodeId.getStoreId(), filePath).toString();
-					final String fileHash = manager.generateStoreFileHash(storeId, filePath);
+					final String fileHash = VfsManagerUtils.generateStoreFileHash(storeId, filePath);
 					items.add(new JsGridFile(folder, fo, fileId, dls.get(fileHash), uls.get(fileHash)));
 				}
 				new JsonResult("files", items).printTo(out);
@@ -871,7 +872,7 @@ public class Service extends BaseService {
 				String path = (parentNodeId.getSize() == 2) ? "/" : parentNodeId.getPath();
 				
 				String newPath = manager.addStoreFile(StoreFileType.FOLDER, storeId, path, name);
-				final String fileHash = manager.generateStoreFileHash(storeId, newPath);
+				final String fileHash = VfsManagerUtils.generateStoreFileHash(storeId, newPath);
 				new JsonResult(fileHash).printTo(out);
 				
 			} else if(crud.equals("rename")) {
@@ -882,7 +883,7 @@ public class Service extends BaseService {
 				int storeId = Integer.valueOf(nodeId.getStoreId());
 				
 				String newPath = manager.renameStoreFile(storeId, nodeId.getPath(), name);
-				final String fileHash = manager.generateStoreFileHash(storeId, newPath);
+				final String fileHash = VfsManagerUtils.generateStoreFileHash(storeId, newPath);
 				new JsonResult(fileHash).printTo(out);
 				
 			} else if(crud.equals(Crud.DELETE)) {
@@ -895,11 +896,71 @@ public class Service extends BaseService {
 					manager.deleteStoreFile(storeId, nodeId.getPath());
 				}
 				new JsonResult().printTo(out);
+				
+			} else if (crud.equals("edit")) {
+				String fileId = ServletUtils.getStringParameter(request, "fileId", true);
+				
+				StoreNodeId nodeId = (StoreNodeId)new StoreNodeId().parse(fileId);
+				int storeId = Integer.valueOf(nodeId.getStoreId());
+				
+				FileObject fo = manager.getStoreFile(storeId, nodeId.getPath());
+				if (!fo.isFile()) throw new WTException("Requested file is not a real file");
+				final String filename = fo.getName().getBaseName();
+				final String fileHash = VfsManagerUtils.generateStoreFileHash(storeId, nodeId.getPath());
+				long lastModified = fo.getContent().getLastModifiedTime();
+				
+				WebTopApp wta = WebTopApp.get(request);
+				StoreFileDocEditorDocumentHandler docHandler = new StoreFileDocEditorDocumentHandler(true, getEnv().getProfileId(), storeId, nodeId.getPath());
+				DocEditorManager.DocumentConfig config = wta.getDocEditorManager().prepareEditing(filename, fileHash, lastModified, docHandler);
+				
+				new JsonResult(config).printTo(out);
 			}
 			
 		} catch(Exception ex) {
 			logger.error("Error in action ManageFiles", ex);
 			new JsonResult(false, "Error").printTo(out);
+		}
+	}
+	
+	private static class StoreFileDocEditorDocumentHandler extends AbstractDocEditorDocumentHandler {
+		private final int storeId;
+		private final String path;
+		
+		public StoreFileDocEditorDocumentHandler(boolean writeCapability, UserProfileId targetProfileId, int storeId, String path) {
+			super(writeCapability, targetProfileId);
+			this.storeId = storeId;
+			this.path = path;
+		}
+		
+		@Override
+		public InputStream readDocument() throws IOException {
+			VfsManager manager = getVfsManager();
+			
+			try {
+				FileObject fo = manager.getStoreFile(storeId, path);
+				return fo.getContent().getInputStream();
+				
+			} catch(WTException ex) {
+				throw new IOException("Unable to get file content", ex);
+			}
+		}
+		
+		@Override
+		public void writeDocument(InputStream is) throws IOException {
+			VfsManager manager = getVfsManager();
+			String parentPath = PathUtils.getFullParentPath(path);
+			String name = PathUtils.getFileName(path);
+			
+			try {
+				manager.addStoreFileFromStream(storeId, parentPath, name, is, true);
+				
+			} catch(WTException ex) {
+				throw new IOException("Unable to get file content", ex);
+			}
+		}
+		
+		private VfsManager getVfsManager() {
+			return (VfsManager) WT.getServiceManager("com.sonicle.webtop.vfs", true, targetProfileId);
 		}
 	}
 	
@@ -1139,5 +1200,28 @@ public class Service extends BaseService {
 		return sb.toString();
 	}
 	
+	public void processGetDocumentToEdit(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		logger.debug("processGetDocumentToEdit");
+	}
 	
+	public void processGetDocumentEditor(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		String html = "";
+		html += "<html>";
+		html += "<head>";
+		html += "<link rel=\"stylesheet\" property=\"stylesheet\" type=\"text/css\" href=\"resources/com.sonicle.webtop.core/0.0.0/resources/css/normalize.min.css\" />";
+		html += "<style>#header {display:none !important}</style>";
+		html += "</head>";
+		html += "<script type=\"text/javascript\" src=\"http://192.168.111.192/web-apps/apps/api/documents/api.js\"></script>";
+		html += "<script>";
+		html += "function run(){new DocsAPI.DocEditor(\"placeholder\",{document:{fileType:\"docx\",key:\"Khirz6zTPdfd7\",title:\"Example Document Title\",url:\"http://192.168.111.192/web-apps/docs/test.docx\"}})}";
+		html += "</script>";
+		html += "<body onload='run()'>";
+		html += "<div id=\"placeholder\"></div>";
+		html += "</body>";
+		html += "</html>";
+		
+		ServletUtils.setHtmlContentType(response);
+		ServletUtils.setCacheControlPrivate(response);
+		out.print(html);
+	}
 }

@@ -32,17 +32,13 @@
  */
 package com.sonicle.webtop.vfs;
 
-import com.sonicle.commons.LangUtils;
 import com.sonicle.commons.PathUtils;
 import com.sonicle.commons.URIUtils;
 import com.sonicle.commons.time.DateTimeUtils;
-import com.sonicle.commons.web.DispositionType;
 import com.sonicle.commons.web.ServletUtils;
 import com.sonicle.commons.web.json.JsonResult;
 import com.sonicle.commons.web.json.MapItem;
 import com.sonicle.vfs2.VfsUtils;
-import com.sonicle.webtop.core.CoreServiceSettings;
-import com.sonicle.webtop.core.app.CoreManifest;
 import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.app.WebTopSession;
 import com.sonicle.webtop.core.bol.js.JsWTSPublic;
@@ -50,7 +46,7 @@ import com.sonicle.webtop.core.sdk.BasePublicService;
 import com.sonicle.webtop.core.sdk.UploadException;
 import com.sonicle.webtop.core.sdk.WTException;
 import com.sonicle.webtop.core.sdk.interfaces.IServiceUploadStreamListener;
-import com.sonicle.webtop.core.servlet.ServletHelper;
+import com.sonicle.webtop.core.app.servlet.ServletHelper;
 import com.sonicle.webtop.vfs.bol.js.JsPubGridFile;
 import com.sonicle.webtop.vfs.model.SharingLink;
 import com.sonicle.webtop.vfs.model.StoreFileType;

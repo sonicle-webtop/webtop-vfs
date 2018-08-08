@@ -33,7 +33,7 @@
 package com.sonicle.webtop.vfs.bol.js;
 
 import com.sonicle.commons.time.DateTimeUtils;
-import com.sonicle.webtop.core.servlet.ServletHelper;
+import com.sonicle.webtop.core.app.servlet.ServletHelper;
 import com.sonicle.webtop.vfs.model.SharingLink;
 import com.sonicle.webtop.vfs.model.StoreShareFolder;
 import org.apache.commons.vfs2.FileObject;

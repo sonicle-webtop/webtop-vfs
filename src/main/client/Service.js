@@ -346,7 +346,9 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 							}
 						},
 						flex: 1
-					}
+					},
+					me.getActAs('renameFile', 'button', {text: null, tooltip: me.res('act-renameFile.lbl')}),
+					me.getActAs('deleteFile', 'button', {text: null, tooltip: me.res('act-deleteFile.lbl')})
 				],
 				bbar: {
 					xtype: 'wtuploadbar',
@@ -375,6 +377,11 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 					text: WT.res('sofiledrop.text')
 				}],
 				listeners: {
+					selectionchange: function() {
+						me.updateDisabled('renameFile');
+						me.updateDisabled('deleteFile');
+					},
+					
 					/*
 					selectionchange: function() {
 						//me.updateCxmGridFile();
@@ -629,6 +636,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		});
 		me.addAct('renameFile', {
 			tooltip: null,
+			disabled: true,
 			handler: function() {
 				var sel = me.getSelectedFile();
 				if(sel) me.renameFileUI(sel);
@@ -636,6 +644,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		});
 		me.addAct('deleteFile', {
 			tooltip: null,
+			disabled: true,
 			handler: function() {
 				var sel = me.getSelectedFiles();
 				if(sel.length > 0) me.deleteFilesUI(sel);
@@ -827,8 +836,47 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 	},
 	
 	openFileUI: function(sel) {
-		
+		var me = this;
+		WT.ajaxReq(me.ID, 'ManageFiles', {
+			params: {
+				crud: 'edit',
+				fileId: sel.getFId()
+			},
+			callback: function(success, json) {
+				if (success) {
+					var vw = WT.createView(me.ID, 'view.DocEditor', {swapReturn: true});
+					vw.showView(function() {
+						vw.beginEdit({
+							editable: true,
+							docType: json.data.docType,
+							docExtension: json.data.docExtension,
+							docKey: json.data.docKey,
+							docTitle: sel.get('name'),
+							docUrl: json.data.docUrl,
+							callbackUrl: json.data.callbackUrl
+						});
+					});
+				}
+			}
+		});
 	},
+	
+	/*
+	editFile: function(fileId, opts) {
+		opts = opts || {};
+		var me = this;
+		WT.ajaxReq(me.ID, 'ManageFiles', {
+			params: {
+				crud: 'edit',
+				fileId: fileId
+			},
+			callback: function(success, json) {
+				Ext.callback(opts.callback, opts.scope || me, [success, json.data, json]);
+			}
+		});
+	},
+	*/
+	
 	
 	downloadFilesUI: function(sel) {
 		var me = this,
@@ -1031,6 +1079,21 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 	editStore: function(storeId, opts) {
 		opts = opts || {};
 		var me = this,
+				vw = WT.createView(me.ID, 'view.Store', {swapReturn: true});
+		
+		vw.on('viewsave', function(s, success, model) {
+			Ext.callback(opts.callback, opts.scope || me, [success, model]);
+		});
+		vw.showView(function() {
+			vw.begin('edit', {
+				data: {
+					storeId: storeId
+				}
+			});
+		});
+		
+		/*
+		var me = this,
 				vct = WT.createView(me.ID, 'view.Store');
 		
 		vct.getView().on('viewsave', function(s, success, model) {
@@ -1043,6 +1106,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				}
 			});
 		});
+		*/
 	},
 	
 	deleteStore: function(storeId, opts) {
@@ -1719,6 +1783,13 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				sel = me.getSelectedFiles();
 				if (sel.length === 1) {
 					return !sel[0].getEPerms().UPDATE;
+				} else {
+					return true;
+				}
+			case 'deleteFile':
+				sel = me.getSelectedFiles();
+				if (sel.length > 0) {
+					return !sel[0].getEPerms().DELETE;
 				} else {
 					return true;
 				}
