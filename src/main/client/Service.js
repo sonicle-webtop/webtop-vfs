@@ -852,55 +852,29 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 	openFileUI: function(sel) {
 		var me = this;
 		me.editFileUI(sel.getFId(), true);
-		
-		
-		/*
-		WT.ajaxReq(me.ID, 'ManageFiles', {
-			params: {
-				crud: 'edit',
-				fileId: sel.getFId()
-			},
-			callback: function(success, json) {
-				if (success) {
-					var vw = WT.createView(me.ID, 'view.DocEditor', {swapReturn: true});
-					vw.showView(function() {
-						vw.beginEdit({
-							editable: json.data.writeSupport,
-							docType: json.data.docType,
-							docExtension: json.data.docExtension,
-							docKey: json.data.docKey,
-							docTitle: sel.get('name'),
-							docUrl: json.data.docUrl,
-							callbackUrl: json.data.callbackUrl
-						});
-					});
-				}
-			}
-		});
-		*/
 	},
 	
 	editFileUI: function(sel, view) {
-		var me = this, cfg;
+		var me = this;
 		me.editFile(sel.getFId(), {
 			callback: function(success, data) {
 				if (success) {
-					var vw = WT.createView(WT.ID, 'view.DocEditor', {swapReturn: true});
-					vw.showView(function() {
-						cfg = {
-							editable: data.writeSupport,
-							docType: data.docType,
-							docExtension: data.docExtension,
-							docKey: data.docKey,
-							docTitle: sel.get('name'),
-							docUrl: data.docUrl,
-							callbackUrl: data.callbackUrl
-						};
-						if (view === true) {
-							vw.beginView(cfg);
-						} else {
-							vw.beginEdit(cfg);
+					var vw = WT.createView(WT.ID, 'view.DocEditor', {
+						swapReturn: true,
+						viewCfg: {
+							editorConfig: {
+								editable: data.writeSupport,
+								docType: data.docType,
+								docExtension: data.docExtension,
+								docKey: data.docKey,
+								docTitle: sel.get('name'),
+								docUrl: data.docUrl,
+								callbackUrl: data.callbackUrl
+							}
 						}
+					});
+					vw.showView(function() {
+						vw.begin(view === true ? 'view' : 'edit');
 					});
 				}
 			}

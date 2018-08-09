@@ -55,7 +55,7 @@ import com.sonicle.vfs2.util.DropboxApiUtils;
 import com.sonicle.vfs2.util.GoogleDriveApiUtils;
 import com.sonicle.vfs2.util.GoogleDriveAppInfo;
 import com.sonicle.webtop.core.CoreUserSettings;
-import com.sonicle.webtop.core.app.AbstractDocEditorDocumentHandler;
+import com.sonicle.webtop.core.app.sdk.BaseDocEditorDocumentHandler;
 import com.sonicle.webtop.core.app.DocEditorManager;
 import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.app.WebTopSession;
@@ -923,7 +923,7 @@ public class Service extends BaseService {
 		}
 	}
 	
-	private static class StoreFileDocEditorDocumentHandler extends AbstractDocEditorDocumentHandler {
+	private static class StoreFileDocEditorDocumentHandler extends BaseDocEditorDocumentHandler {
 		private final int storeId;
 		private final String path;
 		
