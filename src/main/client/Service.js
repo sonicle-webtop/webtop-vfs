@@ -863,7 +863,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 						swapReturn: true,
 						viewCfg: {
 							editorConfig: {
-								editable: data.writeSupport,
+								editable: data.writeSupported,
 								token: data.token,
 								docType: data.docType,
 								docExtension: data.docExtension,
