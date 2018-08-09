@@ -864,6 +864,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 						viewCfg: {
 							editorConfig: {
 								editable: data.writeSupport,
+								token: data.token,
 								docType: data.docType,
 								docExtension: data.docExtension,
 								docKey: data.docKey,
