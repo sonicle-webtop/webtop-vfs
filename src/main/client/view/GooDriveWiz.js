@@ -40,7 +40,7 @@ Ext.define('Sonicle.webtop.vfs.view.GooDriveWiz', {
 	
 	dockableConfig: {
 		title: '{gooDriveWiz.tit}',
-		iconCls: 'wtvfs-icon-storeGooDrive-xs',
+		iconCls: 'wtvfs-icon-storeGooDrive',
 		width: 460,
 		height: 340
 	},

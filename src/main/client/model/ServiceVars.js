@@ -37,6 +37,9 @@ Ext.define('Sonicle.webtop.vfs.model.ServiceVars', {
 	fields: [
 		WTF.field('privateUploadMaxFileSize', 'int', true),
 		WTF.field('uploadLinkExpiration', 'int', true),
-		WTF.field('downloadLinkExpiration', 'int', true)
+		WTF.field('downloadLinkExpiration', 'int', true),
+		WTF.field('nextcloudDefaultHost', 'string', true),
+		WTF.field('nextcloudDefaultPath', 'string', true),
+		WTF.field('fileOpenAction', 'string', false)
 	]
 });

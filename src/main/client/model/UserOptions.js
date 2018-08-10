@@ -38,6 +38,7 @@ Ext.define('Sonicle.webtop.vfs.model.UserOptions', {
 	fields: [
 		WTF.field('privateUploadMaxFileSize', 'int', true),
 		WTF.field('publicUploadMaxFileSize', 'int', true),
-		WTF.field('showHiddenFiles', 'boolean', true)
+		WTF.field('fileShowHidden', 'boolean', true),
+		WTF.field('fileOpenAction', 'string', true)
 	]
 });

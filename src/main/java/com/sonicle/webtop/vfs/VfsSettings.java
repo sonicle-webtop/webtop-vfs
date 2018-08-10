@@ -32,6 +32,8 @@
  */
 package com.sonicle.webtop.vfs;
 
+import com.google.gson.annotations.SerializedName;
+
 /**
  *
  * @author malbinola
@@ -93,10 +95,17 @@ public class VfsSettings {
 	
 	/**
 	 * [user]
-	 * [boolean]
-	 * True to display hidden files and dotfiles (file's name start with .) in results
+	 * [boolean] (false)
+	 * True to display hidden files and period files (its's name start with .) in results
 	 */
-	public static final String HIDDENFILES_SHOW = "hiddenfiles.show";
+	public static final String FILE_SHOW_HIDDEN = "file.showhidden";
+	
+	/**
+	 * [user]
+	 * [enum {view:VIEW, edit:EDIT}] (view)
+	 * Specifies the default action when opening an editable file.
+	 */
+	public static final String FILE_OPEN_ACTION = "file.openaction";
 	
 	/**
 	 * [domain+system]
@@ -111,4 +120,9 @@ public class VfsSettings {
 	 * Nextcloud default path
 	 */
 	public static final String NEXTCLOUD_DEFAULT_PATH = "nextcloud.default.path";
+	
+	public static enum FileOpenAction {
+		@SerializedName("view") VIEW,
+		@SerializedName("edit") EDIT;
+	}
 }

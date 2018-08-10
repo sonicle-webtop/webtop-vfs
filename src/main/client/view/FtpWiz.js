@@ -42,7 +42,7 @@ Ext.define('Sonicle.webtop.vfs.view.FtpWiz', {
 	
 	dockableConfig: {
 		title: '{ftpWiz.tit}',
-		iconCls: 'wtvfs-icon-storeFtp-xs',
+		iconCls: 'wtvfs-icon-storeFtp',
 		width: 450,
 		height: 320
 	},

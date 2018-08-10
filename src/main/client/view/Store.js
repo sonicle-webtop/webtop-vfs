@@ -42,7 +42,7 @@ Ext.define('Sonicle.webtop.vfs.view.Store', {
 	
 	dockableConfig: {
 		title: '{store.tit}',
-		iconCls: 'wtvfs-icon-store-xs',
+		iconCls: 'wtvfs-icon-store',
 		width: 450,
 		height: 260
 	},

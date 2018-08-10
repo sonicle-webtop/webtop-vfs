@@ -39,7 +39,7 @@ Ext.define('Sonicle.webtop.vfs.view.FileWiz', {
 	
 	dockableConfig: {
 		title: '{fileWiz.tit}',
-		iconCls: 'wtvfs-icon-storeFile-xs',
+		iconCls: 'wtvfs-icon-storeFile',
 		width: 450,
 		height: 220
 	},

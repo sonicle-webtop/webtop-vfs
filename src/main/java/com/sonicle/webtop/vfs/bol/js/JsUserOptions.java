@@ -41,7 +41,8 @@ import com.sonicle.webtop.core.sdk.bol.js.JsUserOptionsBase;
 public class JsUserOptions extends JsUserOptionsBase {
 	public Long privateUploadMaxFileSize;
 	public Long publicUploadMaxFileSize;
-	public Boolean showHiddenFiles;
+	public Boolean fileShowHidden;
+	public String fileOpenAction;
 	
 	public JsUserOptions() {}
 	

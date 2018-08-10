@@ -90,7 +90,11 @@ Ext.define('Sonicle.webtop.vfs.model.GridFile', {
 		return this.get('type') === 'folder';
 	},
 	
+	isFile: function() {
+		return this.get('type') === 'file';
+	},
+	
 	isOpenable: function() {
-		return this.get('openable') === true;
+		return this.isFile() && (this.get('openable') === true);
 	}
 });

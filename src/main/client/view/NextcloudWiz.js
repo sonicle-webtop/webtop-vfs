@@ -41,7 +41,7 @@ Ext.define('Sonicle.webtop.vfs.view.NextcloudWiz', {
 	
 	dockableConfig: {
 		title: '{nextcloudWiz.tit}',
-		iconCls: 'wtvfs-icon-storeNextcloud-xs',
+		iconCls: 'wtvfs-icon-storeNextcloud',
 		width: 450,
 		height: 320
 	},

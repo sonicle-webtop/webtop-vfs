@@ -32,6 +32,7 @@
  */
 package com.sonicle.webtop.vfs;
 
+import com.sonicle.commons.EnumUtils;
 import com.sonicle.webtop.core.sdk.BaseUserSettings;
 import com.sonicle.webtop.core.sdk.UserProfileId;
 import static com.sonicle.webtop.vfs.VfsSettings.*;
@@ -66,11 +67,23 @@ public class VfsUserSettings extends BaseUserSettings {
 		return setLong(UPLOAD_PUBLIC_MAXFILESIZE, value);
 	}
 	
-	public boolean getShowHiddenFiles() {
-		return getBoolean(HIDDENFILES_SHOW, false);
+	public boolean getFileShowHidden() {
+		return getBoolean(FILE_SHOW_HIDDEN, false);
 	}
 	
-	public boolean setShowHiddenFiles(boolean value) {
-		return setBoolean(HIDDENFILES_SHOW, value);
+	public boolean setFileShowHidden(boolean value) {
+		return setBoolean(FILE_SHOW_HIDDEN, value);
+	}
+	
+	public FileOpenAction getFileOpenAction() {
+		return getEnum(FILE_OPEN_ACTION, FileOpenAction.VIEW, FileOpenAction.class);
+	}
+	
+	public boolean setFileOpenAction(FileOpenAction value) {
+		return setEnum(FILE_OPEN_ACTION, value);
+	}
+	
+	public boolean setFileOpenAction(String value) {
+		return setFileOpenAction(EnumUtils.forSerializedName(value, FileOpenAction.class));
 	}
 }

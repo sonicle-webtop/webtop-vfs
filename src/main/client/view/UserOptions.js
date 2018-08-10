@@ -34,12 +34,13 @@
 Ext.define('Sonicle.webtop.vfs.view.UserOptions', {
 	extend: 'WTA.sdk.UserOptionsView',
 	requires: [
-		'Sonicle.form.field.Bytes'
+		'Sonicle.form.field.Bytes',
+		'Sonicle.webtop.vfs.store.FileOpenAction'
 	],
 	
 	viewModel: {
 		formulas: {
-			showHiddenFiles: WTF.checkboxBind('record', 'showHiddenFiles')
+			showHiddenFiles: WTF.checkboxBind('record', 'fileShowHidden')
 		}
 	},
 		
@@ -55,7 +56,7 @@ Ext.define('Sonicle.webtop.vfs.view.UserOptions', {
 				bind: '{record.privateUploadMaxFileSize}',
 				disabled: !(WT.isAdmin() || me.isAdminOnBehalf()),
 				fieldLabel: WT.res(me.ID, 'opts.main.fld-privateUploadMaxFileSize.lbl'),
-				width: 280,
+				width: 140+140,
 				permStatus: false,
 				plugins: [{
 					ptype: 'wtadminfieldpermstatus',
@@ -72,7 +73,7 @@ Ext.define('Sonicle.webtop.vfs.view.UserOptions', {
 				bind: '{record.publicUploadMaxFileSize}',
 				disabled: !(WT.isAdmin() || me.isAdminOnBehalf()),
 				fieldLabel: WT.res(me.ID, 'opts.main.fld-publicUploadMaxFileSize.lbl'),
-				width: 280,
+				width: 140+140,
 				permStatus: false,
 				plugins: [{
 					ptype: 'wtadminfieldpermstatus',
@@ -84,7 +85,21 @@ Ext.define('Sonicle.webtop.vfs.view.UserOptions', {
 						scope: me
 					}
 				}
-			}, {
+			},
+			WTF.lookupCombo('id', 'desc', {
+				bind: '{record.fileOpenAction}',
+				store: Ext.create('Sonicle.webtop.vfs.store.FileOpenAction', {
+					autoLoad: true
+				}),
+				fieldLabel: WT.res(me.ID, 'opts.main.fld-fileOpenAction.lbl'),
+				width: 140+140,
+				listeners: {
+					blur: {
+						fn: me.onBlurAutoSave,
+						scope: me
+					}
+				}
+			}), {
 				xtype: 'checkbox',
 				bind: '{showHiddenFiles}',
 				hideEmptyLabel: false,

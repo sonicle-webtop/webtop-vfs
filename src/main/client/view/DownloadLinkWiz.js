@@ -40,7 +40,7 @@ Ext.define('Sonicle.webtop.vfs.view.DownloadLinkWiz', {
 	
 	dockableConfig: {
 		title: '{downloadLinkWiz.tit}',
-		iconCls: 'wtvfs-icon-downloadLink-xs',
+		iconCls: 'wtvfs-icon-downloadLink',
 		width: 420,
 		height: 220
 	},

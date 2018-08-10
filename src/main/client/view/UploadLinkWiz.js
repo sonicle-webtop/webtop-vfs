@@ -40,7 +40,7 @@ Ext.define('Sonicle.webtop.vfs.view.UploadLinkWiz', {
 	
 	dockableConfig: {
 		title: '{uploadLinkWiz.tit}',
-		iconCls: 'wtvfs-icon-uploadLink-xs',
+		iconCls: 'wtvfs-icon-uploadLink',
 		width: 420,
 		height: 220
 	},

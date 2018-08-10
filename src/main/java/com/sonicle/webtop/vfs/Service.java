@@ -138,6 +138,7 @@ public class Service extends BaseService {
 		co.put("downloadLinkExpiration", ss.getDownloadLinkExpiration());
 		co.put("nextcloudDefaultHost", ss.getNextcloudDefaultHost());
 		co.put("nextcloudDefaultPath", ss.getNextcloudDefaultPath());
+		co.put("fileOpenAction", us.getFileOpenAction());
 		return co;
 	}
 	
@@ -277,9 +278,9 @@ public class Service extends BaseService {
 	
 	private ExtTreeNode createRootNode(StoreShareRoot root) {
 		if(root instanceof MyStoreRoot) {
-			return createRootNode(root.getShareId(), root.getOwnerProfileId().toString(), root.getPerms().toString(), lookupResource(VfsLocale.STORES_MY), false, "wtvfs-icon-myStore-xs").setExpanded(true);
+			return createRootNode(root.getShareId(), root.getOwnerProfileId().toString(), root.getPerms().toString(), lookupResource(VfsLocale.STORES_MY), false, "wtvfs-icon-storeMy").setExpanded(true);
 		} else {
-			return createRootNode(root.getShareId(), root.getOwnerProfileId().toString(), root.getPerms().toString(), root.getDescription(), false, "wtvfs-icon-incomingStore-xs");
+			return createRootNode(root.getShareId(), root.getOwnerProfileId().toString(), root.getPerms().toString(), root.getDescription(), false, "wtvfs-icon-storeIncoming");
 		}
 	}
 	
@@ -344,12 +345,12 @@ public class Service extends BaseService {
 		node.put("_eperms", folder.getElementsPerms().toString());
 		
 		List<String> classes = new ArrayList<>();
-		if(!folder.getElementsPerms().implies("CREATE") 
+		if (!folder.getElementsPerms().implies("CREATE") 
 				&& !folder.getElementsPerms().implies("UPDATE")
 				&& !folder.getElementsPerms().implies("DELETE")) classes.add("wttasks-tree-readonly");
 		node.setCls(StringUtils.join(classes, " "));
 		
-		node.setIconClass("wtvfs-icon-"+storeIcon(store)+"-xs");
+		node.setIconClass("wtvfs-icon-"+storeIcon(store));
 		
 		return node;
 	}
@@ -379,51 +380,51 @@ public class Service extends BaseService {
 		
 		try {
 			String crud = ServletUtils.getStringParameter(request, "crud", true);
-			if(crud.equals(Crud.READ)) {
+			if (crud.equals(Crud.READ)) {
 				String node = ServletUtils.getStringParameter(request, "node", true);
 				
-				if(node.equals("root")) { // Share roots...
-					for(StoreShareRoot root : getRootsFromCache()) {
+				if (node.equals("root")) { // Share roots...
+					for (StoreShareRoot root : getRootsFromCache()) {
 						children.add(createRootNode(root));
 					}
 				} else {
 					StoreNodeId nodeId = (StoreNodeId)new StoreNodeId().parse(node);
-					if(nodeId.getSize() == 1) { // Root share's folders...
+					if (nodeId.getSize() == 1) { // Root share's folders...
 						StoreShareRoot root = getRootFromCache(nodeId.getShareId());
-						if(root instanceof MyStoreRoot) {
-							for(Store cal : manager.listStores()) {
+						if (root instanceof MyStoreRoot) {
+							for (Store cal : manager.listStores()) {
 								MyStoreFolder folder = new MyStoreFolder(node, root.getOwnerProfileId(), cal);
 								children.add(createFolderNode(folder, root.getPerms()));
 							}
 						} else {
-							for(StoreShareFolder fold : getFoldersFromCache(root.getShareId())) {
+							for (StoreShareFolder fold : getFoldersFromCache(root.getShareId())) {
 								children.add(createFolderNode(fold, root.getPerms()));
 							}
 						}
 
-					} else if(nodeId.getSize() == 2 || nodeId.getSize() == 3) { // Store's folders (2) or folder's folders (3)...
+					} else if (nodeId.getSize() == 2 || nodeId.getSize() == 3) { // Store's folders (2) or folder's folders (3)...
 						int storeId = Integer.valueOf(nodeId.getStoreId());
 						StoreShareFolder folder = getFolderFromCache(storeId);
 						String path = (nodeId.getSize() == 2) ? "/" : nodeId.getPath();
 						
-						boolean showHidden = us.getShowHiddenFiles();
+						boolean showHidden = us.getFileShowHidden();
 						
 						LinkedHashMap<String, SharingLink> dls = manager.listDownloadLinks(storeId, path);
 						LinkedHashMap<String, SharingLink> uls = manager.listUploadLinks(storeId, path);
 						
 						StoreFileSystem sfs = manager.getStoreFileSystem(storeId);
-						for(FileObject fo : manager.listStoreFiles(StoreFileType.FOLDER, storeId, path)) {
-							if(!showHidden && VfsUtils.isFileObjectHidden(fo)) continue;
+						for (FileObject fo : manager.listStoreFiles(StoreFileType.FOLDER, storeId, path)) {
+							if (!showHidden && VfsUtils.isFileObjectHidden(fo)) continue;
 							// Relativize path and force trailing separator (it's a folder)
 							final String filePath = PathUtils.ensureTrailingSeparator(sfs.getRelativePath(fo), false);
 							//final String fileId = new StoreNodeId(nodeId.getShareId(), nodeId.getStoreId(), filePath).toString();
 							final String fileHash = VfsManagerUtils.generateStoreFileHash(storeId, filePath);
 							
 							String dlLink = null, ulLink = null;
-							if(dls.containsKey(fileHash)) {
+							if (dls.containsKey(fileHash)) {
 								dlLink = dls.get(fileHash).getLinkId();
 							}
-							if(uls.containsKey(fileHash)) {
+							if (uls.containsKey(fileHash)) {
 								ulLink = uls.get(fileHash).getLinkId();
 							}
 							children.add(createFileNode(folder, filePath, dlLink, ulLink, fo));
@@ -827,7 +828,7 @@ public class Service extends BaseService {
 		
 		try {
 			String crud = ServletUtils.getStringParameter(request, "crud", true);
-			if(crud.equals(Crud.READ)) {
+			if (crud.equals(Crud.READ)) {
 				String parentFileId = ServletUtils.getStringParameter(request, "fileId", null);
 				
 				StoreNodeId parentNodeId = (StoreNodeId)new StoreNodeId().parse(parentFileId);
@@ -835,14 +836,14 @@ public class Service extends BaseService {
 				StoreShareFolder folder = getFolderFromCache(storeId);
 				String path = (parentNodeId.getSize() == 2) ? "/" : parentNodeId.getPath();
 				
-				boolean showHidden = us.getShowHiddenFiles();
+				boolean showHidden = us.getFileShowHidden();
 				
 				LinkedHashMap<String, SharingLink> dls = manager.listDownloadLinks(storeId, path);
 				LinkedHashMap<String, SharingLink> uls = manager.listUploadLinks(storeId, path);
 				
 				StoreFileSystem sfs = manager.getStoreFileSystem(storeId);
-				for(FileObject fo : manager.listStoreFiles(StoreFileType.FILE_OR_FOLDER, storeId, path)) {
-					if(!showHidden && VfsUtils.isFileObjectHidden(fo)) continue;
+				for (FileObject fo : manager.listStoreFiles(StoreFileType.FILE_OR_FOLDER, storeId, path)) {
+					if (!showHidden && VfsUtils.isFileObjectHidden(fo)) continue;
 					// Relativize path and force trailing separator if file is a folder
 					final String filePath = fo.isFolder() ? PathUtils.ensureTrailingSeparator(sfs.getRelativePath(fo), false) : sfs.getRelativePath(fo);
 					final String fileId = new StoreNodeId(parentNodeId.getShareId(), parentNodeId.getStoreId(), filePath).toString();

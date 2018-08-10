@@ -40,7 +40,7 @@ Ext.define('Sonicle.webtop.vfs.view.DropboxWiz', {
 	
 	dockableConfig: {
 		title: '{dropboxWiz.tit}',
-		iconCls: 'wtvfs-icon-storeDropbox-xs',
+		iconCls: 'wtvfs-icon-storeDropbox',
 		width: 460,
 		height: 320
 	},

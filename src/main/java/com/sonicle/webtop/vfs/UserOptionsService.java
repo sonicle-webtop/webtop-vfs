@@ -32,6 +32,7 @@
  */
 package com.sonicle.webtop.vfs;
 
+import com.sonicle.commons.EnumUtils;
 import com.sonicle.commons.db.DbUtils;
 import com.sonicle.commons.web.Crud;
 import com.sonicle.commons.web.ServletUtils;
@@ -68,7 +69,8 @@ public class UserOptionsService extends BaseUserOptionsService {
 				// Main
 				jso.privateUploadMaxFileSize = us.getPrivateUploadMaxFileSize(true);
 				jso.publicUploadMaxFileSize = us.getPublicUploadMaxFileSize(true);
-				jso.showHiddenFiles = us.getShowHiddenFiles();
+				jso.fileShowHidden = us.getFileShowHidden();
+				jso.fileOpenAction = EnumUtils.toSerializedName(us.getFileOpenAction());
 				
 				new JsonResult(jso).printTo(out);
 				
@@ -78,7 +80,8 @@ public class UserOptionsService extends BaseUserOptionsService {
 				// Main
 				if (pl.map.has("privateUploadMaxFileSize")) us.setPrivateUploadMaxFileSize(pl.data.privateUploadMaxFileSize);
 				if (pl.map.has("publicUploadMaxFileSize")) us.setPublicUploadMaxFileSize(pl.data.publicUploadMaxFileSize);
-				if (pl.map.has("showHiddenFiles")) us.setShowHiddenFiles(pl.data.showHiddenFiles);
+				if (pl.map.has("fileShowHidden")) us.setFileShowHidden(pl.data.fileShowHidden);
+				if (pl.map.has("fileOpenAction")) us.setFileOpenAction(pl.data.fileOpenAction);
 				
 				new JsonResult().printTo(out);
 			}

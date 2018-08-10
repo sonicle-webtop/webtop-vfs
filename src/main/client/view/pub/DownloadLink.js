@@ -148,8 +148,8 @@ Ext.define('Sonicle.webtop.vfs.view.pub.DownloadLink', {
 					xtype: 'sopathbreadcrumb',
 					reference: 'bcpath',
 					overflowHandler: 'scroller',
-					rootFolderIconCls: 'wt-ftype-folderroot-xs',
-					folderIconCls: 'wt-ftype-folder-xs',
+					rootFolderIconCls: 'wtvfs-icon-rootfolder',
+					folderIconCls: 'wt-ftype-folder',
 					path: '/',
 					listeners: {
 						pathclick: function(s, path) {

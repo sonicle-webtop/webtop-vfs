@@ -72,7 +72,7 @@ Ext.define('Sonicle.webtop.vfs.view.SharingLinks', {
 				dataIndex: 'linkType',
 				getIconCls: function(v,rec) {
 					var exp = rec.get('expired') ? 'Exp' : '';
-					return me.mys.cssIconCls((v === 'D') ? 'downloadLink'+exp : 'uploadLink'+exp, 'xs');
+					return me.mys.cssIconCls((v === 'D') ? 'downloadLink'+exp : 'uploadLink'+exp);
 				},
 				getTip: function(v,rec) {
 					var exp = rec.get('expired') ? '.exp' : '';
@@ -85,7 +85,7 @@ Ext.define('Sonicle.webtop.vfs.view.SharingLinks', {
 				xtype: 'soiconcolumn',
 				dataIndex: 'storeName',
 				getIconCls: function(v,rec) {
-					return me.mys.cssIconCls(rec.get('storeIcon'), 'xs');
+					return me.mys.cssIconCls(rec.get('storeIcon'));
 				},
 				iconSize: WTU.imgSizeToPx('xs'),
 				hideText: false,
@@ -96,7 +96,7 @@ Ext.define('Sonicle.webtop.vfs.view.SharingLinks', {
 				dataIndex: 'fileName',
 				getIconCls: function(v,rec) {
 					var ext = rec.get('fileExt');
-					return Ext.isEmpty(ext) ? 'wt-ftype-folder-xs' : WTF.fileTypeCssIconCls(ext, 'xs');
+					return Ext.isEmpty(ext) ? 'wt-ftype-folder' : WTF.fileTypeCssIconCls(ext);
 				},
 				iconSize: WTU.imgSizeToPx('xs'),
 				hideText: false,
@@ -122,7 +122,7 @@ Ext.define('Sonicle.webtop.vfs.view.SharingLinks', {
 				me.addAct('remove', {
 					text: WT.res('act-remove.lbl'),
 					tooltip: null,
-					iconCls: 'wt-icon-remove-xs',
+					iconCls: 'wt-icon-remove',
 					disabled: true,
 					handler: function() {
 						var sm = me.lref('gp').getSelectionModel();

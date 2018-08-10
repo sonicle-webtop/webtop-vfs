@@ -41,7 +41,7 @@ Ext.define('Sonicle.webtop.vfs.view.OtherWiz', {
 	
 	dockableConfig: {
 		title: '{otherWiz.tit}',
-		iconCls: 'wtvfs-icon-store-xs',
+		iconCls: 'wtvfs-icon-store',
 		width: 450,
 		height: 320
 	},
