@@ -254,13 +254,12 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 					getIconCls: function(v,rec) {
 						return rec.isFolder() ? 'wt-ftype-folder' : WTF.fileTypeCssIconCls(rec.get('ext'));
 					},
-					iconSize: WTU.imgSizeToPx('xs'),
+					iconSize: 16,
 					width: 40
 				}, {
 					xtype: 'solinkcolumn',
 					dataIndex: 'name',
 					header: me.res('gpfiles.name.lbl'),
-					flex: 1,
 					listeners: {
 						linkclick: function(s,idx,rec) {
 							if (rec.isFolder()) {
@@ -273,7 +272,8 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 							}
 						}
 					},
-					maxWidth: 500
+					flex: 1
+					//maxWidth: 500
 				}, {
 					xtype: 'sobytescolumn',
 					dataIndex: 'size',
@@ -283,7 +283,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 					dataIndex: 'lastModified',
 					header: me.res('gpfiles.lastModified.lbl'),
 					xtype: 'datecolumn',
-					format: WT.getShortDateFmt() + ' ' + WT.getShortTimeFmt(),
+					format: WT.getShortDateTimeFmt(),
 					width: 140
 				}, {
 					xtype: 'soiconcolumn',
@@ -299,7 +299,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 						var exp = rec.get('dlLinkExp') ? '.exp' : '';
 						return me.res('gpfiles.dlLink'+exp);
 					},
-					iconSize: WTU.imgSizeToPx('xs'),
+					iconSize: 16,
 					width: 40
 				}, {
 					xtype: 'soiconcolumn',
@@ -315,7 +315,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 						var exp = rec.get('ulLinkExp') ? '.exp' : '';
 						return me.res('gpfiles.ulLink'+exp);
 					},
-					iconSize: WTU.imgSizeToPx('xs'),
+					iconSize: 16,
 					width: 40
 				}],
 				tbar: [
@@ -862,6 +862,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 					var vw = WT.createView(WT.ID, 'view.DocEditor', {
 						swapReturn: true,
 						viewCfg: {
+							editingId: data.editingId,
 							editorConfig: {
 								editable: data.writeSupported,
 								token: data.token,
