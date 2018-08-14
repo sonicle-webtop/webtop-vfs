@@ -271,14 +271,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 					header: me.res('gpfiles.name.lbl'),
 					listeners: {
 						linkclick: function(s,idx,rec) {
-							if (rec.isFolder()) {
-								me.setCurFile(rec.get('fileId'));
-								me.reloadGridFiles();
-							} else if (rec.isOpenable()) {
-								me.getAct('openFile').execute();
-							} else {
-								me.downloadFiles([rec.get('fileId')]);
-							}
+							me.followGridFile(rec);
 						}
 					},
 					flex: 1
@@ -344,6 +337,9 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 						},
 						flex: 1
 					},
+					me.getActAs('renameFile', 'button', {text: null, tooltip: me.res('act-renameFile.lbl')}),
+					me.getActAs('deleteFile', 'button', {text: null, tooltip: me.res('act-deleteFile.lbl')}),
+					'-',
 					me.getActAs('createFolder', 'button', {text: null, tooltip: me.res('act-createFileFolder.lbl')}),
 					me.getActAs('createDocument', 'button', {
 						text: null,
@@ -360,10 +356,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 								//me.getAct('createFileOdp')
 							]
 						}
-					}),
-					'-',
-					me.getActAs('renameFile', 'button', {text: null, tooltip: me.res('act-renameFile.lbl')}),
-					me.getActAs('deleteFile', 'button', {text: null, tooltip: me.res('act-deleteFile.lbl')})
+					})
 				],
 				bbar: {
 					xtype: 'wtuploadbar',
@@ -380,7 +373,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 					},
 					listeners: {
 						fileuploaded: function(s, file) {
-							if(file._extraParams) {
+							if (file._extraParams) {
 								me.reloadGridFilesIf(file._extraParams['fileId']);
 							}
 						}
@@ -398,6 +391,9 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 					},
 					containercontextmenu: function(s, e) {
 						WT.showContextMenu(e, me.getRef('cxmGridFile0'));
+					},
+					rowdblclick: function(s, rec) {
+						me.followGridFile(rec);
 					},
 					rowcontextmenu: function(s, rec, itm, i, e) {
 						var sm = s.getSelectionModel();
@@ -427,11 +423,22 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		}));
 	},
 	
+	followGridFile: function(rec) {
+		var me = this;
+		if (rec.isFolder()) {
+			me.setCurFile(rec.get('fileId'));
+			me.reloadGridFiles();
+		} else if (rec.isOpenable()) {
+			me.getAct('openFile').execute();
+		} else {
+			me.downloadFiles([rec.get('fileId')]);
+		}
+	},
+	
 	expandFile: function(fileId) {
 		var me = this,
 				tree = me.trStores(),
 				node = tree.getStore().getNodeById(fileId);
-		console.log('expanding file');
 		if(node) {
 			node.expand();
 			tree.getSelectionModel().select(node);
@@ -879,6 +886,8 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		me.addRef('cxmStore', Ext.create({
 			xtype: 'menu',
 			items: [
+				me.getAct('createFileNode'),
+				'-',
 				me.getAct('editStore'),
 				me.getAct('deleteStore'),
 				{
@@ -894,11 +903,9 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 					]
 				},
 				'-',
-				me.getAct('refreshFileNode'),
-				'-',
 				me.getAct('editSharing'),
 				'-',
-				me.getAct('createFileNode')
+				me.getAct('refreshFileNode')
 			],
 			listeners: {
 				beforeshow: function(s) {
@@ -918,8 +925,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		me.addRef('cxmFile', Ext.create({
 			xtype: 'menu',
 			items: [
-				me.getAct('renameFileNode'),
-				me.getAct('deleteFileNode'),
+				me.getAct('createFileNode'),
 				'-',
 				me.getAct('refreshFileNode'),
 				'-',
@@ -931,7 +937,8 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				me.getAct('deleteFileNodeUlLink'),
 				me.getAct('sendFileNodeUlLink'),
 				'-',
-				me.getAct('createFileNode')
+				me.getAct('renameFileNode'),
+				me.getAct('deleteFileNode')
 			],
 			listeners: {
 				beforeshow: function(s) {
@@ -982,6 +989,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 						]
 					}
 				}),
+				'-',
 				me.getActAs('createDocument', 'menuitem', {
 					menu: {
 						items: [
@@ -997,16 +1005,16 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 					}
 				}),
 				'-',
-				me.getAct('renameFile'),
-				me.getAct('deleteFile'),
-				'-',
 				me.getAct('addFileDlLink'),
 				me.getAct('deleteFileDlLink'),
 				me.getAct('sendFileDlLink'),
 				'-',
 				me.getAct('addFileUlLink'),
 				me.getAct('deleteFileUlLink'),
-				me.getAct('sendFileUlLink')
+				me.getAct('sendFileUlLink'),
+				'-',
+				me.getAct('renameFile'),
+				me.getAct('deleteFile')
 			],
 			listeners: {
 				beforeshow: function(s) {
