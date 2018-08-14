@@ -46,6 +46,7 @@ import com.sonicle.commons.web.Crud;
 import com.sonicle.commons.web.ServletUtils;
 import com.sonicle.commons.web.ServletUtils.StringArray;
 import com.sonicle.commons.web.json.CompositeId;
+import com.sonicle.commons.web.json.JsonDataResult;
 import com.sonicle.commons.web.json.JsonResult;
 import com.sonicle.commons.web.json.MapItem;
 import com.sonicle.commons.web.json.Payload;
@@ -68,6 +69,8 @@ import com.sonicle.webtop.core.sdk.UserProfile;
 import com.sonicle.webtop.core.sdk.UserProfileId;
 import com.sonicle.webtop.core.sdk.WTException;
 import com.sonicle.webtop.core.sdk.interfaces.IServiceUploadStreamListener;
+import com.sonicle.webtop.vfs.IVfsManager.StoreFileTemplate;
+import com.sonicle.webtop.vfs.IVfsManager.StoreFileType;
 import com.sonicle.webtop.vfs.bol.js.JsGridFile;
 import com.sonicle.webtop.vfs.bol.js.JsGridSharingLink;
 import com.sonicle.webtop.vfs.bol.js.JsSharing;
@@ -78,7 +81,6 @@ import com.sonicle.webtop.vfs.model.StoreShareFolder;
 import com.sonicle.webtop.vfs.model.StoreShareRoot;
 import com.sonicle.webtop.vfs.bol.model.MyStoreFolder;
 import com.sonicle.webtop.vfs.bol.model.MyStoreRoot;
-import com.sonicle.webtop.vfs.model.StoreFileType;
 import com.sonicle.webtop.vfs.model.SharingLink;
 import com.sonicle.webtop.vfs.sfs.StoreFileSystem;
 import java.io.IOException;
@@ -863,17 +865,31 @@ public class Service extends BaseService {
 		
 		try {
 			String crud = ServletUtils.getStringParameter(request, "crud", true);
-			if(crud.equals(Crud.CREATE)) {
+			if (crud.equals(Crud.CREATE)) {
 				String parentFileId = ServletUtils.getStringParameter(request, "fileId", true);
+				String type = ServletUtils.getStringParameter(request, "type", true);
 				String name = ServletUtils.getStringParameter(request, "name", true);
 				
 				StoreNodeId parentNodeId = (StoreNodeId)new StoreNodeId().parse(parentFileId);
 				int storeId = Integer.valueOf(parentNodeId.getStoreId());
 				String path = (parentNodeId.getSize() == 2) ? "/" : parentNodeId.getPath();
 				
-				String newPath = manager.addStoreFile(StoreFileType.FOLDER, storeId, path, name);
-				final String fileHash = VfsManagerUtils.generateStoreFileHash(storeId, newPath);
-				new JsonResult(fileHash).printTo(out);
+				String newPath = null;
+				if (type.equals("folder")) { // Create a folder
+					newPath = manager.addStoreFile(StoreFileType.FOLDER, storeId, path, name);
+					
+				} else { // Create a file using template
+					StoreFileTemplate fileTemplate = EnumUtils.forSerializedName(type, null, StoreFileTemplate.class);
+					if (fileTemplate == null) throw new WTException("Type not supported [{}]", type);
+					
+					newPath = manager.addStoreFileFromTemplate(fileTemplate, storeId, path, name, false);
+				}
+				
+				new JsonDataResult()
+						.set("fileId", new StoreNodeId(parentNodeId.getShareId(), parentNodeId.getStoreId(), newPath).toString())
+						.set("name", PathUtils.getFileName(newPath))
+						.set("hash", VfsManagerUtils.generateStoreFileHash(storeId, newPath))
+						.printTo(out);
 				
 			} else if(crud.equals("rename")) {
 				String fileId = ServletUtils.getStringParameter(request, "fileId", true);
@@ -882,9 +898,17 @@ public class Service extends BaseService {
 				StoreNodeId nodeId = (StoreNodeId)new StoreNodeId().parse(fileId);
 				int storeId = Integer.valueOf(nodeId.getStoreId());
 				
-				String newPath = manager.renameStoreFile(storeId, nodeId.getPath(), name);
-				final String fileHash = VfsManagerUtils.generateStoreFileHash(storeId, newPath);
-				new JsonResult(fileHash).printTo(out);
+				try {
+					String newPath = manager.renameStoreFile(storeId, nodeId.getPath(), name);
+					new JsonDataResult()
+							.set("fileId", new StoreNodeId(nodeId.getShareId(), nodeId.getStoreId(), newPath).toString())
+							.set("name", PathUtils.getFileName(newPath))
+							.set("hash", VfsManagerUtils.generateStoreFileHash(storeId, newPath))
+							.printTo(out);
+					
+				} catch(FileOverwriteException ex) {
+					new JsonResult(false, clientResTplString("gpfiles.error.rename")).printTo(out);
+				}
 				
 			} else if(crud.equals(Crud.DELETE)) {
 				StringArray fileIds = ServletUtils.getObjectParameter(request, "fileIds", StringArray.class, true);

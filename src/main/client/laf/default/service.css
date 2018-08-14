@@ -14,11 +14,12 @@
 .wtvfs-icon-editStore { background-image: url('store-edit_16.svg') !important; background-size: contain; }
 .wtvfs-icon-deleteStore { background-image: url('store-delete_16.svg') !important; background-size: contain; }
 .wtvfs-icon-goUp { background-image: url('file-goUp_16.svg') !important; background-size: contain; }
+.wtvfs-icon-createFile { background-image: url('file-createFile_16.svg') !important; background-size: contain; }
+.wtvfs-icon-createFolder { background-image: url('file-createFolder_16.svg') !important; background-size: contain; }
 .wtvfs-icon-uploadFile { background-image: url('file-upload_16.svg') !important; background-size: contain; }
 .wtvfs-icon-downloadFile { background-image: url('file-download_16.svg') !important; background-size: contain; }
 .wtvfs-icon-renameFile { background-image: url('file-rename_16.svg') !important; background-size: contain; }
 .wtvfs-icon-deleteFile { background-image: url('file-delete_16.svg') !important; background-size: contain; }
-.wtvfs-icon-createFileFolder { background-image: url('file-createFolder_16.svg') !important; background-size: contain; }
 .wtvfs-icon-addFileDlLink { background-image: url('linkDownload_16.svg') !important; background-size: contain; }
 .wtvfs-icon-addFileUlLink { background-image: url('linkUpload_16.svg') !important; background-size: contain; }
 .wtvfs-icon-store { background-image: url('store_16.svg') !important; background-size: contain; }

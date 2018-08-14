@@ -79,7 +79,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		var me = this, tr, node, tbu;
 		//console.log('current file: '+fileId);
 		
-		if(fileId !== me.curFile) {
+		if (fileId !== me.curFile) {
 			tbu = me.tbUpload();
 			me.curFile = fileId;
 			if(fileId) {
@@ -97,6 +97,8 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				me.bcFiles().setSelection(null);
 				tbu.setDisabled(true);
 			}
+			me.updateDisabled('createFolder');
+			me.updateDisabled('createDocument');
 		}
 	},
 	
@@ -157,33 +159,40 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 					selectionchange: function(s, rec) {
 						//console.log('selectionchange');
 						var type = (rec.length === 1) ? rec[0].get('_type') : null;
-						if(type === 'folder') {
+						if (type === 'folder') {
 							me.setCurNode(rec[0].getId());
-						} else if(type === 'file') {
+						} else if (type === 'file') {
 							me.setCurNode(rec[0].getId());
 						} else {
 							me.setCurNode(null);
 						}
 					},
-					itemclick: function(s, rec, itm, i, e) {
-						//console.log('itemclick');
+					itemexpand: function(rec, e) {
 						var type = rec.get('_type');
-						if(type === 'folder') { // Store node
+						if (type === 'folder') { // Store node -> file system root
 							me.setCurFile(rec.getId());
-						} else if(type === 'file') { // File(folder) node
+						} else if (type === 'file') { // File(folder) node -> file system folder
+							me.setCurFile(rec.getId());
+						}
+					},
+					itemclick: function(s, rec) {
+						var type = rec.get('_type');
+						if (type === 'folder') { // Store node -> file system root
+							me.setCurFile(rec.getId());
+						} else if (type === 'file') { // File(folder) node -> file system folder
 							me.setCurFile(rec.getId());
 						}
 					},
 					itemcontextmenu: function(s, rec, itm, i, e) {
 						//console.log('itemcontextmenu');
 						var type = rec.get('_type');
-						if(type === 'root') {
+						if (type === 'root') {
 							me.setCurNode(rec.get('id'));
 							WT.showContextMenu(e, me.getRef('cxmRootStore'), {node: rec});
-						} else if(type === 'folder') {
+						} else if (type === 'folder') {
 							me.setCurNode(rec.get('id'));
 							WT.showContextMenu(e, me.getRef('cxmStore'), {node: rec});
-						} else if(type === 'file') {
+						} else if (type === 'file') {
 							me.setCurNode(rec.get('id'));
 							WT.showContextMenu(e, me.getRef('cxmFile'), {node: rec});
 						} else {
@@ -273,7 +282,6 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 						}
 					},
 					flex: 1
-					//maxWidth: 500
 				}, {
 					xtype: 'sobytescolumn',
 					dataIndex: 'size',
@@ -336,6 +344,24 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 						},
 						flex: 1
 					},
+					me.getActAs('createFolder', 'button', {text: null, tooltip: me.res('act-createFileFolder.lbl')}),
+					me.getActAs('createDocument', 'button', {
+						text: null,
+						tooltip: me.res('act-createDocument.lbl'),
+						menu: {
+							items: [
+								me.getAct('createFileDocx'),
+								me.getAct('createFileXlsx'),
+								me.getAct('createFilePptx'),
+								me.getAct('createFileTxt'),
+								me.getAct('createFileHtml')
+								//me.getAct('createFileOdt'),
+								//me.getAct('createFileOds'),
+								//me.getAct('createFileOdp')
+							]
+						}
+					}),
+					'-',
 					me.getActAs('renameFile', 'button', {text: null, tooltip: me.res('act-renameFile.lbl')}),
 					me.getActAs('deleteFile', 'button', {text: null, tooltip: me.res('act-deleteFile.lbl')})
 				],
@@ -520,14 +546,26 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				if (node) me.deleteStoreUI(node);
 			}
 		});
+		me.addAct('refreshFileNode', {
+			text: WT.res('act-refresh.lbl'),
+			tooltip: null,
+			iconCls: 'wt-icon-refresh',
+			handler: function() {
+				var node = me.getCurrentFileNode();
+				if (node) {
+					me.setCurFile(node.getId());
+					me.loadTreeFileNode(node);
+					me.reloadGridFiles();
+				}
+			}
+		});
 		me.addAct('createFileNode', {
 			ignoreSize: true,
 			text: me.res('act-createFileFolder.lbl'),
 			tooltip: null,
-			iconCls: me.cssIconCls('createFileFolder'),
+			iconCls: me.cssIconCls('createFolder'),
 			handler: function() {
-				var node = me.getCurrentFileNode();
-				if (node) me.createFileUI(node);
+				if (me.curFile) me.createFolderUI(me.curFile);
 			}
 		});
 		me.addAct('renameFileNode', {
@@ -613,6 +651,17 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				if (node) bc.setSelection(node);
 			}
 		});
+		me.addAct('refresh', {
+			text: WT.res('act-refresh.lbl'),
+			tooltip: null,
+			iconCls: 'wt-icon-refresh',
+			handler: function() {
+				if (me.curFile) {
+					me.loadTreeFileNode(me.curFile);
+					me.reloadGridFiles();
+				}
+			}
+		});
 		me.addAct('openFile', {
 			tooltip: null,
 			handler: function() {
@@ -632,6 +681,78 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 			handler: function() {
 				var sel = me.getSelectedFile();
 				if (sel) me.editFileUI(sel, false);
+			}
+		});
+		me.addAct('createFolder', {
+			ignoreSize: true,
+			text: me.res('act-createFileFolder.lbl'),
+			tooltip: null,
+			disabled: true,
+			handler: function() {
+				if (me.curFile) me.createFolderUI(me.curFile);
+			}
+		});
+		me.addAct('createDocument', {
+			ignoreSize: true,
+			text: me.res('act-createDocument.lbl'),
+			tooltip: null,
+			iconCls: 'wtvfs-icon-createFile',
+			disabled: true
+		});
+		me.addAct('createFileTxt', {
+			ignoreSize: true,
+			tooltip: null,
+			handler: function() {
+				if (me.curFile) me.createFileUI(me.curFile, 'txt', true);
+			}
+		});
+		me.addAct('createFileHtml', {
+			ignoreSize: true,
+			tooltip: null,
+			handler: function() {
+				if (me.curFile) me.createFileUI(me.curFile, 'html', true);
+			}
+		});
+		me.addAct('createFileDocx', {
+			ignoreSize: true,
+			tooltip: null,
+			handler: function() {
+				if (me.curFile) me.createFileUI(me.curFile, 'docx', true);
+			}
+		});
+		me.addAct('createFileXlsx', {
+			ignoreSize: true,
+			tooltip: null,
+			handler: function() {
+				if (me.curFile) me.createFileUI(me.curFile, 'xlsx', true);
+			}
+		});
+		me.addAct('createFilePptx', {
+			ignoreSize: true,
+			tooltip: null,
+			handler: function() {
+				if (me.curFile) me.createFileUI(me.curFile, 'pptx', true);
+			}
+		});
+		me.addAct('createFileOdt', {
+			ignoreSize: true,
+			tooltip: null,
+			handler: function() {
+				if (me.curFile) me.createFileUI(me.curFile, 'odt', true);
+			}
+		});
+		me.addAct('createFileOds', {
+			ignoreSize: true,
+			tooltip: null,
+			handler: function() {
+				if (me.curFile) me.createFileUI(me.curFile, 'ods', true);
+			}
+		});
+		me.addAct('createFileOdp', {
+			ignoreSize: true,
+			tooltip: null,
+			handler: function() {
+				if (me.curFile) me.createFileUI(me.curFile, 'odp', true);
 			}
 		});
 		me.addAct('downloadFile', {
@@ -704,17 +825,6 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				if(sel) me.sendFileLinkUI('U', sel);
 			}
 		});
-		me.addAct('refresh', {
-			tooltip: null,
-			iconCls: 'wt-icon-refresh',
-			handler: function() {
-				var node = me.getCurrentFileNode();
-				me.trStores().getStore().load({ node: node });
-				me.setCurFile(node.getId());
-				me.reloadGridFiles();
-			}
-		});
-		
 		me.addAct('showSharingLinks', {
 			scale: hdscale,
 			tooltip: null,
@@ -734,87 +844,224 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		});
 	},
 	
-	/*
-	updateCxmFile: function() {
+	initCxm: function() {
 		var me = this;
-		me.updateDisabled('renameFileNode');
-		me.updateDisabled('deleteFileNode');
-		me.updateDisabled('createFileNode');
-		me.updateDisabled('addFileNodeDlLink');
-		me.updateDisabled('deleteFileNodeDlLink');
-		//me.updateDisabled('sendFolderDlLink');
-		me.updateDisabled('addFileNodeUlLink');
-		me.updateDisabled('deleteFileNodeUlLink');
-		//me.updateDisabled('sendFolderUlLink');
+		me.addRef('cxmRootStore', Ext.create({
+			xtype: 'menu',
+			items: [
+				{
+					text: me.res('act-addStore.lbl'),
+					iconCls: me.cssIconCls('addStore'),
+					menu: [
+						me.getAct('addStoreFtp'),
+						//me.getAct('addStoreDropbox'),
+						me.getAct('addStoreGooDrive'),
+						me.getAct('addStoreNextcloud'),
+						me.getAct('addStoreFile'),
+						me.getAct('addStoreOther')
+					]
+				},
+				'-',
+				me.getAct('editSharing')
+			],
+			listeners: {
+				beforeshow: function(s) {
+					me.updateDisabled('editSharing');
+					me.updateDisabled('addStoreFtp');
+					//me.updateDisabled('addStoreDropbox');
+					me.updateDisabled('addStoreGooDrive');
+					me.updateDisabled('addStoreNextcloud');
+					me.updateDisabled('addStoreFile'),
+					me.updateDisabled('addStoreOther');
+				}
+			}
+		}));
+		me.addRef('cxmStore', Ext.create({
+			xtype: 'menu',
+			items: [
+				me.getAct('editStore'),
+				me.getAct('deleteStore'),
+				{
+					text: me.res('act-addStore.lbl'),
+					iconCls: me.cssIconCls('addStore'),
+					menu: [
+						me.getAct('addStoreFtp'),
+						//me.getAct('addStoreDropbox'),
+						me.getAct('addStoreGooDrive'),
+						me.getAct('addStoreNextcloud'),
+						me.getAct('addStoreFile'),
+						me.getAct('addStoreOther')
+					]
+				},
+				'-',
+				me.getAct('refreshFileNode'),
+				'-',
+				me.getAct('editSharing'),
+				'-',
+				me.getAct('createFileNode')
+			],
+			listeners: {
+				beforeshow: function(s) {
+					me.updateDisabled('editSharing');
+					me.updateDisabled('addStoreFtp');
+					//me.updateDisabled('addStoreDropbox');
+					me.updateDisabled('addStoreGooDrive');
+					me.updateDisabled('addStoreNextcloud');
+					me.updateDisabled('addStoreFile'),
+					me.updateDisabled('addStoreOther');
+					me.updateDisabled('editStore');
+					me.updateDisabled('deleteStore');
+					me.updateDisabled('createFileNode');
+				}
+			}
+		}));
+		me.addRef('cxmFile', Ext.create({
+			xtype: 'menu',
+			items: [
+				me.getAct('renameFileNode'),
+				me.getAct('deleteFileNode'),
+				'-',
+				me.getAct('refreshFileNode'),
+				'-',
+				me.getAct('addFileNodeDlLink'),
+				me.getAct('deleteFileNodeDlLink'),
+				me.getAct('sendFileNodeDlLink'),
+				'-',
+				me.getAct('addFileNodeUlLink'),
+				me.getAct('deleteFileNodeUlLink'),
+				me.getAct('sendFileNodeUlLink'),
+				'-',
+				me.getAct('createFileNode')
+			],
+			listeners: {
+				beforeshow: function(s) {
+					me.updateDisabled('renameFileNode');
+					me.updateDisabled('deleteFileNode');
+					me.updateDisabled('createFileNode');
+					me.updateDisabled('addFileNodeDlLink');
+					me.updateDisabled('deleteFileNodeDlLink');
+					me.updateDisabled('sendFileNodeDlLink');
+					me.updateDisabled('addFileNodeUlLink');
+					me.updateDisabled('deleteFileNodeUlLink');
+					me.updateDisabled('sendFileNodeUlLink');
+				}
+			}
+		}));
+		me.addRef('cxmGridFile0', Ext.create({
+			xtype: 'menu',
+			items: [
+				me.getAct('createFolder'),
+				me.getActAs('createDocument', 'menuitem', {
+					menu: {
+						items: [
+							me.getAct('createFileDocx'),
+							me.getAct('createFileXlsx'),
+							me.getAct('createFilePptx'),
+							me.getAct('createFileTxt'),
+							me.getAct('createFileHtml')
+							//me.getAct('createFileOdt'),
+							//me.getAct('createFileOds'),
+							//me.getAct('createFileOdp')
+						]
+					}
+				}),
+				'-',
+				me.getAct('refresh')
+			]
+		}));
+		me.addRef('cxmGridFile', Ext.create({
+			xtype: 'menu',
+			items: [
+				me.getAct('downloadFile'),
+				me.getActAs('openFile', 'menuitem', {
+					text: me.res('act-openFile.lbl'),
+					menu: {
+						items: [
+							me.getAct(me.isOpenActionEdit() ? 'openFileView' : 'openFileEdit'),
+							me.getAct(me.isOpenActionEdit() ? 'openFileEdit' : 'openFileView')
+						]
+					}
+				}),
+				me.getActAs('createDocument', 'menuitem', {
+					menu: {
+						items: [
+							me.getAct('createFileDocx'),
+							me.getAct('createFileXlsx'),
+							me.getAct('createFilePptx'),
+							me.getAct('createFileTxt'),
+							me.getAct('createFileHtml')
+							//me.getAct('createFileOdt'),
+							//me.getAct('createFileOds'),
+							//me.getAct('createFileOdp')
+						]
+					}
+				}),
+				'-',
+				me.getAct('renameFile'),
+				me.getAct('deleteFile'),
+				'-',
+				me.getAct('addFileDlLink'),
+				me.getAct('deleteFileDlLink'),
+				me.getAct('sendFileDlLink'),
+				'-',
+				me.getAct('addFileUlLink'),
+				me.getAct('deleteFileUlLink'),
+				me.getAct('sendFileUlLink')
+			],
+			listeners: {
+				beforeshow: function(s) {
+					me.updateDisabled('openFile');
+					me.updateDisabled('openFileView');
+					me.updateDisabled('openFileEdit');
+					me.updateDisabled('downloadFile');
+					me.updateDisabled('renameFile');
+					me.updateDisabled('addFileDlLink');
+					me.updateDisabled('deleteFileDlLink');
+					me.updateDisabled('sendFileDlLink');
+					me.updateDisabled('addFileUlLink');
+					me.updateDisabled('deleteFileUlLink');
+					me.updateDisabled('sendFileUlLink');
+				}
+			}
+		}));
 	},
-	
-	updateCxmGridFile: function() {
-		var me = this;
-		me.updateDisabled('openFile');
-		me.updateDisabled('downloadFile');
-		me.updateDisabled('renameFile');
-		me.updateDisabled('addFileDlLink');
-		me.updateDisabled('deleteFileDlLink');
-		//me.updateDisabled('sendDownloadLink');
-		me.updateDisabled('addFileUlLink');
-		me.updateDisabled('deleteFileUlLink');
-		//me.updateDisabled('sendUploadLink');
-	},
-	*/
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
 	
 	addStoreUI: function(type, node) {
 		var me = this, pid = node.get('_pid');
-		if(type === 'ftp') {
+		if (type === 'ftp') {
 			me.setupStoreFtp(pid, {
 				callback: function(success) {
-					if(success) me.loadTreeRootNode(pid);
+					if (success) me.loadTreeRootNode(pid);
 				}
 			});
-		} else if(type === 'dropbox') {
+		} else if (type === 'dropbox') {
 			me.setupStoreDropbox(pid, {
 				callback: function(success) {
-					if(success) me.loadTreeRootNode(pid);
+					if (success) me.loadTreeRootNode(pid);
 				}
 			});
 		} else if(type === 'goodrive') {
 			me.setupStoreGoogleDrive(pid, {
 				callback: function(success) {
-					if(success) me.loadTreeRootNode(pid);
+					if (success) me.loadTreeRootNode(pid);
 				}
 			});
-		} else if(type === 'nextcloud') {
+		} else if (type === 'nextcloud') {
 			me.setupStoreNextcloud(pid, {
 				callback: function(success) {
-					if(success) me.loadTreeRootNode(pid);
+					if (success) me.loadTreeRootNode(pid);
 				}
 			});
-		} else if(type === 'file') {
+		} else if (type === 'file') {
 			me.setupStoreFile(pid, {
 				callback: function(success) {
-					if(success) me.loadTreeRootNode(pid);
+					if (success) me.loadTreeRootNode(pid);
 				}
 			});
-		} else if(type === 'other') {
+		} else if (type === 'other') {
 			me.setupStoreOther(pid, {
 				callback: function(success) {
-					if(success) me.loadTreeRootNode(pid);
+					if (success) me.loadTreeRootNode(pid);
 				}
 			});
 		}
@@ -824,30 +1071,26 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		var me = this;
 		me.editStore(node.get('_storeId'), {
 			callback: function(success) {
-				if(success) me.loadTreeRootNode(node.get('_pid'));
+				if (success) me.loadTreeRootNode(node.get('_pid'));
 			}
 		});
 	},
 	
 	deleteStoreUI: function(node) {
-		var me = this,
-				sto = me.trStores().getStore();
+		var me = this;
 		WT.confirm(me.res('store.confirm.delete', Ext.String.ellipsis(node.get('text'), 40)), function(bid) {
 			if(bid === 'yes') {
 				me.deleteStore(node.get('_storeId'), {
 					callback: function(success) {
-						if(success) {
+						if (success) {
 							node.remove();
-							//sto.remove(node);
-							if(me.isInCurFile(node.getFId())) me.setCurFile(null);
+							if (me.isInCurFile(node.getFId())) me.setCurFile(null);
 						}
 					}
 				});
 			}
 		});
 	},
-	
-	
 	
 	openFileUI: function(sel) {
 		var me = this;
@@ -858,45 +1101,10 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		var me = this;
 		me.editFile(sel.getFId(), {
 			callback: function(success, data) {
-				if (success) {
-					var vw = WT.createView(WT.ID, 'view.DocEditor', {
-						swapReturn: true,
-						viewCfg: {
-							editingId: data.editingId,
-							editorConfig: {
-								editable: data.writeSupported,
-								token: data.token,
-								docType: data.docType,
-								docExtension: data.docExtension,
-								docKey: data.docKey,
-								docTitle: sel.get('name'),
-								docUrl: data.docUrl,
-								callbackUrl: data.callbackUrl
-							}
-						}
-					});
-					vw.showView(function() {
-						vw.begin(view === true ? 'view' : 'edit');
-					});
-				}
+				if (success) me.showDocEditingView(view, data);
 			}
 		});
 	},
-	
-	editFile: function(fileId, opts) {
-		opts = opts || {};
-		var me = this;
-		WT.ajaxReq(me.ID, 'ManageFiles', {
-			params: {
-				crud: 'edit',
-				fileId: fileId
-			},
-			callback: function(success, json) {
-				Ext.callback(opts.callback, opts.scope || me, [success, json.data, json]);
-			}
-		});
-	},
-	
 	
 	downloadFilesUI: function(sel) {
 		var me = this,
@@ -904,22 +1112,54 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		me.downloadFiles(ids);
 	},
 	
-	createFileUI: function(sel) {
-		var me = this;
+	createFolderUI: function(pfile) {
+		var me = this,
+				fid = pfile.isModel ? pfile.getFId() : pfile;
+		
 		WT.prompt(me.res('gpfiles.name.lbl'), {
 			title: me.res('act-createFileFolder.lbl'),
 			value: '',
 			fn: function(bid, name) {
-				if(bid === 'ok') {
-					me.createFile(sel.getFId(), name, {
+				if (bid === 'ok') {
+					me.createFile(fid, 'folder', name, {
 						callback: function(success) {
-							if(success) {
-								if(sel.isNode) {
-									me.loadTreeFileNode(sel);
-									me.reloadGridFiles();
-								} else {
-									me.loadTreeFileNode(sel.getFId());
-									me.reloadGridFiles();
+							if (success) {
+								me.loadTreeFileNode(fid);
+								me.reloadGridFiles();
+							}
+						}
+					});
+				}
+			}
+		});
+	},
+	
+	/**
+	 * @param {String|FileInterface} file 
+	 * @param {String} type
+	 * @param {Boolean} editImmediately
+	 */
+	createFileUI: function(file, type, editImmediately) {
+		var me = this,
+				fid = Ext.isString(file) ? file : (file.isModel ? file.getFId() : null);
+		
+		if (!fid) Ext.raise('Parameter should be a valid String or FileInterface object');
+		WT.prompt(me.res('gpfiles.name.lbl'), {
+			title: '.' + type + ' - ' + me.res('act-createDocument.lbl'),
+			value: '',
+			fn: function(bid, name) {
+				if (bid === 'ok') {
+					me.createFile(fid, type, name, {
+						callback: function(success, data) {
+							if (success) {
+								me.loadTreeFileNode(fid);
+								me.reloadGridFiles();
+								if (editImmediately) {
+									me.editFile(data.fileId, {
+										callback: function(success, data) {
+											if (success) me.showDocEditingView(false, data);
+										}
+									});
 								}
 							}
 						}
@@ -929,21 +1169,25 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		});
 	},
 	
-	renameFileUI: function(sel) {
+	/**
+	 * @param {FileInterface} file
+	 */
+	renameFileUI: function(file) {
+		if (!file.isModel) Ext.raise('Parameter should be a valid FileInterface object');
 		var me = this, pfid;
 		WT.prompt(me.res('gpfiles.name.lbl'), {
 			title: me.res('act-renameFile.lbl'),
-			value: sel.getFName(),
+			value: file.getFName(),
 			fn: function(bid, name) {
 				if(bid === 'ok') {
-					if(name !== sel.getFName()) {
-						me.renameFile(sel.getFId(), name, {
-							callback: function(success) {
-								if(success) {
-									if(sel.isNode) {
-										pfid = sel.parentNode.getFId(); // Keep here before load
-										me.loadTreeFileNode(sel.parentNode);
-										if(me.isInCurFile(sel.getFId())) {
+					if(name !== file.getFName()) {
+						me.renameFile(file.getFId(), name, {
+							callback: function(success, data, js) {
+								if (success) {
+									if (file.isNode) {
+										pfid = file.parentNode.getFId(); // Keep here before load
+										me.loadTreeFileNode(file.parentNode);
+										if (me.isInCurFile(file.getFId())) {
 											me.setCurFile(pfid);
 											me.reloadGridFiles();
 										} else {
@@ -953,6 +1197,8 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 										me.loadTreeFileNode();
 										me.reloadGridFiles();
 									}
+								} else {
+									WT.error(js.message);
 								}
 							}
 						});
@@ -965,20 +1211,19 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 	deleteFileNodeUI: function(node) {
 		var me = this,
 			sto2, rec2;
-		
 		WT.confirm(me.res('gpfiles.confirm.folder.delete', Ext.String.ellipsis(node.getFName(), 40)), function(bid) {
 			if(bid === 'yes') {
 				me.deleteFiles([node.getFId()], {
 					callback: function(success) {
-						if(success) {
-							if(me.curFile && me.curFile.indexOf(node.getFId()) > -1) {
+						if (success) {
+							if (me.curFile && me.curFile.indexOf(node.getFId()) > -1) {
 								// Files grid is currently displaying node being deleted
 								me.setCurFile(node.parentNode.getFId());
 								me.reloadGridFiles();
 							} else {
 								sto2 = me.gpFiles().getStore();
 								rec2 = sto2.getById(node.getFId());
-								if(rec2) sto2.remove(rec2);
+								if (rec2) sto2.remove(rec2);
 							}
 							node.remove();
 						}
@@ -994,16 +1239,16 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 			ids = me.selectionIds(sel),
 			msg;
 		
-		if(sel.length === 1) {
+		if (sel.length === 1) {
 			msg = me.res('gpfiles.confirm.'+sel[0].getFType()+'.delete', Ext.String.ellipsis(sel[0].getFName(), 40));
 		} else {
 			msg = me.res('gpfiles.confirm.delete.selection');
 		}
 		WT.confirm(msg, function(bid) {
-			if(bid === 'yes') {
+			if (bid === 'yes') {
 				me.deleteFiles(ids, {
 					callback: function(success) {
-						if(success) {
+						if (success) {
 							sto.remove(sel);
 							me.loadTreeFileNode();
 						}
@@ -1017,8 +1262,8 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		var me = this;
 		me.setupLink(type, sel.getFId(), {
 			callback: function(success) {
-				if(success) {
-					if(sel.isNode) {
+				if (success) {
+					if (sel.isNode) {
 						me.loadTreeFileNode(sel.parentNode);
 						me.reloadGridFiles();
 					} else {
@@ -1035,21 +1280,21 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				linkId = (type === 'D') ? sel.getFDlLink() : sel.getFUlLink(),
 				rec2;
 		WT.confirm(me.res('sharingLink.confirm.delete'), function(bid) {
-			if(bid === 'yes') {
+			if (bid === 'yes') {
 				me.deleteLink(linkId, {
 					callback: function(success) {
-						if(success) {
-							if(sel.isNode) {
+						if (success) {
+							if (sel.isNode) {
 								rec2 = me.gpFiles().getStore().getById(sel.getFId());
 							} else {
 								rec2 = me.trStores().getStore().getNodeById(sel.getFId());
 							}
-							if(type === 'D') {
+							if (type === 'D') {
 								sel.setFDlLink(null);
-								if(rec2) rec2.setFDlLink(null);
-							} else if(type === 'U') {
+								if (rec2) rec2.setFDlLink(null);
+							} else if (type === 'U') {
 								sel.setFUlLink(null);
-								if(rec2) rec2.setFUlLink(null);
+								if (rec2) rec2.setFUlLink(null);
 							}
 						}
 					}
@@ -1133,14 +1378,14 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		}));
 	},
 	
-	createFile: function(fileId, name, opts) {
+	createFile: function(fileId, type, name, opts) {
 		opts = opts || {};
 		var me = this;
 		WT.ajaxReq(me.ID, 'ManageFiles', {
 			params: {
 				crud: 'create',
 				fileId: fileId,
-				type: 'folder',
+				type: type,
 				name: name
 			},
 			callback: function(success, json) {
@@ -1157,6 +1402,20 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				crud: 'rename',
 				fileId: fileId,
 				name: name
+			},
+			callback: function(success, json) {
+				Ext.callback(opts.callback, opts.scope || me, [success, json.data, json]);
+			}
+		});
+	},
+	
+	editFile: function(fileId, opts) {
+		opts = opts || {};
+		var me = this;
+		WT.ajaxReq(me.ID, 'ManageFiles', {
+			params: {
+				crud: 'edit',
+				fileId: fileId
 			},
 			callback: function(success, json) {
 				Ext.callback(opts.callback, opts.scope || me, [success, json.data, json]);
@@ -1360,163 +1619,26 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		vw.showView();
 	},
 	
-	initCxm: function() {
-		var me = this;
-		me.addRef('cxmRootStore', Ext.create({
-			xtype: 'menu',
-			items: [
-				{
-					text: me.res('act-addStore.lbl'),
-					iconCls: me.cssIconCls('addStore'),
-					menu: [
-						me.getAct('addStoreFtp'),
-						//me.getAct('addStoreDropbox'),
-						me.getAct('addStoreGooDrive'),
-						me.getAct('addStoreNextcloud'),
-						me.getAct('addStoreFile'),
-						me.getAct('addStoreOther')
-					]
-				},
-				'-',
-				me.getAct('editSharing')
-			],
-			listeners: {
-				beforeshow: function(s) {
-					me.updateDisabled('editSharing');
-					me.updateDisabled('addStoreFtp');
-					//me.updateDisabled('addStoreDropbox');
-					me.updateDisabled('addStoreGooDrive');
-					me.updateDisabled('addStoreNextcloud');
-					me.updateDisabled('addStoreFile'),
-					me.updateDisabled('addStoreOther');
+	showDocEditingView: function(viewMode, editingCfg) {
+		var vw = WT.createView(WT.ID, 'view.DocEditor', {
+			swapReturn: true,
+			viewCfg: {
+				editingId: editingCfg.editingId,
+				editorConfig: {
+					editable: editingCfg.writeSupported,
+					token: editingCfg.token,
+					docType: editingCfg.docType,
+					docExtension: editingCfg.docExtension,
+					docKey: editingCfg.docKey,
+					docTitle: editingCfg.docName,
+					docUrl: editingCfg.docUrl,
+					callbackUrl: editingCfg.callbackUrl
 				}
 			}
-		}));
-		me.addRef('cxmStore', Ext.create({
-			xtype: 'menu',
-			items: [
-				me.getAct('editStore'),
-				me.getAct('deleteStore'),
-				{
-					text: me.res('act-addStore.lbl'),
-					iconCls: me.cssIconCls('addStore'),
-					menu: [
-						me.getAct('addStoreFtp'),
-						//me.getAct('addStoreDropbox'),
-						me.getAct('addStoreGooDrive'),
-						me.getAct('addStoreNextcloud'),
-						me.getAct('addStoreFile'),
-						me.getAct('addStoreOther')
-					]
-				},
-				'-',
-				me.getAct('refresh'),
-				'-',
-				me.getAct('editSharing'),
-				'-',
-				me.getAct('createFileNode')
-			],
-			listeners: {
-				beforeshow: function(s) {
-					me.updateDisabled('editSharing');
-					me.updateDisabled('refresh');
-					me.updateDisabled('addStoreFtp');
-					//me.updateDisabled('addStoreDropbox');
-					me.updateDisabled('addStoreGooDrive');
-					me.updateDisabled('addStoreNextcloud');
-					me.updateDisabled('addStoreFile'),
-					me.updateDisabled('addStoreOther');
-					me.updateDisabled('editStore');
-					me.updateDisabled('deleteStore');
-					me.updateDisabled('createFileNode');
-				}
-			}
-		}));
-		me.addRef('cxmFile', Ext.create({
-			xtype: 'menu',
-			items: [
-				me.getAct('renameFileNode'),
-				me.getAct('deleteFileNode'),
-				'-',
-				me.getAct('refresh'),
-				'-',
-				me.getAct('addFileNodeDlLink'),
-				me.getAct('deleteFileNodeDlLink'),
-				me.getAct('sendFileNodeDlLink'),
-				'-',
-				me.getAct('addFileNodeUlLink'),
-				me.getAct('deleteFileNodeUlLink'),
-				me.getAct('sendFileNodeUlLink'),
-				'-',
-				me.getAct('createFileNode')
-			],
-			listeners: {
-				beforeshow: function(s) {
-					me.updateDisabled('renameFileNode');
-					me.updateDisabled('refresh');
-					me.updateDisabled('deleteFileNode');
-					me.updateDisabled('createFileNode');
-					me.updateDisabled('addFileNodeDlLink');
-					me.updateDisabled('deleteFileNodeDlLink');
-					me.updateDisabled('sendFileNodeDlLink');
-					me.updateDisabled('addFileNodeUlLink');
-					me.updateDisabled('deleteFileNodeUlLink');
-					me.updateDisabled('sendFileNodeUlLink');
-				}
-			}
-		}));
-		me.addRef('cxmGridFile0', Ext.create({
-			xtype: 'menu',
-			items: [
-				me.getAct('createFileNode')
-			],
-			listeners: {
-				beforeshow: function(s) {
-					me.updateDisabled('createFileNode');
-				}
-			}
-		}));
-		me.addRef('cxmGridFile', Ext.create({
-			xtype: 'menu',
-			items: [
-				me.getAct('downloadFile'),
-				me.getActAs('openFile', 'menuitem', {
-					text: me.res('act-openFile.lbl'),
-					menu: {
-						items: [
-							me.getAct(me.isOpenActionEdit() ? 'openFileView' : 'openFileEdit'),
-							me.getAct(me.isOpenActionEdit() ? 'openFileEdit' : 'openFileView')
-						]
-					}
-				}),
-				'-',
-				me.getAct('renameFile'),
-				me.getAct('deleteFile'),
-				'-',
-				me.getAct('addFileDlLink'),
-				me.getAct('deleteFileDlLink'),
-				me.getAct('sendFileDlLink'),
-				'-',
-				me.getAct('addFileUlLink'),
-				me.getAct('deleteFileUlLink'),
-				me.getAct('sendFileUlLink')
-			],
-			listeners: {
-				beforeshow: function(s) {
-					me.updateDisabled('openFile');
-					me.updateDisabled('openFileView');
-					me.updateDisabled('openFileEdit');
-					me.updateDisabled('downloadFile');
-					me.updateDisabled('renameFile');
-					me.updateDisabled('addFileDlLink');
-					me.updateDisabled('deleteFileDlLink');
-					me.updateDisabled('sendFileDlLink');
-					me.updateDisabled('addFileUlLink');
-					me.updateDisabled('deleteFileUlLink');
-					me.updateDisabled('sendFileUlLink');
-				}
-			}
-		}));
+		});
+		vw.showView(function() {
+			vw.begin(viewMode === true ? 'view' : 'edit');
+		});
 	},
 	
 	setDefaultFile: function() {
@@ -1542,17 +1664,15 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 	
 	reloadGridFilesIf: function(fileId) {
 		var me = this;
-		if(me.curFile === fileId) me.reloadGridFiles();
+		if (me.curFile === fileId) me.reloadGridFiles();
 	},
 	
 	reloadGridFiles: function() {
 		var me = this, tr, node;
-		if(me.isActive()) {
+		if (me.isActive()) {
 			tr = me.trStores();
 			node = tr.getStore().getNodeById(me.curFile);
-			if(node) {
-				me.bcFiles().setSelection(node);
-			}
+			if (node) me.bcFiles().setSelection(node);
 			WTU.loadWithExtraParams(me.gpFiles().getStore(), {fileId: me.curFile});
 		} else {
 			me.needsReload = true;
@@ -1561,27 +1681,25 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 	
 	reloadTreeFile: function() {
 		var me = this, sto, node;
-		if(me.isActive()) {
+		if (me.isActive()) {
 			sto = me.trStores().getStore();
 			node = sto.getNodeById(me.curFile);
-			if(node) sto.load({node: node});
+			if (node) sto.load({node: node});
 		} else {
 			me.needsReload = true;
 		}
 	},
 	
-	
-	
 	loadTreeFileNode: function(node) {
 		var me = this, sto, no;
-		if(me.isActive()) {
+		if (me.isActive()) {
 			sto = me.trStores().getStore();
-			if(node && node.isNode) {
+			if (node && node.isNode) {
 				no = node;
 			} else {
 				no = sto.getNodeById(node || me.curFile);
 			}
-			if(no) sto.load({node: no});
+			if (no) sto.load({node: no});
 		} else {
 			me.needsReload = true;
 		}
@@ -1593,38 +1711,13 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				node;
 		
 		node = sto.findNode('_pid', pid, false);
-		if(node) sto.load({node: node});
+		if (node) sto.load({node: node});
 	},
-	
-	
-	/*
-	reloadFiles: function(fileId) {
-		var me = this, sto, pars = {};
-		
-		if(me.isActive()) {
-			sto = me.gpFiles().getStore();
-			if(fileId !== undefined) {
-				pars = sto.getProxy().getExtraParams();
-				if(pars['fileId'] !== fileId) {
-					
-					WTU.loadWithExtraParams(sto, {fileId: fileId});
-				} else {
-					sto.load();
-				}
-			}
-			
-			//if(fileId !== undefined) Ext.apply(pars, {fileId: fileId});
-			//WTU.loadWithExtraParams(sto, pars);
-		} else {
-			me.needsReload = true;
-		}
-	},
-	*/
 	
 	getSelectedFile: function(forceSingle) {
-		if(forceSingle === undefined) forceSingle = true;
+		if (forceSingle === undefined) forceSingle = true;
 		var sel = this.getSelectedFiles();
-		if(forceSingle && sel.length !== 1) return null;
+		if (forceSingle && sel.length !== 1) return null;
 		return (sel.length > 0) ? sel[0] : null;
 	},
 	
@@ -1784,6 +1877,22 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				sel = me.getSelectedFiles();
 				if (sel.length === 1) {
 					return (!sel[0].isFolder() && sel[0].isOpenable()) ? false : true;
+				} else {
+					return true;
+				}
+			case 'createFolder':
+			case 'createDocument':
+			case 'createFileTxt':
+			case 'createFileDocx':
+			case 'createFileXlsx':
+			case 'createFilePptx':
+			case 'createFileOdt':
+			case 'createFileOds':
+			case 'createFileOdp':
+			case 'createFileHtml':
+				sel = me.getCurrentFileNode();
+				if (sel) {
+					return !(sel.getEPerms().CREATE && sel.getEPerms().UPDATE);
 				} else {
 					return true;
 				}

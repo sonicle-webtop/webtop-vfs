@@ -34,6 +34,7 @@ package com.sonicle.webtop.vfs;
 
 import com.sonicle.commons.AlgoUtils;
 import com.sonicle.commons.EnumUtils;
+import com.sonicle.commons.LangUtils;
 import com.sonicle.commons.PathUtils;
 import com.sonicle.commons.URIUtils;
 import com.sonicle.commons.db.DbUtils;
@@ -67,7 +68,6 @@ import com.sonicle.webtop.vfs.bol.OSharingLink;
 import com.sonicle.webtop.vfs.bol.OStore;
 import com.sonicle.webtop.vfs.bol.model.MyStoreRoot;
 import com.sonicle.webtop.vfs.model.SharingLink;
-import com.sonicle.webtop.vfs.model.StoreFileType;
 import com.sonicle.webtop.vfs.model.StoreShareFolder;
 import com.sonicle.webtop.vfs.model.StoreShareRoot;
 import com.sonicle.webtop.vfs.dal.SharingLinkDAO;
@@ -87,8 +87,10 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -687,6 +689,32 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		}
 	}
 	
+	public String addStoreFileFromTemplate(StoreFileTemplate fileTemplate, int storeId, String parentPath, String name, boolean overwrite) throws IOException, FileSystemException, WTException {
+		final String RESOURCE_NAME = "/{0}/tpl/file/{1}.{2}";
+		String tplName = null;
+		URL tplUrl = null;
+		
+		// Firstly try to get template file specific for target locale, 
+		// otherwise look for the template in english (en) locale.
+		String fileExt = EnumUtils.toSerializedName(fileTemplate);
+		tplName = MessageFormat.format(RESOURCE_NAME, LangUtils.packageToPath(SERVICE_ID), getLocale().getLanguage(), fileExt);
+		tplUrl = this.getClass().getResource(tplName);
+		if (tplUrl == null) {
+			tplName = MessageFormat.format(RESOURCE_NAME, LangUtils.packageToPath(SERVICE_ID), "en", fileExt);
+			tplUrl = this.getClass().getResource(tplName);
+		}
+		if (tplUrl == null) throw new WTException("Template file not found [{}]", tplName);
+		String fileName = StringUtils.endsWithIgnoreCase(name, "." + fileExt) ? name : name + "." + fileExt;
+		
+		InputStream is = null;
+		try {
+			is = tplUrl.openStream();
+			return addStoreFileFromStream(storeId, parentPath, fileName, is, overwrite);
+		} finally {
+			IOUtils.closeQuietly(is);
+		}
+	}
+	
 	@Override
 	public String addStoreFile(StoreFileType fileType, int storeId, String parentPath, String name) throws FileSystemException, WTException {
 		FileObject tfo = null, ntfo = null;
@@ -716,12 +744,21 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		}
 	}
 	
+	public String suggestStoreFileName(int storeId, String path, String newName)  throws FileSystemException, WTException {
+		NewTargetFile ntf = getNewTargetFileObject(storeId, PathUtils.getFullParentPath(path), newName, false);
+		return PathUtils.getFileName(ntf.path);
+	}
+	
 	@Override
-	public String renameStoreFile(int storeId, String path, String newName) throws FileSystemException, WTException {
+	public String renameStoreFile(int storeId, String path, String newName) throws FileSystemException, FileOverwriteException, WTException {
+		return renameStoreFile(storeId, path, newName, false);
+	}
+	
+	@Override
+	public String renameStoreFile(int storeId, String path, String newName, boolean overwrite) throws FileSystemException, FileOverwriteException, WTException {
 		try {
 			checkRightsOnStoreElements(storeId, "UPDATE");
-			
-			return doRenameStoreFile(storeId, path, newName);
+			return doRenameStoreFile(storeId, path, newName, overwrite);
 			
 		} catch(SQLException | DAOException ex) {
 			throw new WTException(ex, "DB error");
@@ -1253,16 +1290,16 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		StoreDAO dao = StoreDAO.getInstance();
 		
 		OStore ostore = createOStore(store);
-		if(ostore.getDomainId() == null) ostore.setDomainId(getTargetProfileId().getDomainId());
-		if(ostore.getUserId() == null) ostore.setUserId(getTargetProfileId().getUserId());
+		if (ostore.getDomainId() == null) ostore.setDomainId(getTargetProfileId().getDomainId());
+		if (ostore.getUserId() == null) ostore.setUserId(getTargetProfileId().getUserId());
 		
 		try {
 			URI uri = store.getUri();
-			if((store.getBuiltIn() == 0) && uri.getScheme().equals("file")) {
+			if ((store.getBuiltIn() == 0) && uri.getScheme().equals("file")) {
 				ostore.setUri(Store.buildURI("file", null, null, null, null, prependFileBasePath(uri)).toString());
 			}
 			
-			if(insert) {
+			if (insert) {
 				ostore.setStoreId(dao.getSequence(con).intValue());
 				dao.insert(con, ostore);
 			} else {
@@ -1288,7 +1325,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		if(sfs == null) throw new WTException("Unable to get store fileSystem");
 		
 		FileObject tfo = null;
-		if(path.equals("/")) {
+		if (path.equals("/")) {
 			tfo = sfs.getRootFileObject();
 		} else {
 			tfo = sfs.getDescendantFileObject(path);
@@ -1300,11 +1337,12 @@ public class VfsManager extends BaseManager implements IVfsManager {
 	private NewTargetFile getNewTargetFileObject(int storeId, String parentPath, String name, boolean overwrite) throws FileSystemException, WTException {
 		String newPath = FilenameUtils.separatorsToUnix(FilenameUtils.concat(parentPath, name));
 		
-		if(overwrite) {
+		if (overwrite) {
 			return new NewTargetFile(newPath, getTargetFileObject(storeId, newPath));
+			
 		} else {
 			FileObject newFo = getTargetFileObject(storeId, newPath);
-			if(!newFo.exists()) {
+			if (!newFo.exists()) {
 				return new NewTargetFile(newPath, newFo);
 			} else {
 				String ext = FilenameUtils.getExtension(name);
@@ -1322,8 +1360,8 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		}
 	}
 	
-	private String doRenameStoreFile(int storeId, String path, String newName) throws FileSystemException, SQLException, DAOException, WTException {
-		SharingLinkDAO dao = SharingLinkDAO.getInstance();
+	private String doRenameStoreFile(int storeId, String path, String newName, boolean overwrite) throws FileSystemException, SQLException, DAOException, FileOverwriteException, WTException {
+		SharingLinkDAO shaDao = SharingLinkDAO.getInstance();
 		FileObject tfo = null, ntfo = null;
 		Connection con = null;
 		
@@ -1331,12 +1369,13 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			tfo = getTargetFileObject(storeId, path);
 			String newPath = FilenameUtils.separatorsToUnix(FilenameUtils.concat(PathUtils.getFullParentPath(path), newName));
 			ntfo = getTargetFileObject(storeId, newPath);
+			if (!overwrite && ntfo.exists()) throw new FileOverwriteException("A file with same name already exists [{}]", newPath);
 			
 			logger.debug("Renaming store file [{}, {} -> {}]", storeId, path, newPath);
 			try {
 				con = WT.getConnection(SERVICE_ID, false);
 				
-				dao.deleteByStorePath(con, storeId, path);
+				shaDao.deleteByStorePath(con, storeId, path);
 				tfo.moveTo(ntfo);
 				DbUtils.commitQuietly(con);
 				
