@@ -1640,6 +1640,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 					docKey: editingCfg.docKey,
 					docTitle: editingCfg.docName,
 					docUrl: editingCfg.docUrl,
+					//autosave: false,
 					callbackUrl: editingCfg.callbackUrl
 				}
 			}

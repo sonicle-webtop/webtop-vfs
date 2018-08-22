@@ -936,8 +936,8 @@ public class Service extends BaseService {
 				StoreShareFolder folder = getFolderFromCache(storeId);
 				if ((folder != null) && folder.getElementsPerms().implies("UPDATE")) writable = true;
 				
-				StoreFileDocEditorDocumentHandler docHandler = new StoreFileDocEditorDocumentHandler(writable, getEnv().getProfileId(), storeId, nodeId.getPath());
-				DocEditorManager.DocumentConfig config = getWts().prepareDocumentEditing(filename, fileHash, lastModified, docHandler);
+				StoreFileDocEditorDocumentHandler docHandler = new StoreFileDocEditorDocumentHandler(writable, getEnv().getProfileId(), fileHash, storeId, nodeId.getPath());
+				DocEditorManager.DocumentConfig config = getWts().prepareDocumentEditing(docHandler, filename, lastModified);
 				
 				new JsonResult(config).printTo(out);
 			}
@@ -952,10 +952,23 @@ public class Service extends BaseService {
 		private final int storeId;
 		private final String path;
 		
-		public StoreFileDocEditorDocumentHandler(boolean writeCapability, UserProfileId targetProfileId, int storeId, String path) {
-			super(writeCapability, targetProfileId);
+		public StoreFileDocEditorDocumentHandler(boolean writeCapability, UserProfileId targetProfileId, String documentUniqueId, int storeId, String path) {
+			super(writeCapability, targetProfileId, documentUniqueId);
 			this.storeId = storeId;
 			this.path = path;
+		}
+		
+		@Override
+		public long getLastModifiedTime() throws IOException {
+			VfsManager manager = getVfsManager();
+			
+			try {
+				FileObject fo = manager.getStoreFile(storeId, path);
+				return fo.exists() ? fo.getContent().getLastModifiedTime() : -1;
+				
+			} catch(WTException ex) {
+				throw new IOException("Unable to get file content", ex);
+			}
 		}
 		
 		@Override
