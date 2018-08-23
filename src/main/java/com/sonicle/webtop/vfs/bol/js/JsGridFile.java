@@ -33,7 +33,6 @@
 package com.sonicle.webtop.vfs.bol.js;
 
 import com.sonicle.commons.time.DateTimeUtils;
-import com.sonicle.webtop.core.app.DocEditorManager;
 import com.sonicle.webtop.core.app.servlet.ServletHelper;
 import com.sonicle.webtop.vfs.model.SharingLink;
 import com.sonicle.webtop.vfs.model.StoreShareFolder;
@@ -55,7 +54,7 @@ public class JsGridFile {
 	public String ext;
 	public Long size;
 	public String lastModified;
-	public Boolean openable;
+	public Short editable;
 	public String dlLink;
 	public Boolean dlLinkExp;
 	public String ulLink;
@@ -64,7 +63,7 @@ public class JsGridFile {
 	
 	public JsGridFile() {}
 	
-	public JsGridFile(StoreShareFolder folder, FileObject fo, String fileId, SharingLink dlLink, SharingLink ulLink) {
+	public JsGridFile(StoreShareFolder folder, FileObject fo, String fileId, boolean canBeOpenedWithDocEditor, SharingLink dlLink, SharingLink ulLink) {
 		this.fileId = fileId;
 		this.type = getFileType(fo);
 		this.mtype = (type.equals("folder")) ? "" : ServletHelper.guessMediaType(fo.getName().getBaseName(), true);
@@ -72,7 +71,7 @@ public class JsGridFile {
 		this.ext = fo.getName().getExtension();
 		this.size = getFileSize(fo);
 		this.lastModified = getFileLastModified(fo);
-		this.openable = DocEditorManager.isEditable(fo.getName().getBaseName());
+		this.editable = canBeOpenedWithDocEditor ? (short)1 : (short)0;
 		DateTime now = DateTimeUtils.now();
 		if(dlLink != null) {
 			this.dlLink = dlLink.getLinkId();

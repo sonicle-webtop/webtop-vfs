@@ -75,15 +75,15 @@ public class VfsUserSettings extends BaseUserSettings {
 		return setBoolean(FILE_SHOW_HIDDEN, value);
 	}
 	
-	public FileOpenAction getFileOpenAction() {
-		return getEnum(FILE_OPEN_ACTION, FileOpenAction.VIEW, FileOpenAction.class);
+	public FileEditAction getFileEditAction() {
+		return getEnum(FILE_EDIT_ACTION, FileEditAction.VIEW, FileEditAction.class);
 	}
 	
-	public boolean setFileOpenAction(FileOpenAction value) {
-		return setEnum(FILE_OPEN_ACTION, value);
+	public boolean setFileEditAction(FileEditAction value) {
+		return setEnum(FILE_EDIT_ACTION, value);
 	}
 	
-	public boolean setFileOpenAction(String value) {
-		return setFileOpenAction(EnumUtils.forSerializedName(value, FileOpenAction.class));
+	public boolean setFileEditAction(String value) {
+		return setFileEditAction(EnumUtils.forSerializedName(value, FileEditAction.class));
 	}
 }

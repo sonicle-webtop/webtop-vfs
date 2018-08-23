@@ -42,7 +42,7 @@ public class JsUserOptions extends JsUserOptionsBase {
 	public Long privateUploadMaxFileSize;
 	public Long publicUploadMaxFileSize;
 	public Boolean fileShowHidden;
-	public String fileOpenAction;
+	public String fileEditAction;
 	
 	public JsUserOptions() {}
 	

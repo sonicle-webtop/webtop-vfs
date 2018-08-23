@@ -43,6 +43,7 @@ import com.sonicle.commons.PathUtils;
 import com.sonicle.commons.URIUtils;
 import com.sonicle.commons.time.DateTimeUtils;
 import com.sonicle.commons.web.Crud;
+import com.sonicle.commons.web.DispositionType;
 import com.sonicle.commons.web.ServletUtils;
 import com.sonicle.commons.web.ServletUtils.StringArray;
 import com.sonicle.commons.web.json.CompositeId;
@@ -96,6 +97,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.vfs2.FileName;
 import org.apache.commons.vfs2.FileObject;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -140,7 +142,7 @@ public class Service extends BaseService {
 		co.put("downloadLinkExpiration", ss.getDownloadLinkExpiration());
 		co.put("nextcloudDefaultHost", ss.getNextcloudDefaultHost());
 		co.put("nextcloudDefaultPath", ss.getNextcloudDefaultPath());
-		co.put("fileOpenAction", us.getFileOpenAction());
+		co.put("fileEditAction", us.getFileEditAction());
 		return co;
 	}
 	
@@ -839,6 +841,7 @@ public class Service extends BaseService {
 				String path = (parentNodeId.getSize() == 2) ? "/" : parentNodeId.getPath();
 				
 				boolean showHidden = us.getFileShowHidden();
+				boolean docServerEnabled = getEnv().getCoreServiceSettings().getDocumentServerEnabled();
 				
 				LinkedHashMap<String, SharingLink> dls = manager.listDownloadLinks(storeId, path);
 				LinkedHashMap<String, SharingLink> uls = manager.listUploadLinks(storeId, path);
@@ -846,11 +849,13 @@ public class Service extends BaseService {
 				StoreFileSystem sfs = manager.getStoreFileSystem(storeId);
 				for (FileObject fo : manager.listStoreFiles(StoreFileType.FILE_OR_FOLDER, storeId, path)) {
 					if (!showHidden && VfsUtils.isFileObjectHidden(fo)) continue;
+					
 					// Relativize path and force trailing separator if file is a folder
 					final String filePath = fo.isFolder() ? PathUtils.ensureTrailingSeparator(sfs.getRelativePath(fo), false) : sfs.getRelativePath(fo);
 					final String fileId = new StoreNodeId(parentNodeId.getShareId(), parentNodeId.getStoreId(), filePath).toString();
 					final String fileHash = VfsManagerUtils.generateStoreFileHash(storeId, filePath);
-					items.add(new JsGridFile(folder, fo, fileId, dls.get(fileHash), uls.get(fileHash)));
+					boolean canBeOpenedWithDocEditor = docServerEnabled && shouldEditInDocEditor(fo.getName());
+					items.add(new JsGridFile(folder, fo, fileId, canBeOpenedWithDocEditor, dls.get(fileHash), uls.get(fileHash)));
 				}
 				new JsonResult("files", items).printTo(out);
 			}
@@ -1007,8 +1012,10 @@ public class Service extends BaseService {
 		
 		try {
 			StringArray fileIds = ServletUtils.getObjectParameter(request, "fileIds", StringArray.class, true);
+			boolean inline = ServletUtils.getBooleanParameter(request, "inline", false);
 			
-			if(fileIds.size() > 1) throw new WTException("Unable to download multiple files for now");
+			if (fileIds.size() > 1) throw new WTException("Unable to download multiple files for now");
+			//if (fileIds.size() > 1) inline = false;
 			String fileId = fileIds.get(0);
 			//TODO: Implementare download file multipli
 			
@@ -1019,8 +1026,8 @@ public class Service extends BaseService {
 			try {
 				fo = manager.getStoreFile(storeId, nodeId.getPath());
 				
-				if(!fo.isFile()) {
-					logger.warn("Cannot download a non-file [{}, {}]", storeId, nodeId.getPath());
+				if (!fo.isFile()) {
+					logger.warn("Cannot read a non-file [{}, {}]", storeId, nodeId.getPath());
 					throw new WTException("Requested file is not a real file");
 				}
 				
@@ -1028,7 +1035,11 @@ public class Service extends BaseService {
 				//String mediaType = ServletHelper.guessMediaType(filename, true);
 				
 				ServletUtils.setContentLengthHeader(response, fo.getContent().getSize());
-				ServletUtils.setFileStreamHeadersForceDownload(response, filename);
+				if (inline) {
+					ServletUtils.setFileStreamHeaders(response, filename);
+				} else {
+					ServletUtils.setFileStreamHeadersForceDownload(response, filename);
+				}
 				IOUtils.copy(fo.getContent().getInputStream(), response.getOutputStream());
 				
 			} finally {
@@ -1036,7 +1047,7 @@ public class Service extends BaseService {
 			}
 			
 		} catch(Exception ex) {
-			logger.error("Error in action DownloadFiles", ex);
+			logger.error("Error in DownloadFiles", ex);
 			ServletUtils.writeErrorHandlingJs(response, ex.getMessage());
 		}
 	}
@@ -1237,5 +1248,10 @@ public class Service extends BaseService {
 		}
 		
 		return sb.toString();
+	}
+	
+	private boolean shouldEditInDocEditor(FileName fileName) {
+		if ("pdf".equalsIgnoreCase(fileName.getExtension())) return false;
+		return DocEditorManager.isEditable(fileName.getBaseName());
 	}
 }

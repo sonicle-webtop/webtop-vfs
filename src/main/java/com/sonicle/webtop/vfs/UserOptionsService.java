@@ -70,7 +70,7 @@ public class UserOptionsService extends BaseUserOptionsService {
 				jso.privateUploadMaxFileSize = us.getPrivateUploadMaxFileSize(true);
 				jso.publicUploadMaxFileSize = us.getPublicUploadMaxFileSize(true);
 				jso.fileShowHidden = us.getFileShowHidden();
-				jso.fileOpenAction = EnumUtils.toSerializedName(us.getFileOpenAction());
+				jso.fileEditAction = EnumUtils.toSerializedName(us.getFileEditAction());
 				
 				new JsonResult(jso).printTo(out);
 				
@@ -81,7 +81,7 @@ public class UserOptionsService extends BaseUserOptionsService {
 				if (pl.map.has("privateUploadMaxFileSize")) us.setPrivateUploadMaxFileSize(pl.data.privateUploadMaxFileSize);
 				if (pl.map.has("publicUploadMaxFileSize")) us.setPublicUploadMaxFileSize(pl.data.publicUploadMaxFileSize);
 				if (pl.map.has("fileShowHidden")) us.setFileShowHidden(pl.data.fileShowHidden);
-				if (pl.map.has("fileOpenAction")) us.setFileOpenAction(pl.data.fileOpenAction);
+				if (pl.map.has("fileEditAction")) us.setFileEditAction(pl.data.fileEditAction);
 				
 				new JsonResult().printTo(out);
 			}

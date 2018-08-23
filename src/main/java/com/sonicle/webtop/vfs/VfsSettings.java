@@ -105,7 +105,7 @@ public class VfsSettings {
 	 * [enum {view:VIEW, edit:EDIT}] (view)
 	 * Specifies the default action when opening an editable file.
 	 */
-	public static final String FILE_OPEN_ACTION = "file.openaction";
+	public static final String FILE_EDIT_ACTION = "file.editaction";
 	
 	/**
 	 * [domain+system]
@@ -121,7 +121,7 @@ public class VfsSettings {
 	 */
 	public static final String NEXTCLOUD_DEFAULT_PATH = "nextcloud.default.path";
 	
-	public static enum FileOpenAction {
+	public static enum FileEditAction {
 		@SerializedName("view") VIEW,
 		@SerializedName("edit") EDIT;
 	}

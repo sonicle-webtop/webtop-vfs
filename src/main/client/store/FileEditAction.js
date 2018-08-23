@@ -30,7 +30,7 @@
  * reasonably feasible for technical reasons, the Appropriate Legal Notices must
  * display the words "Copyright (C) 2014 Sonicle S.r.l.".
  */
-Ext.define('Sonicle.webtop.vfs.store.FileOpenAction', {
+Ext.define('Sonicle.webtop.vfs.store.FileEditAction', {
 	extend: 'Ext.data.ArrayStore',
 	
 	model: 'WTA.model.Simple',
@@ -42,7 +42,7 @@ Ext.define('Sonicle.webtop.vfs.store.FileOpenAction', {
 	constructor: function(cfg) {
 		var me = this;
 		Ext.each(me.config.data, function(row) {
-			row[1] = WT.res('com.sonicle.webtop.vfs', 'store.file.openaction.'+row[0]);
+			row[1] = WT.res('com.sonicle.webtop.vfs', 'store.file.editaction.'+row[0]);
 		});
 		me.callParent([cfg]);
 	}

@@ -428,10 +428,12 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		if (rec.isFolder()) {
 			me.setCurFile(rec.get('fileId'));
 			me.reloadGridFiles();
-		} else if (rec.isOpenable()) {
-			me.getAct('openFile').execute();
+		} else if (rec.isEditable() && rec.getEPerms().UPDATE) {
+			me.editFileUI(rec, !me.isEditActionEdit());
+		} else if (me.isOpenable(rec)) {
+			me.openFile(rec.getFId());
 		} else {
-			me.downloadFiles([rec.get('fileId')]);
+			me.downloadFiles([rec.getFId()]);
 		}
 	},
 	
@@ -676,14 +678,22 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				if (sel) me.openFileUI(sel);
 			}
 		});
-		me.addAct('openFileView', {
+		me.addAct('editFile', {
+			text: me.res('act-openFile.lbl'),
+			tooltip: null,
+			handler: function() {
+				var sel = me.getSelectedFile();
+				if (sel) me.editFileUI(sel, !me.isEditActionEdit());
+			}
+		});
+		me.addAct('editFileView', {
 			tooltip: null,
 			handler: function() {
 				var sel = me.getSelectedFile();
 				if (sel) me.editFileUI(sel, true);
 			}
 		});
-		me.addAct('openFileEdit', {
+		me.addAct('editFileEdit', {
 			tooltip: null,
 			handler: function() {
 				var sel = me.getSelectedFile();
@@ -767,7 +777,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 			tooltip: null,
 			handler: function() {
 				var sel = me.getSelectedFiles();
-				if(sel.length > 0) me.downloadFilesUI(sel);
+				if (sel.length > 0) me.downloadFilesUI(sel);
 			}
 		});
 		me.addAct('renameFile', {
@@ -980,12 +990,12 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 			xtype: 'menu',
 			items: [
 				me.getAct('downloadFile'),
-				me.getActAs('openFile', 'menuitem', {
-					text: me.res('act-openFile.lbl'),
+				me.getAct('openFile'),
+				me.getActAs('editFile', 'menuitem', {
 					menu: {
 						items: [
-							me.getAct(me.isOpenActionEdit() ? 'openFileView' : 'openFileEdit'),
-							me.getAct(me.isOpenActionEdit() ? 'openFileEdit' : 'openFileView')
+							me.getAct(me.isEditActionEdit() ? 'editFileView' : 'editFileEdit'),
+							me.getAct(me.isEditActionEdit() ? 'editFileEdit' : 'editFileView')
 						]
 					}
 				}),
@@ -1019,8 +1029,11 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 			listeners: {
 				beforeshow: function(s) {
 					me.updateDisabled('openFile');
-					me.updateDisabled('openFileView');
-					me.updateDisabled('openFileEdit');
+					me.setActHiddenIfDisabled('openFile');
+					me.updateDisabled('editFile');
+					me.setActHiddenIfDisabled('editFile');
+					me.updateDisabled('editFileView');
+					me.updateDisabled('editFileEdit');
 					me.updateDisabled('downloadFile');
 					me.updateDisabled('renameFile');
 					me.updateDisabled('addFileDlLink');
@@ -1102,7 +1115,13 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 	
 	openFileUI: function(sel) {
 		var me = this;
-		me.editFileUI(sel, !me.isOpenActionEdit());
+		me.openFile(sel.getFId());
+	},
+	
+	downloadFilesUI: function(sel) {
+		var me = this,
+			ids = me.selectionIds(sel);
+		me.downloadFiles(ids);
 	},
 	
 	editFileUI: function(sel, view) {
@@ -1112,12 +1131,6 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				if (success) me.showDocEditingView(view, data);
 			}
 		});
-	},
-	
-	downloadFilesUI: function(sel) {
-		var me = this,
-			ids = me.selectionIds(sel);
-		me.downloadFiles(ids);
 	},
 	
 	createFolderUI: function(pfile) {
@@ -1162,7 +1175,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 							if (success) {
 								me.loadTreeFileNode(fid);
 								me.reloadGridFiles();
-								if (editImmediately) {
+								if (editImmediately && WT.getVar('docServerEnabled')) {
 									me.editFile(data.fileId, {
 										callback: function(success, data) {
 											if (success) me.showDocEditingView(false, data);
@@ -1378,6 +1391,13 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				Ext.callback(opts.callback, opts.scope || me, [success, json.data, json]);
 			}
 		});
+	},
+	
+	openFile: function(fileId) {
+		Sonicle.URLMgr.openFile(WTF.processBinUrl(this.ID, 'DownloadFiles', {
+			fileIds: WTU.arrayAsParam(fileId),
+			inline: true
+		}));
 	},
 	
 	downloadFiles: function(fileIds) {
@@ -1881,11 +1901,24 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 					return true;
 				}
 			case 'openFile':
-			case 'openFileView':
-			case 'openFileEdit':
 				sel = me.getSelectedFiles();
 				if (sel.length === 1) {
-					return (!sel[0].isFolder() && sel[0].isOpenable()) ? false : true;
+					return me.isOpenable(sel[0]) ? false : true;
+				} else {
+					return true;
+				}
+			case 'editFile':
+			case 'editFileView':
+				sel = me.getSelectedFiles();
+				if (sel.length === 1) {
+					return sel[0].isEditable() ? !sel[0].getEPerms().UPDATE : true;
+				} else {
+					return true;
+				}
+			case 'editFileEdit':
+				sel = me.getSelectedFiles();
+				if (sel.length === 1) {
+					return sel[0].isEditable() ? false : true;
 				} else {
 					return true;
 				}
@@ -1969,8 +2002,12 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 	},
 	
 	privates: {
-		isOpenActionEdit: function() {
-			return this.getVar('fileOpenAction') === 'edit';
+		isEditActionEdit: function() {
+			return this.getVar('fileEditAction') === 'edit';
+		},
+		
+		isOpenable: function(rec) {
+			return rec.isFile() && (['pdf'].indexOf(rec.get('ext')) !== -1);
 		}
 	}
 });

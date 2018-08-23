@@ -35,7 +35,7 @@ Ext.define('Sonicle.webtop.vfs.view.UserOptions', {
 	extend: 'WTA.sdk.UserOptionsView',
 	requires: [
 		'Sonicle.form.field.Bytes',
-		'Sonicle.webtop.vfs.store.FileOpenAction'
+		'Sonicle.webtop.vfs.store.FileEditAction'
 	],
 	
 	viewModel: {
@@ -87,12 +87,12 @@ Ext.define('Sonicle.webtop.vfs.view.UserOptions', {
 				}
 			},
 			WTF.lookupCombo('id', 'desc', {
-				bind: '{record.fileOpenAction}',
-				store: Ext.create('Sonicle.webtop.vfs.store.FileOpenAction', {
+				bind: '{record.fileEditAction}',
+				store: Ext.create('Sonicle.webtop.vfs.store.FileEditAction', {
 					autoLoad: true
 				}),
-				fieldLabel: WT.res(me.ID, 'opts.main.fld-fileOpenAction.lbl'),
-				width: 140+140,
+				fieldLabel: WT.res(me.ID, 'opts.main.fld-fileEditAction.lbl'),
+				width: 140+180,
 				listeners: {
 					blur: {
 						fn: me.onBlurAutoSave,

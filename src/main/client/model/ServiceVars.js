@@ -40,6 +40,6 @@ Ext.define('Sonicle.webtop.vfs.model.ServiceVars', {
 		WTF.field('downloadLinkExpiration', 'int', true),
 		WTF.field('nextcloudDefaultHost', 'string', true),
 		WTF.field('nextcloudDefaultPath', 'string', true),
-		WTF.field('fileOpenAction', 'string', false)
+		WTF.field('fileEditAction', 'string', false)
 	]
 });
