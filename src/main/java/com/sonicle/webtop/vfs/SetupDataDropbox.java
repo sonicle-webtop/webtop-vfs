@@ -53,7 +53,7 @@ public class SetupDataDropbox extends SetupData {
 	public String accessToken = null;
 	
 	public SetupDataDropbox() {
-		provider = Store.PROVIDER_DROPBOX;
+		provider = Store.Provider.DROPBOX;
 	}
 
 	public static URI buildDropboxURI(String accountId, String accessToken) throws URISyntaxException {

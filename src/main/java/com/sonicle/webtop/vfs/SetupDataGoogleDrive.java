@@ -55,7 +55,7 @@ public class SetupDataGoogleDrive extends SetupData {
 	public String accessToken = null;
 	
 	public SetupDataGoogleDrive() {
-		provider = Store.PROVIDER_GOOGLEDRIVE;
+		provider = Store.Provider.GOOGLEDRIVE;
 	}
 
 	public static URI buildGoogleDriveURI(String accountEmail, String accessToken) throws URISyntaxException {

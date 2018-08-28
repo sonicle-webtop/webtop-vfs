@@ -95,6 +95,6 @@ Ext.define('Sonicle.webtop.vfs.model.GridFile', {
 	},
 	
 	isEditable: function() {
-		return this.isFile() && this.get('editable') === 1;
+		return this.isFile() && this.get('editable') > 0;
 	}
 });

@@ -1126,11 +1126,32 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 	
 	editFileUI: function(sel, view) {
 		var me = this;
-		me.editFile(sel.getFId(), {
-			callback: function(success, data) {
-				if (success) me.showDocEditingView(view, data);
-			}
-		});
+		if (!view && sel.get('editable') === 2) {
+			WT.confirm(me.res('gpfiles.confirm.edit.remote'), function(bid) {
+				if (bid !== 'cancel') {
+					if (bid === 'no') view = true;
+					me.editFile(sel.getFId(), {
+						callback: function(success, data) {
+							if (success) me.showDocEditingView(view, data);
+						}
+					});
+				}
+			}, me, {
+				config: {
+					buttonText: {
+						yes: me.res('gpfiles.confirm.edit.remote.yes'),
+						no: me.res('gpfiles.confirm.edit.remote.no')
+					}
+				}
+			});
+			
+		} else {
+			me.editFile(sel.getFId(), {
+				callback: function(success, data) {
+					if (success) me.showDocEditingView(view, data);
+				}
+			});
+		}
 	},
 	
 	createFolderUI: function(pfile) {

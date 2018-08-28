@@ -32,6 +32,7 @@
  */
 package com.sonicle.webtop.vfs;
 
+import com.sonicle.webtop.vfs.model.Store;
 import java.net.URI;
 import java.net.URISyntaxException;
 
@@ -42,13 +43,13 @@ import java.net.URISyntaxException;
 public abstract class SetupData {
 	public String profileId = null;
 	public String name = null;
-	public String provider = null;
+	public Store.Provider provider = null;
 	
 	public abstract URI generateURI() throws URISyntaxException;
 	public abstract String generateParameters();
 	public abstract void updateName();
 	
-	public String getProvider() {
+	public Store.Provider getProvider() {
 		return provider;
 	}
 }

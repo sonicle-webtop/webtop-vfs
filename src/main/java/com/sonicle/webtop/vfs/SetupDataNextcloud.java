@@ -53,7 +53,7 @@ public class SetupDataNextcloud extends SetupData {
 	public String path = null;
 	
 	public SetupDataNextcloud() {
-		provider = Store.PROVIDER_NEXTCLOUD;
+		provider = Store.Provider.NEXTCLOUD;
 	}
 
 	public static URI buildNextcloudURI(String scheme, String host, Integer port, String username, String password, String path) throws URISyntaxException {

@@ -47,7 +47,7 @@ public class SetupDataFile extends SetupData {
 	public String path = null;
 	
 	public SetupDataFile() {
-		provider = Store.PROVIDER_FILE;
+		provider = Store.Provider.FILE;
 	}
 	
 	public static URI buildFileURI(String path) throws URISyntaxException {

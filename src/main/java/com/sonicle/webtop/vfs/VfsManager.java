@@ -454,7 +454,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			item.setUserId(getTargetProfileId().getUserId());
 			item.setBuiltIn(Store.BUILTIN_MYDOCUMENTS);
 			item.setName("");
-			item.setProvider(Store.PROVIDER_MYDOCUMENTS);
+			item.setProvider(Store.Provider.MYDOCUMENTS);
 			item.setUri(Store.buildURI(URI_SCHEME_MYDOCUMENTS, getTargetProfileId().getUserId(), null, null, null, null));
 			item = doStoreUpdate(true, con, item);
 			
@@ -502,7 +502,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			item.setUserId(getTargetProfileId().getUserId());
 			item.setBuiltIn(Store.BUILTIN_DOMAINIMAGES);
 			item.setName("");
-			item.setProvider(Store.PROVIDER_DOMAINIMAGES);
+			item.setProvider(Store.Provider.DOMAINIMAGES);
 			item.setUri(uri);
 			item = doStoreUpdate(true, con, item);
 			DbUtils.commitQuietly(con);
@@ -1102,7 +1102,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		sto.setDomainId(ostore.getDomainId());
 		sto.setUserId(ostore.getUserId());
 		sto.setBuiltIn(ostore.getBuiltIn());
-		sto.setProvider(ostore.getProvider());
+		sto.setProvider(EnumUtils.forSerializedName(ostore.getProvider(), Store.Provider.class));
 		sto.setName(!StringUtils.isBlank(newName) ? newName : ostore.getName());
 		URI uri = new URI(ostore.getUri());
 		if (ostore.getBuiltIn().equals(Store.BUILTIN_NO) && StringUtils.isBlank(uri.getUserInfo())) {
@@ -1115,22 +1115,23 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		return sto;
 	}
 	
-	private OStore createOStore(Store with) {
-		return fillOStore(new OStore(), with);
+	private OStore createOStore(Store src) {
+		if (src == null) return null;
+		return fillOStore(new OStore(), src);
 	}
 	
-	private OStore fillOStore(OStore fill, Store with) {
-		if ((fill != null) && (with != null)) {
-			fill.setStoreId(with.getStoreId());
-			fill.setDomainId(with.getDomainId());
-			fill.setUserId(with.getUserId());
-			fill.setBuiltIn(with.getBuiltIn());
-			fill.setProvider(with.getProvider());
-			fill.setName(with.getName());
-			fill.setUri(with.getUri().toString());
-			fill.setParameters(with.getParameters());
+	private OStore fillOStore(OStore tgt, Store src) {
+		if ((tgt != null) && (src != null)) {
+			tgt.setStoreId(src.getStoreId());
+			tgt.setDomainId(src.getDomainId());
+			tgt.setUserId(src.getUserId());
+			tgt.setBuiltIn(src.getBuiltIn());
+			tgt.setProvider(EnumUtils.toSerializedName(src.getProvider()));
+			tgt.setName(src.getName());
+			tgt.setUri(src.getUri().toString());
+			tgt.setParameters(src.getParameters());
 		}
-		return fill;
+		return tgt;
 	}
 	
 	private SharingLink createSharingLink(OSharingLink with) {
@@ -1287,7 +1288,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 	}
 	
 	private Store doStoreUpdate(boolean insert, Connection con, Store store) throws WTException {
-		StoreDAO dao = StoreDAO.getInstance();
+		StoreDAO stoDao = StoreDAO.getInstance();
 		
 		OStore ostore = createOStore(store);
 		if (ostore.getDomainId() == null) ostore.setDomainId(getTargetProfileId().getDomainId());
@@ -1300,10 +1301,10 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			}
 			
 			if (insert) {
-				ostore.setStoreId(dao.getSequence(con).intValue());
-				dao.insert(con, ostore);
+				ostore.setStoreId(stoDao.getSequence(con).intValue());
+				stoDao.insert(con, ostore);
 			} else {
-				dao.update(con, ostore);
+				stoDao.update(con, ostore);
 			}
 			
 			return createStore(ostore, buildStoreName(getLocale(), ostore));
@@ -1314,15 +1315,15 @@ public class VfsManager extends BaseManager implements IVfsManager {
 	}
 	
 	private void doStoreDelete(Connection con, int storeId) throws WTException {
-		StoreDAO stdao = StoreDAO.getInstance();
+		StoreDAO stoDao = StoreDAO.getInstance();
 		SharingLinkDAO shdao = SharingLinkDAO.getInstance();
-		stdao.deleteById(con, storeId);
+		stoDao.deleteById(con, storeId);
 		shdao.deleteByStore(con, storeId);
 	}
 	
 	private FileObject getTargetFileObject(int storeId, String path) throws FileSystemException, WTException {
 		StoreFileSystem sfs = getStoreFileSystemFromCache(storeId);
-		if(sfs == null) throw new WTException("Unable to get store fileSystem");
+		if (sfs == null) throw new WTException("Unable to get store fileSystem");
 		
 		FileObject tfo = null;
 		if (path.equals("/")) {

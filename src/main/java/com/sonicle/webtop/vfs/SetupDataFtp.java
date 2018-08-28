@@ -51,7 +51,7 @@ public class SetupDataFtp extends SetupData {
 	public String path = null;
 	
 	public SetupDataFtp() {
-		provider = Store.PROVIDER_FTP;
+		provider = Store.Provider.FTP;
 	}
 
 	@Override

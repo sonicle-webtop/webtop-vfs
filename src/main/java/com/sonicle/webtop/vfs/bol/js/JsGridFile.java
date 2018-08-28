@@ -71,7 +71,7 @@ public class JsGridFile {
 		this.ext = fo.getName().getExtension();
 		this.size = getFileSize(fo);
 		this.lastModified = getFileLastModified(fo);
-		this.editable = canBeOpenedWithDocEditor ? (short)1 : (short)0;
+		this.editable = (short)(!canBeOpenedWithDocEditor ? 0 : (folder.getStore().isProviderRemote() ? 2 : 1));
 		DateTime now = DateTimeUtils.now();
 		if(dlLink != null) {
 			this.dlLink = dlLink.getLinkId();

@@ -301,30 +301,30 @@ public class Service extends BaseService {
 	}
 	
 	private String storeIcon(Store store) {
-		String provider = store.getProvider();
+		Store.Provider provider = store.getProvider();
 		
 		if (store.getBuiltIn().equals(Store.BUILTIN_NO)) {
-			if(StringUtils.equals(provider, Store.PROVIDER_FTP)) {
+			if (Store.Provider.FTP.equals(provider)) {
 				return "storeFtp";
-			} else if(StringUtils.equals(provider, Store.PROVIDER_DROPBOX)) {
+			} else if(Store.Provider.DROPBOX.equals(provider)) {
 				return "storeDropbox";
-			} else if(StringUtils.equals(provider, Store.PROVIDER_GOOGLEDRIVE)) {
+			} else if(Store.Provider.GOOGLEDRIVE.equals(provider)) {
 				return "storeGooDrive";
-			} else if(StringUtils.equals(provider, Store.PROVIDER_NEXTCLOUD)) {
+			} else if(Store.Provider.NEXTCLOUD.equals(provider)) {
 				return "storeNextcloud";
-			} else if(StringUtils.equals(provider, Store.PROVIDER_FILE)) {
+			} else if(Store.Provider.FILE.equals(provider)) {
 				return "storeFile";
-			} else if(StringUtils.equals(provider, Store.PROVIDER_SMB)) {
+			} else if(Store.Provider.SMB.equals(provider)) {
 				return "storeSmb";
-			} else if(StringUtils.equals(provider, Store.PROVIDER_WEBDAV)) {
+			} else if(Store.Provider.WEBDAV.equals(provider)) {
 				return "storeWebdav";
 			} else {
 				return "store";
 			}
 		} else {
-			if(StringUtils.equals(provider, Store.PROVIDER_MYDOCUMENTS)) {
+			if (Store.Provider.MYDOCUMENTS.equals(provider)) {
 				return "storeMyDocs";
-			} else if(StringUtils.equals(provider, Store.PROVIDER_DOMAINIMAGES)) {
+			} else if (Store.Provider.DOMAINIMAGES.equals(provider)) {
 				return "storeDomainImages";
 			} else {
 				return "store";
@@ -795,7 +795,7 @@ public class Service extends BaseService {
 				setup.username = username;
 				setup.password = password;
 				setup.path = path;
-				setup.provider = scheme;
+				setup.provider = EnumUtils.forSerializedName(scheme, Store.Provider.class);
 				setup.updateName();
 				wts.setProperty(SERVICE_ID, PROPERTY, setup);
 				//TODO: controllo connessione
