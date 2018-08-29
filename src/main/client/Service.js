@@ -49,6 +49,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		'Sonicle.webtop.vfs.model.SharingLink'
 	],
 	uses: [
+		'Sonicle.webtop.vfs.view.FolderChooser',
 		'Sonicle.webtop.vfs.view.Sharing',
 		'Sonicle.webtop.vfs.view.SharingLinks'
 	],
@@ -1567,9 +1568,10 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				}
 			});
 		
-		vw.on('viewclose', function(s) {
-			Ext.callback(opts.callback, opts.scope || me, [true, s.getVMData()]);
-		});
+			vw.on('viewclose', function(s) {
+				Ext.callback(opts.callback, opts.scope || me, [true, s.getVMData()]);
+			});
+		if (opts.listeners) vw.on(opts.listeners);
 		vw.showView();
 	},
 	
@@ -1583,10 +1585,14 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				}
 			});
 		
-		vw.on('viewclose', function(s) {
-			Ext.callback(opts.callback, opts.scope || me, [true, s.getVMData()]);
-		});
+		if (opts.callback) {
+			vw.on('viewclose', function(s) {
+				Ext.callback(opts.callback, opts.scope || me, [true, s.getVMData(), s]);
+			});
+		}
+		if (opts.listeners) vw.on(opts.listeners);
 		vw.showView();
+		return vw;
 	},
 	
 	setupStoreGoogleDrive: function(profileId, opts) {
@@ -1599,10 +1605,14 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				}
 			});
 		
-		vw.on('viewclose', function(s) {
-			Ext.callback(opts.callback, opts.scope || me, [true, s.getVMData()]);
-		});
+		if (opts.callback) {
+			vw.on('viewclose', function(s) {
+				Ext.callback(opts.callback, opts.scope || me, [true, s.getVMData(), s]);
+			});
+		}
+		if (opts.listeners) vw.on(opts.listeners);
 		vw.showView();
+		return vw;
 	},
 	
 	setupStoreNextcloud: function(profileId, opts) {
@@ -1618,10 +1628,14 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				}
 			});
 		
-		vw.on('viewclose', function(s) {
-			Ext.callback(opts.callback, opts.scope || me, [true, s.getVMData()]);
-		});
+		if (opts.callback) {
+			vw.on('viewclose', function(s) {
+				Ext.callback(opts.callback, opts.scope || me, [true, s.getVMData(), s]);
+			});
+		}
+		if (opts.listeners) vw.on(opts.listeners);
 		vw.showView();
+		return vw;
 	},
 	
 	setupStoreFile: function(profileId, opts) {
@@ -1634,10 +1648,14 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				}
 			});
 		
-		vw.on('viewclose', function(s) {
-			Ext.callback(opts.callback, opts.scope || me, [true, s.getVMData()]);
-		});
+		if (opts.callback) {
+			vw.on('viewclose', function(s) {
+				Ext.callback(opts.callback, opts.scope || me, [true, s.getVMData(), s]);
+			});
+		}
+		if (opts.listeners) vw.on(opts.listeners);
 		vw.showView();
+		return vw;
 	},
 	
 	setupStoreOther: function(profileId, opts) {
@@ -1650,10 +1668,14 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				}
 			});
 		
-		vw.on('viewclose', function(s) {
-			Ext.callback(opts.callback, opts.scope || me, [true, s.getVMData()]);
-		});
+		if (opts.callback) {
+			vw.on('viewclose', function(s) {
+				Ext.callback(opts.callback, opts.scope || me, [true, s.getVMData(), s]);
+			});
+		}
+		if (opts.listeners) vw.on(opts.listeners);
 		vw.showView();
+		return vw;
 	},
 	
 	showSharingLinks: function(opts) {
@@ -1661,34 +1683,66 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		var me = this,
 			vw = WT.createView(me.ID, 'view.SharingLinks', {swapReturn: true});
 		
-		vw.on('viewclose', function(s) {
-			Ext.callback(opts.callback, opts.scope || me, [true]);
-		});
+		if (opts.callback) {
+			vw.on('viewclose', function(s) {
+				Ext.callback(opts.callback, opts.scope || me, [true, s]);
+			});
+		}
 		if (opts.listeners) vw.on(opts.listeners);
 		vw.showView();
+		return vw;
 	},
 	
-	showDocEditingView: function(viewMode, editingCfg) {
-		var vw = WT.createView(WT.ID, 'view.DocEditor', {
-			swapReturn: true,
-			viewCfg: {
-				editingId: editingCfg.editingId,
-				editorConfig: {
-					editable: editingCfg.writeSupported,
-					token: editingCfg.token,
-					docType: editingCfg.docType,
-					docExtension: editingCfg.docExtension,
-					docKey: editingCfg.docKey,
-					docTitle: editingCfg.docName,
-					docUrl: editingCfg.docUrl,
-					//autosave: false,
-					callbackUrl: editingCfg.callbackUrl
-				}
-			}
-		});
+	showDocEditingView: function(viewMode, editingCfg, opts) {
+		var me = this,
+				vw = WT.createView(WT.ID, 'view.DocEditor', {
+					swapReturn: true,
+					viewCfg: {
+						editingId: editingCfg.editingId,
+						editorConfig: {
+							editable: editingCfg.writeSupported,
+							token: editingCfg.token,
+							docType: editingCfg.docType,
+							docExtension: editingCfg.docExtension,
+							docKey: editingCfg.docKey,
+							docTitle: editingCfg.docName,
+							docUrl: editingCfg.docUrl,
+							//autosave: false,
+							callbackUrl: editingCfg.callbackUrl
+						}
+					}
+				});
+		
+		if (opts.callback) {
+			vw.on('viewclose', function(s) {
+				Ext.callback(opts.callback, opts.scope || me, [true, s]);
+			});
+		}
+		if (opts.listeners) vw.on(opts.listeners);
 		vw.showView(function() {
 			vw.begin(viewMode === true ? 'view' : 'edit');
 		});
+		return vw;
+	},
+	
+	showFolderChooser: function(opts) {
+		opts = opts || {};
+		var me = this,
+			vw = WT.createView(me.ID, 'view.FolderChooser', {
+				swapReturn: true
+			});
+		
+		if (opts.callback) {
+			vw.on('viewok', function(s, file) {
+				Ext.callback(opts.callback, opts.scope || me, [true, file, s]);
+			});
+			vw.on('viewclose', function(s) {
+				Ext.callback(opts.callback, opts.scope || me, [false, null, s]);
+			});
+		}
+		if (opts.listeners) vw.on(opts.listeners);
+		vw.showView();
+		return vw;
 	},
 	
 	setDefaultFile: function() {

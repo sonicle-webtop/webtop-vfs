@@ -386,6 +386,7 @@ public class Service extends BaseService {
 			String crud = ServletUtils.getStringParameter(request, "crud", true);
 			if (crud.equals(Crud.READ)) {
 				String node = ServletUtils.getStringParameter(request, "node", true);
+				boolean chooser = ServletUtils.getBooleanParameter(request, "chooser", false);
 				
 				if (node.equals("root")) { // Share roots...
 					for (StoreShareRoot root : getRootsFromCache()) {
@@ -413,8 +414,11 @@ public class Service extends BaseService {
 						
 						boolean showHidden = us.getFileShowHidden();
 						
-						LinkedHashMap<String, SharingLink> dls = manager.listDownloadLinks(storeId, path);
-						LinkedHashMap<String, SharingLink> uls = manager.listUploadLinks(storeId, path);
+						LinkedHashMap<String, SharingLink> dls = null, uls = null;
+						if (!chooser) {
+							dls = manager.listDownloadLinks(storeId, path);
+							uls = manager.listUploadLinks(storeId, path);
+						}
 						
 						StoreFileSystem sfs = manager.getStoreFileSystem(storeId);
 						for (FileObject fo : manager.listStoreFiles(StoreFileType.FOLDER, storeId, path)) {
@@ -425,10 +429,10 @@ public class Service extends BaseService {
 							final String fileHash = VfsManagerUtils.generateStoreFileHash(storeId, filePath);
 							
 							String dlLink = null, ulLink = null;
-							if (dls.containsKey(fileHash)) {
+							if ((dls != null) && dls.containsKey(fileHash)) {
 								dlLink = dls.get(fileHash).getLinkId();
 							}
-							if (uls.containsKey(fileHash)) {
+							if ((uls != null) && uls.containsKey(fileHash)) {
 								ulLink = uls.get(fileHash).getLinkId();
 							}
 							children.add(createFileNode(folder, filePath, dlLink, ulLink, fo));

@@ -48,6 +48,29 @@ Ext.define('Sonicle.webtop.vfs.ServiceApi', {
 	},
 	
 	/**
+	 * Shows folder picker dialog.
+	 * @param {Object} opts An object containing configuration.
+	 * @param {Function} [opts.callback] A function to be called when the link is succesfully created.
+	 * Will be called with the following config parameters:
+	 * 
+	 * - success - True if result is not null.
+	 * - result - The result object.
+	 * - result.fileId - The file ID.
+	 * - result.storeId - The store ID that owns the file.
+	 * - result.path - The file path.
+	 * - result.wrl - The WRL link.
+	 * 
+	 * @param {Object} [opts.scope] The callback method scope.
+	 */
+	chooseFolder: function(opts) {
+		opts = opts || {};
+		this.service.showFolderChooser({
+			callback: opts.callback,
+			scope: opts.scope
+		});
+	},
+	
+	/**
 	 * Adds new sharing link (download).
 	 * @param {Object} data An object containing link data.
 	 * @param {String} [data.fileId] The file ID.
@@ -57,6 +80,7 @@ Ext.define('Sonicle.webtop.vfs.ServiceApi', {
 	 * 
 	 * - success - True if result is not null.
 	 * - result - The result object.
+	 * 
 	 * @param {Object} [opts.scope] The callback method scope.
 	 */
 	addSharingLinkForDownload: function(data, opts) {
@@ -77,6 +101,7 @@ Ext.define('Sonicle.webtop.vfs.ServiceApi', {
 	 * 
 	 * - success - True if result is not null.
 	 * - result - The result object.
+	 * 
 	 * @param {Object} [opts.scope] The callback method scope.
 	 */
 	addSharingLinkForUpload: function(data, opts) {
@@ -96,6 +121,7 @@ Ext.define('Sonicle.webtop.vfs.ServiceApi', {
 	 * Will be called with the following config parameters:
 	 * 
 	 * - success - True if successful operation.
+	 * 
 	 * @param {Object} [opts.scope] The callback method scope.
 	 */
 	deleteSharingLink: function(data, opts) {
