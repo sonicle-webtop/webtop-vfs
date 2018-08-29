@@ -845,7 +845,6 @@ public class Service extends BaseService {
 				String path = (parentNodeId.getSize() == 2) ? "/" : parentNodeId.getPath();
 				
 				boolean showHidden = us.getFileShowHidden();
-				boolean docServerEnabled = getEnv().getCoreServiceSettings().getDocumentServerEnabled();
 				
 				LinkedHashMap<String, SharingLink> dls = manager.listDownloadLinks(storeId, path);
 				LinkedHashMap<String, SharingLink> uls = manager.listUploadLinks(storeId, path);
@@ -858,7 +857,7 @@ public class Service extends BaseService {
 					final String filePath = fo.isFolder() ? PathUtils.ensureTrailingSeparator(sfs.getRelativePath(fo), false) : sfs.getRelativePath(fo);
 					final String fileId = new StoreNodeId(parentNodeId.getShareId(), parentNodeId.getStoreId(), filePath).toString();
 					final String fileHash = VfsManagerUtils.generateStoreFileHash(storeId, filePath);
-					boolean canBeOpenedWithDocEditor = docServerEnabled && shouldEditInDocEditor(fo.getName());
+					boolean canBeOpenedWithDocEditor = isFileEditableInDocEditor(fo.getName().getBaseName());
 					items.add(new JsGridFile(folder, fo, fileId, canBeOpenedWithDocEditor, dls.get(fileHash), uls.get(fileHash)));
 				}
 				new JsonResult("files", items).printTo(out);
@@ -1252,10 +1251,5 @@ public class Service extends BaseService {
 		}
 		
 		return sb.toString();
-	}
-	
-	private boolean shouldEditInDocEditor(FileName fileName) {
-		if ("pdf".equalsIgnoreCase(fileName.getExtension())) return false;
-		return DocEditorManager.isEditable(fileName.getBaseName());
 	}
 }
