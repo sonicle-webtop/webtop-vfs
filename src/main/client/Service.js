@@ -345,6 +345,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 					me.getActAs('createDocument', 'button', {
 						text: null,
 						tooltip: me.res('act-createDocument.lbl'),
+						hidden: !WT.getVar('docServerEnabled'),
 						menu: {
 							items: [
 								me.getAct('createFileDocx'),
@@ -970,6 +971,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 			items: [
 				me.getAct('createFolder'),
 				me.getActAs('createDocument', 'menuitem', {
+					hidden: !WT.getVar('docServerEnabled'),
 					menu: {
 						items: [
 							me.getAct('createFileDocx'),
@@ -1001,7 +1003,9 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 					}
 				}),
 				'-',
+				me.getAct('createFolder'),
 				me.getActAs('createDocument', 'menuitem', {
+					hidden: !WT.getVar('docServerEnabled'),
 					menu: {
 						items: [
 							me.getAct('createFileDocx'),
