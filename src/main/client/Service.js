@@ -1698,6 +1698,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 	},
 	
 	showDocEditingView: function(viewMode, editingCfg, opts) {
+		opts = opts || {};
 		var me = this,
 				vw = WT.createView(WT.ID, 'view.DocEditor', {
 					swapReturn: true,
