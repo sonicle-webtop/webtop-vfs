@@ -356,7 +356,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			return items;
 			
 		} catch(SQLException | DAOException ex) {
-			throw new WTException(ex, "DB error");
+			throw wrapException(ex);
 		} catch(URISyntaxException ex) {
 			throw new WTException(ex, "Bad store URI");
 		} finally {
@@ -381,7 +381,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			return oids.get(0);
 			
 		} catch(SQLException | DAOException ex) {
-			throw new WTException(ex, "DB error");
+			throw wrapException(ex);
 		} finally {
 			DbUtils.closeQuietly(con);
 		}
@@ -398,8 +398,8 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			OStore ostore = dao.selectById(con, storeId);
 			return createStore(ostore, buildStoreName(getLocale(), ostore));
 			
-		} catch(SQLException | DAOException ex) {
-			throw new WTException(ex, "DB error");
+		} catch(SQLException | DAOException | WTException ex) {
+			throw wrapException(ex);
 		} catch(URISyntaxException ex) {
 			throw new WTException(ex, "Bad store URI");
 		} finally {
@@ -423,12 +423,9 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			addStoreFileSystemToCache(item);
 			return item;
 			
-		} catch(SQLException | DAOException ex) {
+		} catch(SQLException | DAOException | WTException ex) {
 			DbUtils.rollbackQuietly(con);
-			throw new WTException(ex, "DB error");
-		} catch(Exception ex) {
-			DbUtils.rollbackQuietly(con);
-			throw ex;
+			throw wrapException(ex);
 		} finally {
 			DbUtils.closeQuietly(con);
 		}
@@ -462,15 +459,12 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			writeLog("STORE_INSERT", item.getStoreId().toString());
 			return item;
 			
-		} catch(SQLException | DAOException ex) {
+		} catch(SQLException | DAOException | WTException ex) {
 			DbUtils.rollbackQuietly(con);
-			throw new WTException(ex, "DB error");
+			throw wrapException(ex);
 		} catch(URISyntaxException ex) {
 			DbUtils.rollbackQuietly(con);
 			throw new WTException(ex, "Unable to generate URI");
-		} catch(Exception ex) {
-			DbUtils.rollbackQuietly(con);
-			throw ex;
 		} finally {
 			DbUtils.closeQuietly(con);
 		}
@@ -509,15 +503,12 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			writeLog("STORE_INSERT", item.getStoreId().toString());
 			return item;
 			
-		} catch(SQLException | DAOException ex) {
+		} catch(SQLException | DAOException | WTException ex) {
 			DbUtils.rollbackQuietly(con);
-			throw new WTException(ex, "DB error");
+			throw wrapException(ex);
 		} catch(URISyntaxException ex) {
 			DbUtils.rollbackQuietly(con);
 			throw new WTException(ex, "Unable to generate URI");
-		} catch(Exception ex) {
-			DbUtils.rollbackQuietly(con);
-			throw ex;
 		} finally {
 			DbUtils.closeQuietly(con);
 		}
@@ -536,12 +527,9 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			
 			return item;
 			
-		} catch(SQLException | DAOException ex) {
+		} catch(SQLException | DAOException | WTException ex) {
 			DbUtils.rollbackQuietly(con);
-			throw new WTException(ex, "DB error");
-		} catch(Exception ex) {
-			DbUtils.rollbackQuietly(con);
-			throw ex;
+			throw wrapException(ex);
 		} finally {
 			DbUtils.closeQuietly(con);
 		}
@@ -574,12 +562,9 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			writeLog("STORE_DELETE", ref);
 			removeStoreFileSystemFromCache(storeId);
 			
-		} catch(SQLException | DAOException ex) {
+		} catch(SQLException | DAOException | WTException ex) {
 			DbUtils.rollbackQuietly(con);
-			throw new WTException(ex, "DB error");
-		} catch(Exception ex) {
-			DbUtils.rollbackQuietly(con);
-			throw ex;
+			throw wrapException(ex);
 		} finally {
 			DbUtils.closeQuietly(con);
 		}
@@ -623,9 +608,9 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		try {
 			tfo = getTargetFileObject(storeId, path);
 			FileSelector selector = null;
-			if (fileType.equals(StoreFileType.FILE)) {
+			if (StoreFileType.FILE.equals(fileType)) {
 				selector = new FileSelector(false, true);
-			} else if(fileType.equals(StoreFileType.FOLDER)) {
+			} else if(StoreFileType.FOLDER.equals(fileType)) {
 				selector = new FileSelector(true, false);
 			} else {
 				selector = new FileSelector(true, true);
@@ -685,7 +670,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			throw ex;
 		} finally {
 			IOUtils.closeQuietly(tfo);
-			if(ntf != null) IOUtils.closeQuietly(ntf.tfo);
+			if (ntf != null) IOUtils.closeQuietly(ntf.tfo);
 		}
 	}
 	
@@ -760,8 +745,8 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			checkRightsOnStoreElements(storeId, "UPDATE");
 			return doRenameStoreFile(storeId, path, newName, overwrite);
 			
-		} catch(SQLException | DAOException ex) {
-			throw new WTException(ex, "DB error");
+		} catch(SQLException | DAOException | WTException ex) {
+			throw wrapException(ex);
 		}
 	}
 	
@@ -783,7 +768,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			}
 			
 		} catch(SQLException | DAOException | WTException ex) {
-			throw wrapThrowable(ex);
+			throw wrapException(ex);
 		} finally {
 			DbUtils.closeQuietly(con);
 		}
@@ -815,7 +800,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			
 		} catch(SQLException | DAOException ex) {
 			DbUtils.rollbackQuietly(con);
-			throw new WTException(ex, "DB error");
+			throw wrapException(ex);
 		} finally {
 			DbUtils.closeQuietly(con);
 		}
@@ -841,7 +826,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			
 		} catch(SQLException | DAOException ex) {
 			DbUtils.rollbackQuietly(con);
-			throw new WTException(ex, "DB error");
+			throw wrapException(ex);
 		} finally {
 			DbUtils.closeQuietly(con);
 		}
@@ -861,12 +846,9 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			
 			return createSharingLink(olink);
 			
-		} catch(SQLException | DAOException ex) {
+		} catch(SQLException | DAOException | WTException ex) {
 			DbUtils.rollbackQuietly(con);
-			throw new WTException(ex, "DB error");
-		} catch(Exception ex) {
-			DbUtils.rollbackQuietly(con);
-			throw ex;
+			throw wrapException(ex);
 		} finally {
 			DbUtils.closeQuietly(con);
 		}
@@ -886,12 +868,9 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			writeLog("DOWNLOADLINK_INSERT", link.getLinkId());
 			return link;
 			
-		} catch(SQLException | DAOException ex) {
+		} catch(SQLException | DAOException | WTException ex) {
 			DbUtils.rollbackQuietly(con);
-			throw new WTException(ex, "DB error");
-		} catch(Exception ex) {
-			DbUtils.rollbackQuietly(con);
-			throw ex;
+			throw wrapException(ex);
 		} finally {
 			DbUtils.closeQuietly(con);
 		}
@@ -911,12 +890,9 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			writeLog("UPLOADLINK_INSERT", link.getLinkId());
 			return link;
 			
-		} catch(SQLException | DAOException ex) {
+		} catch(SQLException | DAOException | WTException ex) {
 			DbUtils.rollbackQuietly(con);
-			throw new WTException(ex, "DB error");
-		} catch(Exception ex) {
-			DbUtils.rollbackQuietly(con);
-			throw ex;
+			throw wrapException(ex);
 		} finally {
 			DbUtils.closeQuietly(con);
 		}
@@ -938,12 +914,9 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			DbUtils.commitQuietly(con);
 			writeLog("SHARINGLINK_UPDATE", link.getLinkId());
 			
-		} catch(SQLException | DAOException ex) {
+		} catch(SQLException | DAOException | WTException ex) {
 			DbUtils.rollbackQuietly(con);
-			throw new WTException(ex, "DB error");
-		} catch(Exception ex) {
-			DbUtils.rollbackQuietly(con);
-			throw ex;
+			throw wrapException(ex);
 		} finally {
 			DbUtils.closeQuietly(con);
 		}
@@ -965,12 +938,9 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			DbUtils.commitQuietly(con);
 			writeLog("SHARINGLINK_DELETE", linkId);
 			
-		} catch(SQLException | DAOException ex) {
+		} catch(SQLException | DAOException | WTException ex) {
 			DbUtils.rollbackQuietly(con);
-			throw new WTException(ex, "DB error");
-		} catch(Exception ex) {
-			DbUtils.rollbackQuietly(con);
-			throw ex;
+			throw wrapException(ex);
 		} finally {
 			DbUtils.closeQuietly(con);
 		}
@@ -1010,10 +980,8 @@ public class VfsManager extends BaseManager implements IVfsManager {
 				sendLinkUsageEmail(olink, path, ipAddress, userAgent);
 			}
 			
-		} catch(SQLException | DAOException ex) {
-			throw new WTException(ex, "DB error");
-		} catch(Exception ex) {
-			throw ex;
+		} catch(SQLException | DAOException | WTException ex) {
+			throw wrapException(ex);
 		} finally {
 			DbUtils.closeQuietly(con);
 		}
@@ -1089,7 +1057,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			return (owner == null) ? null : new UserProfileId(owner.getDomainId(), owner.getUserId());
 			
 		} catch(SQLException | DAOException ex) {
-			throw new WTException(ex, "DB error");
+			throw wrapException(ex);
 		} finally {
 			DbUtils.closeQuietly(con);
 		}
