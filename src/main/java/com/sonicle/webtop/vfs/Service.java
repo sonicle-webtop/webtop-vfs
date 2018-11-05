@@ -316,7 +316,7 @@ public class Service extends BaseService {
 				return "storeFile";
 			} else if(Store.Provider.SMB.equals(provider)) {
 				return "storeSmb";
-			} else if(Store.Provider.WEBDAV.equals(provider)) {
+			} else if(Store.Provider.WEBDAV.equals(provider) || Store.Provider.WEBDAVS.equals(provider)) {
 				return "storeWebdav";
 			} else {
 				return "store";
