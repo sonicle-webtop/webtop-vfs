@@ -207,7 +207,8 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		var sto = me.trStores().getStore(),
 			gpId = Ext.id(null, 'gridpanel');
 		
-		me.setMainComponent(Ext.create({
+		me.grid = me.createGrid(gpId, sto);
+		me.mainComponent = Ext.create({
 			xtype: 'container',
 			layout: 'border',
 			referenceHolder: true,
@@ -233,180 +234,8 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 					}
 				}
 			},*/
-			items: [{
-				region: 'center',
-				xtype: 'grid',
-				id: gpId,
-				reference: 'gpfiles',
-				cls: 'wtvfs-gpfiles',
-				stateful: true,
-				stateId: me.buildStateId('gpfiles'),
-				store: {
-					model: 'Sonicle.webtop.vfs.model.GridFile',
-					proxy: WTF.apiProxy(me.ID, 'ManageGridFiles', 'files', {
-						extraParams: {
-							fileId: null
-						}
-					})
-				},
-				viewConfig: {
-					deferEmptyText: false,
-					emptyText: me.res('gpfiles.emp')
-				},
-				selModel: {
-					type: 'checkboxmodel',
-					mode : 'MULTI'
-				},
-				columns: [{
-					xtype: 'soiconcolumn',
-					dataIndex: 'type',
-					header: WTF.headerWithGlyphIcon('fa fa-file-o'),
-					getIconCls: function(v,rec) {
-						return rec.isFolder() ? 'wt-ftype-folder' : WTF.fileTypeCssIconCls(rec.get('ext'));
-					},
-					iconSize: 16,
-					width: 40
-				}, {
-					xtype: 'solinkcolumn',
-					dataIndex: 'name',
-					header: me.res('gpfiles.name.lbl'),
-					listeners: {
-						linkclick: function(s,idx,rec) {
-							me.followGridFile(rec);
-						}
-					},
-					flex: 1
-				}, {
-					xtype: 'sobytescolumn',
-					dataIndex: 'size',
-					header: me.res('gpfiles.size.lbl'),
-					width: 110
-				}, {
-					dataIndex: 'lastModified',
-					header: me.res('gpfiles.lastModified.lbl'),
-					xtype: 'datecolumn',
-					format: WT.getShortDateTimeFmt(),
-					width: 140
-				}, {
-					xtype: 'soiconcolumn',
-					dataIndex: 'dlLink',
-					header: WTF.headerWithGlyphIcon('fa fa-cloud-download'),
-					getIconCls: function(v,rec) {
-						if (Ext.isEmpty(v)) return '';
-						var exp = rec.get('dlLinkExp') ? 'Exp' : '';
-						return me.cssIconCls('downloadLink'+exp);
-					},
-					getTip: function(v,rec) {
-						if (Ext.isEmpty(v)) return '';
-						var exp = rec.get('dlLinkExp') ? '.exp' : '';
-						return me.res('gpfiles.dlLink'+exp);
-					},
-					iconSize: 16,
-					width: 40
-				}, {
-					xtype: 'soiconcolumn',
-					dataIndex: 'ulLink',
-					header: WTF.headerWithGlyphIcon('fa fa-cloud-upload'),
-					getIconCls: function(v,rec) {
-						if (Ext.isEmpty(v)) return '';
-						var exp = rec.get('ulLinkExp') ? 'Exp' : '';
-						return me.cssIconCls('uploadLink'+exp);
-					},
-					getTip: function(v,rec) {
-						if (Ext.isEmpty(v)) return '';
-						var exp = rec.get('ulLinkExp') ? '.exp' : '';
-						return me.res('gpfiles.ulLink'+exp);
-					},
-					iconSize: 16,
-					width: 40
-				}],
-				tbar: [
-					me.getAct('goUp'),
-					{
-						xtype: 'sobreadcrumb',
-						reference: 'bcfiles',
-						store: sto,
-						overflowHandler: 'scroller',
-						minDepth: 2,
-						listeners: {
-							change: function(s, node) {
-								if (node) {
-									me.setCurFile(node.getId());
-									me.reloadGridFiles();
-								}
-							}
-						},
-						flex: 1
-					},
-					me.getActAs('renameFile', 'button', {text: null, tooltip: me.res('act-renameFile.lbl')}),
-					me.getActAs('deleteFile', 'button', {text: null, tooltip: me.res('act-deleteFile.lbl')}),
-					'-',
-					me.getActAs('createFolder', 'button', {text: null, tooltip: me.res('act-createFileFolder.lbl')}),
-					me.getActAs('createDocument', 'button', {
-						text: null,
-						tooltip: me.res('act-createDocument.lbl'),
-						hidden: !WT.getVar('docServerEnabled'),
-						menu: {
-							items: [
-								me.getAct('createFileDocx'),
-								me.getAct('createFileXlsx'),
-								me.getAct('createFilePptx'),
-								me.getAct('createFileTxt'),
-								me.getAct('createFileHtml')
-								//me.getAct('createFileOdt'),
-								//me.getAct('createFileOds'),
-								//me.getAct('createFileOdp')
-							]
-						}
-					})
-				],
-				bbar: {
-					xtype: 'wtuploadbar',
-					reference: 'tbupload',
-					sid: me.ID,
-					uploadContext: 'UploadStoreFile',
-					maxFileSize: me.getVar('privateUploadMaxFileSize'),
-					buttonIconCls: me.cssIconCls('uploadFile'),
-					dropElement: gpId,
-					fileExtraParams: function() {
-						return {
-							fileId: me.curFile
-						};
-					},
-					listeners: {
-						fileuploaded: function(s, file) {
-							if (file._extraParams) {
-								me.reloadGridFilesIf(file._extraParams['fileId']);
-							}
-						}
-					},
-					disabled: true
-				},
-				plugins: [{
-					ptype: 'sofiledrop',
-					text: WT.res('sofiledrop.text')
-				}],
-				listeners: {
-					selectionchange: function() {
-						me.updateDisabled('renameFile');
-						me.updateDisabled('deleteFile');
-					},
-					containercontextmenu: function(s, e) {
-						WT.showContextMenu(e, me.getRef('cxmGridFile0'));
-					},
-					rowdblclick: function(s, rec) {
-						me.followGridFile(rec);
-					},
-					rowcontextmenu: function(s, rec, itm, i, e) {
-						var sm = s.getSelectionModel();
-						if(sm.getSelection().length <= 1) sm.select(rec);
-						WT.showContextMenu(e, me.getRef('cxmGridFile'), {
-							file: rec,
-							files: s.getSelection()
-						});
-					}
-				}
-			}/*, {
+			items: [
+				me.grid/*, {
 				region: 'east',
 				xtype: 'wtform',
 				stateful: true,
@@ -422,7 +251,31 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				},
 				items: []
 			}*/]
-		}));
+		});
+		me.setMainComponent(me.mainComponent);
+		
+		me.grid.on('render', function(v) {
+			me.grid.dragZone = new Ext.dd.DragZone(v.getEl(), {
+					ddGroup: 'cloudAttachmentsId',
+					getDragData: function(ev) {	
+					var sourceEl = ev.getTarget(v.itemSelector, 10);
+				
+				if(v.getView().getRecord(sourceEl)) {
+					d = sourceEl.cloneNode(true);
+					d.id = Ext.id();
+						return (v.dragData = {
+							sourceEl: sourceEl,
+							repairXY: Ext.fly(sourceEl).getXY(),
+							ddel: d,
+							patientData: v.getView().getRecord(sourceEl).data
+					 });
+				}
+					},
+					getRepairXY: function() {
+						return this.dragData.repairXY;
+				}
+				});
+		});
 	},
 	
 	followGridFile: function(rec) {
@@ -2089,5 +1942,183 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		isOpenable: function(rec) {
 			return rec.isFile() && (['pdf'].indexOf(rec.get('ext')) !== -1);
 		}
+	},
+	
+	createGrid: function(gridId, store) {
+		var me = this;
+			var grid = Ext.create('Ext.grid.Panel', {
+				region: 'center',
+				id: gridId,
+				reference: 'gpfiles',
+				cls: 'wtvfs-gpfiles',
+				stateful: true,
+				stateId: me.buildStateId('gpfiles'),
+				store: {
+					model: 'Sonicle.webtop.vfs.model.GridFile',
+					proxy: WTF.apiProxy(me.ID, 'ManageGridFiles', 'files', {
+						extraParams: {
+							fileId: null
+						}
+					})
+				},
+				viewConfig: {
+					deferEmptyText: false,
+					emptyText: me.res('gpfiles.emp')
+				},
+				selModel: {
+					type: 'checkboxmodel',
+					mode : 'MULTI'
+				},
+				columns: [{
+					xtype: 'soiconcolumn',
+					dataIndex: 'type',
+					header: WTF.headerWithGlyphIcon('fa fa-file-o'),
+					getIconCls: function(v,rec) {
+						return rec.isFolder() ? 'wt-ftype-folder' : WTF.fileTypeCssIconCls(rec.get('ext'));
+					},
+					iconSize: 16,
+					width: 40
+				}, {
+					xtype: 'solinkcolumn',
+					dataIndex: 'name',
+					header: me.res('gpfiles.name.lbl'),
+					listeners: {
+						linkclick: function(s,idx,rec) {
+							me.followGridFile(rec);
+						}
+					},
+					flex: 1
+				}, {
+					xtype: 'sobytescolumn',
+					dataIndex: 'size',
+					header: me.res('gpfiles.size.lbl'),
+					width: 110
+				}, {
+					dataIndex: 'lastModified',
+					header: me.res('gpfiles.lastModified.lbl'),
+					xtype: 'datecolumn',
+					format: WT.getShortDateTimeFmt(),
+					width: 140
+				}, {
+					xtype: 'soiconcolumn',
+					dataIndex: 'dlLink',
+					header: WTF.headerWithGlyphIcon('fa fa-cloud-download'),
+					getIconCls: function(v,rec) {
+						if (Ext.isEmpty(v)) return '';
+						var exp = rec.get('dlLinkExp') ? 'Exp' : '';
+						return me.cssIconCls('downloadLink'+exp);
+					},
+					getTip: function(v,rec) {
+						if (Ext.isEmpty(v)) return '';
+						var exp = rec.get('dlLinkExp') ? '.exp' : '';
+						return me.res('gpfiles.dlLink'+exp);
+					},
+					iconSize: 16,
+					width: 40
+				}, {
+					xtype: 'soiconcolumn',
+					dataIndex: 'ulLink',
+					header: WTF.headerWithGlyphIcon('fa fa-cloud-upload'),
+					getIconCls: function(v,rec) {
+						if (Ext.isEmpty(v)) return '';
+						var exp = rec.get('ulLinkExp') ? 'Exp' : '';
+						return me.cssIconCls('uploadLink'+exp);
+					},
+					getTip: function(v,rec) {
+						if (Ext.isEmpty(v)) return '';
+						var exp = rec.get('ulLinkExp') ? '.exp' : '';
+						return me.res('gpfiles.ulLink'+exp);
+					},
+					iconSize: 16,
+					width: 40
+				}],
+				tbar: [
+					me.getAct('goUp'),
+					{
+						xtype: 'sobreadcrumb',
+						reference: 'bcfiles',
+						store: store,
+						overflowHandler: 'scroller',
+						minDepth: 2,
+						listeners: {
+							change: function(s, node) {
+								if (node) {
+									me.setCurFile(node.getId());
+									me.reloadGridFiles();
+								}
+							}
+						},
+						flex: 1
+					},
+					me.getActAs('renameFile', 'button', {text: null, tooltip: me.res('act-renameFile.lbl')}),
+					me.getActAs('deleteFile', 'button', {text: null, tooltip: me.res('act-deleteFile.lbl')}),
+					'-',
+					me.getActAs('createFolder', 'button', {text: null, tooltip: me.res('act-createFileFolder.lbl')}),
+					me.getActAs('createDocument', 'button', {
+						text: null,
+						tooltip: me.res('act-createDocument.lbl'),
+						hidden: !WT.getVar('docServerEnabled'),
+						menu: {
+							items: [
+								me.getAct('createFileDocx'),
+								me.getAct('createFileXlsx'),
+								me.getAct('createFilePptx'),
+								me.getAct('createFileTxt'),
+								me.getAct('createFileHtml')
+								//me.getAct('createFileOdt'),
+								//me.getAct('createFileOds'),
+								//me.getAct('createFileOdp')
+							]
+						}
+					})
+				],
+				bbar: {
+					xtype: 'wtuploadbar',
+					reference: 'tbupload',
+					sid: me.ID,
+					uploadContext: 'UploadStoreFile',
+					maxFileSize: me.getVar('privateUploadMaxFileSize'),
+					buttonIconCls: me.cssIconCls('uploadFile'),
+					dropElement: gridId,
+					fileExtraParams: function() {
+						return {
+							fileId: me.curFile
+						};
+					},
+					listeners: {
+						fileuploaded: function(s, file) {
+							if (file._extraParams) {
+								me.reloadGridFilesIf(file._extraParams['fileId']);
+							}
+						}
+					},
+					disabled: true
+				},
+				plugins: [{
+					ptype: 'sofiledrop',
+					text: WT.res('sofiledrop.text')
+				}],
+				listeners: {
+					selectionchange: function() {
+						me.updateDisabled('renameFile');
+						me.updateDisabled('deleteFile');
+					},
+					containercontextmenu: function(s, e) {
+						WT.showContextMenu(e, me.getRef('cxmGridFile0'));
+					},
+					rowdblclick: function(s, rec) {
+						me.followGridFile(rec);
+					},
+					rowcontextmenu: function(s, rec, itm, i, e) {
+						var sm = s.getSelectionModel();
+						if(sm.getSelection().length <= 1) sm.select(rec);
+						WT.showContextMenu(e, me.getRef('cxmGridFile'), {
+							file: rec,
+							files: s.getSelection()
+						});
+					}
+				}
+			});
+			return grid;
 	}
 });

@@ -60,10 +60,12 @@ public class JsGridFile {
 	public String ulLink;
 	public Boolean ulLinkExp;
 	public String eperms;
+	public int storeId;
+	public String path;
 	
 	public JsGridFile() {}
 	
-	public JsGridFile(StoreShareFolder folder, FileObject fo, String fileId, boolean canBeOpenedWithDocEditor, SharingLink dlLink, SharingLink ulLink) {
+	public JsGridFile(StoreShareFolder folder, FileObject fo, String fileId, boolean canBeOpenedWithDocEditor, SharingLink dlLink, SharingLink ulLink, int storeId, String path) {
 		this.fileId = fileId;
 		this.type = getFileType(fo);
 		this.mtype = (type.equals("folder")) ? "" : ServletHelper.guessMediaType(fo.getName().getBaseName(), true);
@@ -88,6 +90,8 @@ public class JsGridFile {
 			this.ulLinkExp = false;
 		}
 		this.eperms = folder.getElementsPerms().toString();
+		this.storeId = storeId;
+		this.path = path;
 	}
 	
 	private String getFileLastModified(FileObject fo) {
