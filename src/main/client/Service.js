@@ -267,7 +267,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 							sourceEl: sourceEl,
 							repairXY: Ext.fly(sourceEl).getXY(),
 							ddel: d,
-							patientData: v.getView().getRecord(sourceEl).data
+							cloudData: v.getView().getRecord(sourceEl).data
 					 });
 				}
 					},
