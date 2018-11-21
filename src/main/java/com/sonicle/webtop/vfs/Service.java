@@ -858,7 +858,7 @@ public class Service extends BaseService {
 					final String fileId = new StoreNodeId(parentNodeId.getShareId(), parentNodeId.getStoreId(), filePath).toString();
 					final String fileHash = VfsManagerUtils.generateStoreFileHash(storeId, filePath);
 					boolean canBeOpenedWithDocEditor = isFileEditableInDocEditor(fo.getName().getBaseName());
-					items.add(new JsGridFile(folder, fo, fileId, canBeOpenedWithDocEditor, dls.get(fileHash), uls.get(fileHash)));
+					items.add(new JsGridFile(folder, fo, fileId, canBeOpenedWithDocEditor, dls.get(fileHash), uls.get(fileHash), storeId, filePath));
 				}
 				new JsonResult("files", items).printTo(out);
 			}

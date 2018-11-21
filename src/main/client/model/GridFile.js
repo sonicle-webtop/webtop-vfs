@@ -51,7 +51,9 @@ Ext.define('Sonicle.webtop.vfs.model.GridFile', {
 		WTF.roField('dlLinkExp', 'boolean'),
 		WTF.roField('ulLink', 'string'),
 		WTF.roField('ulLinkExp', 'boolean'),
-		WTF.roField('eperms', 'string')
+		WTF.roField('eperms', 'string'),
+		WTF.roField('storeId', 'string'),
+		WTF.roField('path', 'string')
 	],
 	
 	getFId: function() {
@@ -96,5 +98,13 @@ Ext.define('Sonicle.webtop.vfs.model.GridFile', {
 	
 	isEditable: function() {
 		return this.isFile() && this.get('editable') > 0;
+	},
+	
+	getFStoreId: function() {
+		return this.get('storeId');
+	},
+	
+	getFPath: function() {
+		return this.get('path');
 	}
 });
