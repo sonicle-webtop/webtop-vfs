@@ -1991,7 +1991,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 					xtype: 'solinkcolumn',
 					dataIndex: 'name',
 					header: me.res('gpfiles.name.lbl'),
-					cls: 'wt-theme-text-lnk',
+					tdCls: 'wt-theme-text-lnk',
 					preserveWhitespaces: true,
 					listeners: {
 						linkclick: function(s,idx,rec) {
