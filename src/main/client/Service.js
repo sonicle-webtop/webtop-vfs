@@ -38,6 +38,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		'Sonicle.grid.column.Bytes',
 		'Sonicle.grid.column.Icon',
 		'Sonicle.grid.column.Link',
+		'Sonicle.grid.plugin.DragDrop',
 		'Sonicle.plugin.FileDrop',
 		'Sonicle.toolbar.Breadcrumb',
 		'Sonicle.upload.Button',
@@ -253,29 +254,6 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 			}*/]
 		});
 		me.setMainComponent(me.mainComponent);
-		
-		me.grid.on('render', function(v) {
-			me.grid.dragZone = new Ext.dd.DragZone(v.getEl(), {
-					ddGroup: 'cloudAttachmentsId',
-					getDragData: function(ev) {	
-					var sourceEl = ev.getTarget(v.itemSelector, 10);
-				
-				if(v.getView().getRecord(sourceEl)) {
-					d = sourceEl.cloneNode(true);
-					d.id = Ext.id();
-						return (v.dragData = {
-							sourceEl: sourceEl,
-							repairXY: Ext.fly(sourceEl).getXY(),
-							ddel: d,
-							cloudData: v.getView().getRecord(sourceEl).data
-					 });
-				}
-					},
-					getRepairXY: function() {
-						return this.dragData.repairXY;
-				}
-				});
-		});
 	},
 	
 	followGridFile: function(rec) {
@@ -1963,7 +1941,38 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				},
 				viewConfig: {
 					deferEmptyText: false,
-					emptyText: me.res('gpfiles.emp')
+					emptyText: me.res('gpfiles.emp'),
+					plugins: [{
+						ptype: 'sogridviewdragdrop',
+						dragGroup: 'wtvfs-storefile',
+						isDragDisallowed: function(view, rec) {
+							var sel = view.getSelection();
+							if (sel && (sel.length > 1)) return true;
+							if (rec && (rec.get('type') === 'folder')) return true;
+							return false;
+						},
+						getDragData: function(view, data) {
+							var rec = data.itemRecord;
+							if (rec) {
+								return {
+									storeFile: {
+										storeId: rec.get('storeId'),
+										path: rec.get('path'),
+										type: rec.get('type'),
+										name: rec.get('name'),
+										mediaType: rec.get('mtype'),
+										size: rec.get('size')
+									}
+								};
+							} else {
+								return {};
+							}
+						},
+						getDragText: function(view, data) {
+							var rec = data.itemRecord;
+							return rec ? rec.get('name') : null;
+						}
+					}]
 				},
 				selModel: {
 					type: 'checkboxmodel',
