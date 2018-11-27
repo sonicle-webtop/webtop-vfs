@@ -1970,7 +1970,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 						},
 						getDragText: function(view, data) {
 							var rec = data.itemRecord;
-							return rec ? rec.get('name') : null;
+							return rec ? Sonicle.String.htmlEncodeWhitespaces(Ext.String.htmlEncode(rec.get('name'))) : null;
 						}
 					}]
 				},
@@ -1991,6 +1991,8 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 					xtype: 'solinkcolumn',
 					dataIndex: 'name',
 					header: me.res('gpfiles.name.lbl'),
+					cls: 'wt-theme-text-lnk',
+					preserveWhitespaces: true,
 					listeners: {
 						linkclick: function(s,idx,rec) {
 							me.followGridFile(rec);
@@ -2115,7 +2117,8 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 					containercontextmenu: function(s, e) {
 						WT.showContextMenu(e, me.getRef('cxmGridFile0'));
 					},
-					rowdblclick: function(s, rec) {
+					rowdblclick: function(s, rec, el, ridx, e) {
+						if (e.position.colIdx === 0) return; // Skip dbl-click on selection cleckbox
 						me.followGridFile(rec);
 					},
 					rowcontextmenu: function(s, rec, itm, i, e) {
