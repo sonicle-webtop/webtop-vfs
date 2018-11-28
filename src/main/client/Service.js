@@ -1945,6 +1945,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 					plugins: [{
 						ptype: 'sogridviewdragdrop',
 						dragGroup: 'wtvfs-storefile',
+						enableDrop: false,
 						isDragDisallowed: function(view, rec) {
 							var sel = view.getSelection();
 							if (sel && (sel.length > 1)) return true;
