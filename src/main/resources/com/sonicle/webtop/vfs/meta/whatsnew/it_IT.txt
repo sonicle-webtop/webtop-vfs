@@ -1,0 +1,6 @@
+$	5.2.0
+	%	Versione 5.2.0
+	*	<h1>Trascinamento file</h1>
+		<p>I file possono essere trascinati all'interno della finestra di un nuovo 
+		messaggio email, diventando così degli allegati.</p>
+		<img src="5.2.0_dragtomail.png"/>

@@ -1,0 +1,6 @@
+$	5.2.0
+	%	Version 5.2.0
+	*	<h1>Drag files</h1>
+		<p>Files can be dragged into new mail message window, at drop time they
+		will become new attachments.</p>
+		<img src="5.2.0_dragtomail.png"/>
