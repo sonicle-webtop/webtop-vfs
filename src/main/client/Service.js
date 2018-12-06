@@ -1946,11 +1946,11 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 						ptype: 'sogridviewdragdrop',
 						dragGroup: 'wtvfs-storefile',
 						enableDrop: false,
-						isDragDisallowed: function(view, rec) {
+						isDragAllowed: function(view, rec) {
 							var sel = view.getSelection();
-							if (sel && (sel.length > 1)) return true;
-							if (rec && (rec.get('type') === 'folder')) return true;
-							return false;
+							if (sel && (sel.length > 1)) return false;
+							if (rec && (rec.get('type') === 'folder')) return false;
+							return true;
 						},
 						getDragData: function(view, data) {
 							var rec = data.itemRecord;

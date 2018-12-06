@@ -20,6 +20,8 @@
 		<webtop.service.i18n.languages>en,it,es,de,hr</webtop.service.i18n.languages>
 		<webtop.service.i18n.tx.push.languages>it</webtop.service.i18n.tx.push.languages>
 		<webtop.service.i18n.tx.pull.languages>es,de,hr</webtop.service.i18n.tx.pull.languages>
+	 <maven.compiler.source>1.8</maven.compiler.source>
+	 <maven.compiler.target>1.8</maven.compiler.target>
 	</properties>
 	
 	<dependencies>
