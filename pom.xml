@@ -57,5 +57,10 @@
 			<artifactId>sonicle-vfs2</artifactId>
 			<version>LATEST</version>
 		</dependency>
+		<dependency>
+			<groupId>com.sonicle.webtop</groupId>
+			<artifactId>webtop-mail-api</artifactId>
+			<version>LATEST</version>
+		</dependency>
 	</dependencies>
 </project>

@@ -43,7 +43,6 @@ import com.sonicle.commons.PathUtils;
 import com.sonicle.commons.URIUtils;
 import com.sonicle.commons.time.DateTimeUtils;
 import com.sonicle.commons.web.Crud;
-import com.sonicle.commons.web.DispositionType;
 import com.sonicle.commons.web.ServletUtils;
 import com.sonicle.commons.web.ServletUtils.StringArray;
 import com.sonicle.commons.web.json.CompositeId;
@@ -70,6 +69,7 @@ import com.sonicle.webtop.core.sdk.UserProfile;
 import com.sonicle.webtop.core.sdk.UserProfileId;
 import com.sonicle.webtop.core.sdk.WTException;
 import com.sonicle.webtop.core.sdk.interfaces.IServiceUploadStreamListener;
+import com.sonicle.webtop.mail.IMailManager;
 import com.sonicle.webtop.vfs.IVfsManager.StoreFileTemplate;
 import com.sonicle.webtop.vfs.IVfsManager.StoreFileType;
 import com.sonicle.webtop.vfs.bol.js.JsGridFile;
@@ -97,7 +97,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.vfs2.FileName;
 import org.apache.commons.vfs2.FileObject;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -1225,6 +1224,36 @@ public class Service extends BaseService {
 		} catch(Exception ex) {
 			logger.error("Error in ManageSharingLink", ex);
 			new JsonResult(false, "Error").printTo(out);
+		}
+	}
+	
+	public void processSaveMessageAttachment(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		try {
+			String parentFileId = ServletUtils.getStringParameter(request, "fileId", true);
+			String name = ServletUtils.getStringParameter(request, "name", true);
+			String mailAccount = ServletUtils.getStringParameter(request, "mailAccount", true);
+			String mailFolder = ServletUtils.getStringParameter(request, "mailFolder", true);
+			int mailMsgId = ServletUtils.getIntParameter(request, "mailMsgId", true);
+			int mailAttachId = ServletUtils.getIntParameter(request, "mailAttachId", true);
+			
+			StoreNodeId parentNodeId = (StoreNodeId)new StoreNodeId().parse(parentFileId);
+			int storeId = Integer.valueOf(parentNodeId.getStoreId());
+			String path = (parentNodeId.getSize() == 2) ? "/" : parentNodeId.getPath();
+			
+			IMailManager mailMgr = (IMailManager)WT.getServiceManager("com.sonicle.webtop.mail");
+			InputStream is = null;
+			try {
+				//TODO: improve method signature, are all params truly needed?
+				is = mailMgr.getAttachmentInputStream(mailAccount, mailFolder, mailMsgId, mailAttachId);
+				manager.addStoreFileFromStream(storeId, path, name, is);
+			} finally {
+				IOUtils.closeQuietly(is);
+			}
+			new JsonResult(true).printTo(out);
+			
+		} catch (Exception ex) {
+			logger.error("Error in SaveMessageAttachment", ex);
+			new JsonResult(ex).printTo(out);
 		}
 	}
 	

@@ -1581,6 +1581,27 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		return vw;
 	},
 	
+	saveMessageAttachment: function(targetFileId, targetFilename, mailAccount, mailFolder, mailMsgId, mailAttachId) {
+		var me = this;
+		WT.ajaxReq(me.ID, 'SaveMessageAttachment', {
+			params: {
+				fileId: targetFileId,
+				name: targetFilename,
+				mailAccount: mailAccount,
+				mailFolder: mailFolder,
+				mailMsgId: mailMsgId,
+				mailAttachId: mailAttachId
+			},
+			callback: function(success, json) {
+				if (success) {
+					me.reloadFiles();
+				} else {
+					WT.error(json.message);
+				}
+			}
+		});
+	},
+	
 	setDefaultFile: function() {
 		var me = this,
 				rn = me.getMyRoot(me.trStores()),
@@ -1945,7 +1966,8 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 					plugins: [{
 						ptype: 'sogridviewdragdrop',
 						dragGroup: 'wtvfs-storefile',
-						enableDrop: false,
+						//TODO: maybe format group names in a better way!
+						dropGroup: 'attachment',
 						isDragAllowed: function(view, rec) {
 							var sel = view.getSelection();
 							if (sel && (sel.length > 1)) return false;
@@ -1972,6 +1994,10 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 						getDragText: function(view, data) {
 							var rec = data.itemRecord;
 							return rec ? Sonicle.String.htmlEncodeWhitespaces(Ext.String.htmlEncode(rec.get('name'))) : null;
+						}, 
+						handleNodeDrop: function(data) {
+							var att = data.msgAttachment;
+							me.saveMessageAttachment(me.curNode, att.attachName, att.accountId, att.folder, att.msgId, att.attachId);
 						}
 					}]
 				},
