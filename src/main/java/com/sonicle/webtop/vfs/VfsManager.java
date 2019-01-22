@@ -689,7 +689,8 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			tplUrl = this.getClass().getResource(tplName);
 		}
 		if (tplUrl == null) throw new WTException("Template file not found [{}]", tplName);
-		String fileName = StringUtils.endsWithIgnoreCase(name, "." + fileExt) ? name : name + "." + fileExt;
+		String sntzName = PathUtils.sanitizeFolderName(name);
+		String fileName = StringUtils.endsWithIgnoreCase(sntzName, "." + fileExt) ? sntzName : sntzName + "." + fileExt;
 		
 		InputStream is = null;
 		try {
@@ -710,7 +711,8 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			tfo = getTargetFileObject(storeId, parentPath);
 			if (!tfo.isFolder()) throw new IllegalArgumentException("Please provide a valid parentPath");
 			
-			String newPath = FilenameUtils.separatorsToUnix(FilenameUtils.concat(parentPath, name));
+			String sntzName = PathUtils.sanitizeFolderName(name);
+			String newPath = FilenameUtils.separatorsToUnix(FilenameUtils.concat(parentPath, sntzName));
 			ntfo = getTargetFileObject(storeId, newPath);
 			logger.debug("Creating store file [{}, {}]", storeId, newPath);
 			if (fileType.equals(StoreFileType.FOLDER)) {
@@ -1336,7 +1338,8 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		
 		try {
 			tfo = getTargetFileObject(storeId, path);
-			String newPath = FilenameUtils.separatorsToUnix(FilenameUtils.concat(PathUtils.getFullParentPath(path), newName));
+			String sntzName = PathUtils.sanitizeFolderName(newName);
+			String newPath = FilenameUtils.separatorsToUnix(FilenameUtils.concat(PathUtils.getFullParentPath(path), sntzName));
 			ntfo = getTargetFileObject(storeId, newPath);
 			if (!overwrite && ntfo.exists()) throw new FileOverwriteException("A file with same name already exists [{}]", newPath);
 			
