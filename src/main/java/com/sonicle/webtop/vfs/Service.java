@@ -43,6 +43,8 @@ import com.sonicle.commons.PathUtils;
 import com.sonicle.commons.URIUtils;
 import com.sonicle.commons.time.DateTimeUtils;
 import com.sonicle.commons.web.Crud;
+import com.sonicle.commons.web.DispositionType;
+import com.sonicle.commons.web.ParameterException;
 import com.sonicle.commons.web.ServletUtils;
 import com.sonicle.commons.web.ServletUtils.StringArray;
 import com.sonicle.commons.web.json.CompositeId;
@@ -51,6 +53,7 @@ import com.sonicle.commons.web.json.JsonResult;
 import com.sonicle.commons.web.json.MapItem;
 import com.sonicle.commons.web.json.Payload;
 import com.sonicle.commons.web.json.extjs.ExtTreeNode;
+import com.sonicle.vfs2.FileSelector;
 import com.sonicle.vfs2.VfsUtils;
 import com.sonicle.vfs2.util.DropboxApiUtils;
 import com.sonicle.vfs2.util.GoogleDriveApiUtils;
@@ -86,6 +89,7 @@ import com.sonicle.webtop.vfs.model.SharingLink;
 import com.sonicle.webtop.vfs.sfs.StoreFileSystem;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.URI;
 import java.util.ArrayList;
@@ -93,11 +97,15 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.jar.JarEntry;
+import java.util.jar.JarOutputStream;
+import java.util.logging.Level;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.vfs2.FileObject;
+import org.apache.commons.vfs2.FileSystemException;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.format.DateTimeFormatter;
@@ -1013,6 +1021,7 @@ public class Service extends BaseService {
 	public void processDownloadFiles(HttpServletRequest request, HttpServletResponse response) {
 		
 		try {
+			boolean recursive = ServletUtils.getBooleanParameter(request, "recursive", false);
 			StringArray fileIds = ServletUtils.getObjectParameter(request, "fileIds", StringArray.class, true);
 			boolean inline = ServletUtils.getBooleanParameter(request, "inline", false);
 			
@@ -1027,22 +1036,34 @@ public class Service extends BaseService {
 			FileObject fo = null;
 			try {
 				fo = manager.getStoreFile(storeId, nodeId.getPath());
-				
-				if (!fo.isFile()) {
+				if (fo.isFolder()) {
+					String filename = fo.getName().getBaseName() + ".zip";
+					ServletUtils.setFileStreamHeaders(response, "application/x-zip-compressed", DispositionType.ATTACHMENT, filename);
+					
+					JarOutputStream jos = null;
+					try {
+						jos = new JarOutputStream(response.getOutputStream());
+						writeFileObject(fo, recursive, jos);
+						
+					} finally {
+						IOUtils.closeQuietly(jos);
+					}
+					
+				} else if (fo.isFile()) {
+					String filename = fo.getName().getBaseName();
+					//String mediaType = ServletHelper.guessMediaType(filename, true);
+					ServletUtils.setContentLengthHeader(response, fo.getContent().getSize());
+					if (inline) {
+						ServletUtils.setFileStreamHeaders(response, filename);
+					} else {
+						ServletUtils.setFileStreamHeadersForceDownload(response, filename);
+					}
+					IOUtils.copy(fo.getContent().getInputStream(), response.getOutputStream());
+					
+				} else {
 					logger.warn("Cannot read a non-file [{}, {}]", storeId, nodeId.getPath());
 					throw new WTException("Requested file is not a real file");
 				}
-				
-				String filename = fo.getName().getBaseName();
-				//String mediaType = ServletHelper.guessMediaType(filename, true);
-				
-				ServletUtils.setContentLengthHeader(response, fo.getContent().getSize());
-				if (inline) {
-					ServletUtils.setFileStreamHeaders(response, filename);
-				} else {
-					ServletUtils.setFileStreamHeadersForceDownload(response, filename);
-				}
-				IOUtils.copy(fo.getContent().getInputStream(), response.getOutputStream());
 				
 			} finally {
 				IOUtils.closeQuietly(fo);
@@ -1051,6 +1072,22 @@ public class Service extends BaseService {
 		} catch(Exception ex) {
 			logger.error("Error in DownloadFiles", ex);
 			ServletUtils.writeErrorHandlingJs(response, ex.getMessage());
+		}
+	}
+	
+	private void writeFileObject(FileObject baseFo, boolean recursive, JarOutputStream jos) throws FileSystemException, IOException {
+		writeFileObject(baseFo, baseFo.findFiles(new FileSelector(true, true)), recursive, jos);
+	}
+	
+	private void writeFileObject(FileObject baseFo, FileObject[] fileObjects, boolean recursive, JarOutputStream jos) throws FileSystemException, IOException {
+		for (FileObject fo : fileObjects) {
+			if (fo.isFolder()) {
+				if (recursive) writeFileObject(baseFo, fo.findFiles(new FileSelector(true, true)), recursive, jos);
+			} else {
+				String relName = baseFo.getName().getRelativeName(fo.getName());
+				jos.putNextEntry(new JarEntry(relName));
+				IOUtils.copy(fo.getContent().getInputStream(), jos);
+			}
 		}
 	}
 	

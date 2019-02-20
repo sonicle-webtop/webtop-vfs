@@ -266,7 +266,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		} else if (me.isOpenable(rec)) {
 			me.openFile(rec.getFId());
 		} else {
-			me.downloadFiles([rec.getFId()]);
+			me.downloadFiles(false, [rec.getFId()]);
 		}
 	},
 	
@@ -692,6 +692,16 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				});
 			}
 		});
+		me.addAct('downloadFileNode', {
+			ignoreSize: true,
+			text: me.res('act-downloadFile.lbl'),
+			tooltip: null,
+			iconCls: me.cssIconCls('downloadFolder', 'xs'),
+			handler: function() {
+				var node = me.getCurrentFileNode();
+				if (node) me.downloadFilesUI([node]);
+			}
+		});
 	},
 	
 	initCxm: function() {
@@ -769,6 +779,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 			xtype: 'menu',
 			items: [
 				me.getAct('createFileNode'),
+				me.getAct('downloadFileNode'),
 				'-',
 				me.getAct('refreshFileNode'),
 				'-',
@@ -955,9 +966,14 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 	},
 	
 	downloadFilesUI: function(sel) {
-		var me = this,
-			ids = me.selectionIds(sel);
-		me.downloadFiles(ids);
+		var me = this;
+		if (sel[0].isFolder()) {
+			WT.confirm(me.res('gpfiles.confirm.download.recursive'), function(bid) {
+				if (bid !== 'cancel') me.downloadFiles(bid === 'yes', [sel[0].getFId()]);
+			});
+		} else {
+			me.downloadFiles(false, me.selectionIds(sel, 'file'));
+		}
 	},
 	
 	editFileUI: function(sel, view) {
@@ -1257,8 +1273,9 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		}));
 	},
 	
-	downloadFiles: function(fileIds) {
+	downloadFiles: function(recursive, fileIds) {
 		Sonicle.URLMgr.download(WTF.processBinUrl(this.ID, 'DownloadFiles', {
+			recursive: recursive,
 			fileIds: WTU.arrayAsParam(fileIds)
 		}));
 	},
@@ -1686,9 +1703,13 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		return this.gpFiles().getSelection();
 	},
 	
-	selectionIds: function(sel) {
+	selectionIds: function(sel, filterByType) {
 		var ids = [];
 		Ext.iterate(sel, function(rec) {
+			if (!Ext.isEmpty(filterByType)) {
+				if ((filterByType === 'file') && !rec.isFile()) return;
+				if ((filterByType === 'folder') && !rec.isFolder()) return;
+			}
 			ids.push(rec.getId());
 		});
 		return ids;
@@ -1873,7 +1894,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 			case 'downloadFile':
 				sel = me.getSelectedFiles();
 				if (sel.length === 1) {
-					return sel[0].isFolder() ? true : false;
+					return false;
 				} else {
 					return true;
 				}

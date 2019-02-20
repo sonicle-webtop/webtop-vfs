@@ -94,5 +94,13 @@ Ext.define('Sonicle.webtop.vfs.model.StoreNode', {
 	
 	getEPerms: function() {
 		return this.toPermsObj(this.get('_eperms'));
+	},
+	
+	isFolder: function() {
+		return true;
+	},
+	
+	isFile: function() {
+		return false;
 	}
 });
