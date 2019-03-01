@@ -1,7 +1,7 @@
 $	5.2.2
-	%	Versione 5.2.2
-	*	<h1>Scarica cartella</h1>
-		<p>Un nuovo menu consente di scaricare una intera cartella come file zip</p>
+	%	Version 5.2.2
+	*	<h1>Download folder</h1>
+		<p>A new context menu allows to download an entire folder as a zip file</p>
 		<img src="5.2.2_downloadfolder.png"/>
 $	5.2.0
 	%	Version 5.2.0
