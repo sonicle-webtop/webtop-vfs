@@ -56,7 +56,7 @@ public class UserOptionsService extends BaseUserOptionsService {
 	public static final Logger logger = WT.getLogger(UserOptionsService.class);
 	
 	@Override
-	public void processUserOptions(HttpServletRequest request, HttpServletResponse response, PrintWriter out, String payload) {
+	public void processUserOptions(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		Connection con = null;
 		
 		try {
@@ -75,7 +75,7 @@ public class UserOptionsService extends BaseUserOptionsService {
 				new JsonResult(jso).printTo(out);
 				
 			} else if(crud.equals(Crud.UPDATE)) {
-				Payload<MapItem, JsUserOptions> pl = ServletUtils.getPayload(payload, JsUserOptions.class);
+				Payload<MapItem, JsUserOptions> pl = ServletUtils.getPayload(request, JsUserOptions.class);
 				
 				// Main
 				if (pl.map.has("privateUploadMaxFileSize")) us.setPrivateUploadMaxFileSize(pl.data.privateUploadMaxFileSize);
