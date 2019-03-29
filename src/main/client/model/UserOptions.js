@@ -34,7 +34,7 @@
 Ext.define('Sonicle.webtop.vfs.model.UserOptions', {
 	extend: 'WTA.sdk.model.UserOptions',
 	
-	proxy: WT.optionsProxy('com.sonicle.webtop.vfs'),
+	proxy: WTF.optionsProxy('com.sonicle.webtop.vfs'),
 	fields: [
 		WTF.field('privateUploadMaxFileSize', 'int', true),
 		WTF.field('publicUploadMaxFileSize', 'int', true),
