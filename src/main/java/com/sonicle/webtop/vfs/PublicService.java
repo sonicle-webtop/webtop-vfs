@@ -47,6 +47,7 @@ import com.sonicle.webtop.core.sdk.UploadException;
 import com.sonicle.webtop.core.sdk.WTException;
 import com.sonicle.webtop.core.sdk.interfaces.IServiceUploadStreamListener;
 import com.sonicle.webtop.core.app.servlet.ServletHelper;
+import com.sonicle.webtop.core.sdk.UserProfileId;
 import com.sonicle.webtop.vfs.IVfsManager.StoreFileType;
 import com.sonicle.webtop.vfs.bol.js.JsPubGridFile;
 import com.sonicle.webtop.vfs.model.SharingLink;
@@ -80,17 +81,17 @@ public class PublicService extends BasePublicService {
 	public static final String PUBPATH_CONTEXT_LINK = "link";
 	
 	private final Object lock1 = new Object();
-	private VfsManager manager;
 	
 	@Override
 	public void initialize() throws Exception {
-		manager = (VfsManager)WT.getServiceManager(SERVICE_ID);
 		registerUploadListener("UploadFile", new OnUploadFile());
 	}
 
 	@Override
-	public void cleanup() throws Exception {
-		manager = null;
+	public void cleanup() throws Exception {}
+	
+	private VfsManager getAdminManager(String domainId) {
+		return (VfsManager)WT.getServiceManager(SERVICE_ID, true, new UserProfileId(domainId, "admin"));
 	}
 	
 	private WebTopSession getWts() {
@@ -110,148 +111,147 @@ public class PublicService extends BasePublicService {
 	
 	@Override
 	public void processDefaultAction(HttpServletRequest request, HttpServletResponse response) throws Exception {
-		PublicPath path = new PublicPath(request.getPathInfo());
 		WebTopSession wts = getWts();
 		
 		try {
-			try {
-				String domainId = WT.findDomainIdByPublicName(path.getDomainPublicName());
-				if (domainId == null) throw new WTException("Invalid domain public name [{0}]", path.getDomainPublicName());
-				
-				if(path.getContext().equals(PUBPATH_CONTEXT_LINK)) {
-					FileUrlPath fileUrlPath = new FileUrlPath(path.getRemainingPath());
+			PublicPath path = new PublicPath(request.getPathInfo());
+			String domainId = WT.findDomainIdByPublicName(path.getDomainPublicName());
+			if (domainId == null) throw new WTException("Invalid domain public name [{0}]", path.getDomainPublicName());
 
-					SharingLink link = null;
-					if (!StringUtils.isBlank(fileUrlPath.getLinkId())) {
-						link = manager.getSharingLink(fileUrlPath.getLinkId());
-					}
+			if (path.getContext().equals(PUBPATH_CONTEXT_LINK)) {
+				FileUrlPath fileUrlPath = new FileUrlPath(path.getRemainingPath());
+				VfsManager adminVfsMgr = getAdminManager(domainId);
 
-					if (link == null) { // Link not found
-						logger.trace("Link not found [{}]", fileUrlPath.getLinkId());
-						response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-						writeErrorPage(request, response, wts, "linknotfound");
+				SharingLink link = null;
+				if (!StringUtils.isBlank(fileUrlPath.getLinkId())) {
+					link = adminVfsMgr.getSharingLink(fileUrlPath.getLinkId());
+				}
 
-					} else if (link.isExpired(DateTimeUtils.now())) { // Link expired
-						logger.trace("Link expired [{}]", fileUrlPath.getLinkId());
-						response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-						writeErrorPage(request, response, wts, "linkexpired");
+				if (link == null) { // Link not found
+					logger.trace("Link not found [{}]", fileUrlPath.getLinkId());
+					response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+					writeErrorPage(request, response, domainId, wts, "linknotfound");
 
-					} else if (!isLinkAuthorized(link)) { // Link not authorized
-						writeLinkPage(request, response, wts, "Authorize", link);
+				} else if (link.isExpired(DateTimeUtils.now())) { // Link expired
+					logger.trace("Link expired [{}]", fileUrlPath.getLinkId());
+					response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+					writeErrorPage(request, response, domainId, wts, "linkexpired");
 
-					} else if (link.getLinkType().equals(SharingLink.LinkType.DOWNLOAD)) {
-						if (PathUtils.isFolder(link.getFilePath())) {
-							Integer dl = ServletUtils.getIntParameter(request, "dl", 0);
+				} else if (!isLinkAuthorized(link)) { // Link not authorized
+					writeLinkPage(request, response, domainId, wts, "Authorize", link);
 
-							if (dl == 1) { // Download file request
-								String fileId = ServletUtils.getStringParameter(request, "fileId", true);
-								
-								String outName;
-								if (PathUtils.isFolder(fileId)) {
-									if (PathUtils.isRootFolder(fileId)) {
-										outName = StringUtils.defaultString(PathUtils.getFileName(link.getFilePath()), link.getLinkId());
-									} else {
-										outName = PathUtils.getFileName(fileId);
-									}
-									outName += ".zip";
+				} else if (link.getLinkType().equals(SharingLink.LinkType.DOWNLOAD)) {
+					if (PathUtils.isFolder(link.getFilePath())) {
+						Integer dl = ServletUtils.getIntParameter(request, "dl", 0);
+
+						if (dl == 1) { // Download file request
+							String fileId = ServletUtils.getStringParameter(request, "fileId", true);
+
+							String outName;
+							if (PathUtils.isFolder(fileId)) {
+								if (PathUtils.isRootFolder(fileId)) {
+									outName = StringUtils.defaultString(PathUtils.getFileName(link.getFilePath()), link.getLinkId());
 								} else {
 									outName = PathUtils.getFileName(fileId);
 								}
-								
-								final String servicePublicUrl = WT.getServicePublicUrl(link.getDomainId(), SERVICE_ID);
-								final URI url = buildPublicLinkFolderGetUrl(servicePublicUrl, link, fileId, outName);
-								ServletUtils.setLocationHeader(response, url.toASCIIString());
-								response.setStatus(HttpServletResponse.SC_FOUND);
-
-							} else if (fileUrlPath.isGet()) { // Real binary stream
-								String p = ServletUtils.getStringParameter(request, "p", true);
-								
-								String filePath = PathUtils.concatPaths(link.getFilePath(), p);
-								boolean written = writeStoreFile(response, link, fileUrlPath.getOutFileName(), false);
-								if (!written) {
-									response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-									writeErrorPage(request, response, wts, "linknotfound");
-								} else {
-									if (link.getNotify()) {
-										manager.notifySharingLinkUsage(link.getLinkId(), filePath, wts.getRemoteIP(), wts.getPlainUserAgent());
-									}
-								}
-
+								outName += ".zip";
 							} else {
-								writeLinkPage(request, response, wts, "DownloadLink", link);
+								outName = PathUtils.getFileName(fileId);
 							}
-							
+
+							final String servicePublicUrl = WT.getServicePublicUrl(link.getDomainId(), SERVICE_ID);
+							final URI url = buildPublicLinkFolderGetUrl(servicePublicUrl, link, fileId, outName);
+							ServletUtils.setLocationHeader(response, url.toASCIIString());
+							response.setStatus(HttpServletResponse.SC_FOUND);
+
+						} else if (fileUrlPath.isGet()) { // Real binary stream
+							String p = ServletUtils.getStringParameter(request, "p", true);
+
+							String filePath = PathUtils.concatPaths(link.getFilePath(), p);
+							boolean written = writeStoreFile(response, link, fileUrlPath.getOutFileName(), false);
+							if (!written) {
+								response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+								writeErrorPage(request, response, domainId, wts, "linknotfound");
+							} else {
+								if (link.getNotify()) {
+									adminVfsMgr.notifySharingLinkUsage(link.getLinkId(), filePath, wts.getRemoteIP(), wts.getPlainUserAgent());
+								}
+							}
+
 						} else {
-							Integer raw = ServletUtils.getIntParameter(request, "raw", 0);
-							if ((raw == 1) || (raw == 2)) { // Link points directly to file raw data (no preview page)
-								boolean inline = (raw == 2); // inline=2 to request an inline content-disposition
-								final String servicePublicUrl = WT.getServicePublicUrl(link.getDomainId(), SERVICE_ID);
-								final URI url = buildPublicLinkFileGetUrl(servicePublicUrl, link, inline);
-								ServletUtils.setLocationHeader(response, url.toString());
-								response.setStatus(HttpServletResponse.SC_FOUND);
-								
-							} else if (fileUrlPath.isGet()) { // Real binary stream
-								boolean inline = ServletUtils.getBooleanParameter(request, "inline", false);
-								
-								boolean written = writeStoreFile(response, link, fileUrlPath.getOutFileName(), inline);
-								if (!written) {
-									response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-									writeErrorPage(request, response, wts, "linknotfound");
-								} else {
-									if (link.getNotify()) {
-										manager.notifySharingLinkUsage(link.getLinkId(), link.getFilePath(), wts.getClientRemoteIP(), wts.getPlainUserAgent());
-									}
-								}
-								
-							} else {
-								logger.trace("Invalid request");
-								response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-								writeErrorPage(request, response, wts, "badrequest");
-							}
+							writeLinkPage(request, response, domainId, wts, "DownloadLink", link);
 						}
-						
-					} else if (link.getLinkType().equals(SharingLink.LinkType.UPLOAD)) {
-						VfsUserSettings us = new VfsUserSettings(SERVICE_ID, link.getProfileId());
-						
-						JsWTSPublic.Vars vars = new JsWTSPublic.Vars();
-						vars.put("publicUploadMaxFileSize", us.getPublicUploadMaxFileSize(true));
-						writeLinkPage(request, response, wts, "UploadLink", link, vars);
+
+					} else {
+						Integer raw = ServletUtils.getIntParameter(request, "raw", 0);
+						if ((raw == 1) || (raw == 2)) { // Link points directly to file raw data (no preview page)
+							boolean inline = (raw == 2); // inline=2 to request an inline content-disposition
+							final String servicePublicUrl = WT.getServicePublicUrl(link.getDomainId(), SERVICE_ID);
+							final URI url = buildPublicLinkFileGetUrl(servicePublicUrl, link, inline);
+							ServletUtils.setLocationHeader(response, url.toString());
+							response.setStatus(HttpServletResponse.SC_FOUND);
+
+						} else if (fileUrlPath.isGet()) { // Real binary stream
+							boolean inline = ServletUtils.getBooleanParameter(request, "inline", false);
+
+							boolean written = writeStoreFile(response, link, fileUrlPath.getOutFileName(), inline);
+							if (!written) {
+								response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+								writeErrorPage(request, response, domainId, wts, "linknotfound");
+							} else {
+								if (link.getNotify()) {
+									adminVfsMgr.notifySharingLinkUsage(link.getLinkId(), link.getFilePath(), wts.getClientRemoteIP(), wts.getPlainUserAgent());
+								}
+							}
+
+						} else {
+							logger.trace("Invalid request");
+							response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+							writeErrorPage(request, response, domainId, wts, "badrequest");
+						}
 					}
 
-				} else {
-					logger.trace("Invalid context [{}]", path.getContext());
-					response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-					writeErrorPage(request, response, wts, "badrequest");
+				} else if (link.getLinkType().equals(SharingLink.LinkType.UPLOAD)) {
+					VfsUserSettings us = new VfsUserSettings(SERVICE_ID, link.getProfileId());
+
+					JsWTSPublic.Vars vars = new JsWTSPublic.Vars();
+					vars.put("publicUploadMaxFileSize", us.getPublicUploadMaxFileSize(true));
+					writeLinkPage(request, response, domainId, wts, "UploadLink", link, vars);
 				}
-				
-			} catch(Exception ex) {
-				logger.trace("Error", ex);
+
+			} else {
+				logger.trace("Invalid context [{}]", path.getContext());
 				response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-				writeErrorPage(request, response, wts, "badrequest");
+				writeErrorPage(request, response, domainId, wts, "badrequest");
 			}
+				
 		} catch(Throwable t) {
 			logger.error("Unexpected error", t);
+			response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+			writeErrorPage(request, response, null, wts, "badrequest");
 		}
 	}
 	
 	public void processAuthorizeLink(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		
 		try {
+			String domainId = ServletUtils.getStringParameter(request, "domainId", true);
 			String linkId = ServletUtils.getStringParameter(request, "linkId", true);
 			String password = ServletUtils.getStringParameter(request, "password", true);
 			
-			SharingLink link = manager.getSharingLink(linkId);
-			if(link == null) throw new WTException("Link not found [{0}]", linkId);
+			VfsManager adminVfsMgr = getAdminManager(domainId);
+			SharingLink link = adminVfsMgr.getSharingLink(linkId);
+			if (link == null) throw new WTException("Link not found [{0}]", linkId);
 			
-			if(isLinkAuthorized(link)) {
+			if (isLinkAuthorized(link)) {
 				new JsonResult().printTo(out);
 			} else {
 				boolean check = true;
-				if(link.getAuthMode().equals(SharingLink.AuthMode.PASSWORD)) {
+				if (link.getAuthMode().equals(SharingLink.AuthMode.PASSWORD)) {
 					check = StringUtils.equals(password, link.getPassword());
 				}
 
-				if(check) {
+				if (check) {
 					getAuthedLinks().add(linkId);
 					new JsonResult().printTo(out);
 				} else {
@@ -260,7 +260,7 @@ public class PublicService extends BasePublicService {
 			}
 			
 		} catch(Exception ex) {
-			logger.error("Error in CheckLinkPassword", ex);
+			logger.error("Error in AuthorizeLink", ex);
 			new JsonResult(false, "Error").printTo(out);
 		}
 	}
@@ -269,20 +269,22 @@ public class PublicService extends BasePublicService {
 		ArrayList<JsPubGridFile> items = new ArrayList<>();
 		
 		try {
+			String domainId = ServletUtils.getStringParameter(request, "domainId", true);
 			String linkId = ServletUtils.getStringParameter(request, "linkId", true);
 			String fileId = ServletUtils.getStringParameter(request, "fileId", true);
 			
-			SharingLink link = manager.getSharingLink(linkId);
-			if(link == null) throw new WTException("Link not found [{0}]", linkId);
-			if(!isLinkAuthorized(link)) throw new WTException("Link not authorized [{0}]", linkId);
+			VfsManager adminVfsMgr = getAdminManager(domainId);
+			SharingLink link = adminVfsMgr.getSharingLink(linkId);
+			if (link == null) throw new WTException("Link not found [{0}]", linkId);
+			if (!isLinkAuthorized(link)) throw new WTException("Link not authorized [{0}]", linkId);
 			
 			String path = PathUtils.concatPaths(link.getFilePath(), fileId);
-			if(!PathUtils.isFolder(path)) throw new WTException("Invalid file [{0}]", path);
+			if (!PathUtils.isFolder(path)) throw new WTException("Invalid file [{0}]", path);
 			
 			VfsManager vfsMgr = (VfsManager)WT.getServiceManager(SERVICE_ID, true, link.getProfileId());
 			StoreFileSystem sfs = vfsMgr.getStoreFileSystem(link.getStoreId());
-			for(FileObject fo : vfsMgr.listStoreFiles(StoreFileType.FILE_OR_FOLDER, link.getStoreId(), path)) {
-				if(VfsUtils.isFileObjectHidden(fo)) continue;
+			for (FileObject fo : vfsMgr.listStoreFiles(StoreFileType.FILE_OR_FOLDER, link.getStoreId(), path)) {
+				if (VfsUtils.isFileObjectHidden(fo)) continue;
 				// Relativize path and force trailing separator if file is a folder
 				String filePath = fo.isFolder() ? PathUtils.ensureTrailingSeparator(sfs.getRelativePath(fo), false) : sfs.getRelativePath(fo);
 				// Relativize path to link (suitable only for folders...see before)
@@ -302,12 +304,15 @@ public class PublicService extends BasePublicService {
 		public void onUpload(String context, HttpServletRequest request, HashMap<String, String> multipartParams, WebTopSession.UploadedFile file, InputStream is, MapItem responseData) throws UploadException {
 			//TODO: inibire upload se dimensione > publicUploadMaxFileSize
 			try {
+				String domainId = multipartParams.get("domainId");
+				if (StringUtils.isBlank(domainId)) throw new UploadException("Missing parameter [domainId]");
 				String linkId = multipartParams.get("linkId");
-				if(StringUtils.isBlank(linkId)) throw new UploadException("Missing parameter [linkId]");
-
-				SharingLink link = manager.getSharingLink(linkId);
-				if(link == null) throw new UploadException("Link not found [{0}]", linkId);
-				if(!link.getLinkType().equals(SharingLink.LinkType.UPLOAD)) throw new UploadException("Wrong link type [{0}]", linkId);
+				if (StringUtils.isBlank(linkId)) throw new UploadException("Missing parameter [linkId]");
+				
+				VfsManager adminVfsMgr = getAdminManager(domainId);
+				SharingLink link = adminVfsMgr.getSharingLink(linkId);
+				if (link == null) throw new UploadException("Link not found [{0}]", linkId);
+				if (!link.getLinkType().equals(SharingLink.LinkType.UPLOAD)) throw new UploadException("Wrong link type [{0}]", linkId);
 
 				VfsManager vfsMgr = (VfsManager)WT.getServiceManager(SERVICE_ID, true, link.getProfileId());
 				String newPath = vfsMgr.addStoreFileFromStream(link.getStoreId(), link.getFilePath(), file.getFilename(), is);
@@ -352,7 +357,7 @@ public class PublicService extends BasePublicService {
 					ServletUtils.setContentLengthHeader(response, fo.getContent().getSize());
 					IOUtils.copy(fo.getContent().getInputStream(), response.getOutputStream());
 
-				} else if(fo.isFolder()) {
+				} else if (fo.isFolder()) {
 					OutputStream os = response.getOutputStream();
 					ServletUtils.setFileStreamHeadersForceDownload(response, outFileName); // Filename already contains .zip extension!
 					ZipOutputStream zos = new ZipOutputStream(os);
@@ -374,22 +379,26 @@ public class PublicService extends BasePublicService {
 		}
 	}
 	
-	private void writeLinkPage(HttpServletRequest request, HttpServletResponse response, WebTopSession wts, String view, SharingLink link) throws IOException, TemplateException {
-		writeLinkPage(request, response, wts, view, link, new JsWTSPublic.Vars());
+	private void writeLinkPage(HttpServletRequest request, HttpServletResponse response, String domainId, WebTopSession wts, String view, SharingLink link) throws IOException, TemplateException {
+		writeLinkPage(request, response, domainId, wts, view, link, new JsWTSPublic.Vars());
 	}
 	
-	private void writeLinkPage(HttpServletRequest request, HttpServletResponse response, WebTopSession wts, String view, SharingLink link, JsWTSPublic.Vars vars) throws IOException, TemplateException {
+	private void writeLinkPage(HttpServletRequest request, HttpServletResponse response, String domainId, WebTopSession wts, String view, SharingLink link, JsWTSPublic.Vars vars) throws IOException, TemplateException {
 		vars.put("view", view);
 		vars.put("linkId", link.getLinkId());
 		vars.put("linkName", PathUtils.getFileName(link.getFilePath()));
+		vars.put("domainId", domainId);
 		writePage(response, wts, vars, ServletHelper.getBaseUrl(request));
+		//writePage(response, ServletHelper.getBaseUrl(request), domainId, wts, vars);
 	}
 	
-	private void writeErrorPage(HttpServletRequest request, HttpServletResponse response, WebTopSession wts, String reskey) throws IOException, TemplateException {
+	private void writeErrorPage(HttpServletRequest request, HttpServletResponse response, String domainId, WebTopSession wts, String reskey) throws IOException, TemplateException {
 		JsWTSPublic.Vars vars = new JsWTSPublic.Vars();
 		vars.put("view", "Error");
 		vars.put("reskey", reskey);
+		vars.put("domainId", domainId);
 		writePage(response, wts, vars, ServletHelper.getBaseUrl(request));
+		//writePage(response, ServletHelper.getBaseUrl(request), domainId, wts, vars);
 	}
 	
 	private URI buildPublicLinkFileGetUrl(String publicBaseUrl, SharingLink link, boolean inline) throws URISyntaxException {

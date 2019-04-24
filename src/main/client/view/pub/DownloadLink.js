@@ -70,6 +70,7 @@ Ext.define('Sonicle.webtop.vfs.view.pub.DownloadLink', {
 					model: 'Sonicle.webtop.vfs.model.pub.GridFile',
 					proxy: WTF.proxy(me.mys.ID, 'PreviewFiles', 'files', {
 						extraParams: {
+							domainId: me.mys.getVar('domainId'),
 							linkId: me.mys.getVar('linkId'),
 							fileId: null
 						}
