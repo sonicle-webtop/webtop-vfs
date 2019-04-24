@@ -385,20 +385,18 @@ public class PublicService extends BasePublicService {
 	
 	private void writeLinkPage(HttpServletRequest request, HttpServletResponse response, String domainId, WebTopSession wts, String view, SharingLink link, JsWTSPublic.Vars vars) throws IOException, TemplateException {
 		vars.put("view", view);
+		vars.put("domainId", domainId);
 		vars.put("linkId", link.getLinkId());
 		vars.put("linkName", PathUtils.getFileName(link.getFilePath()));
-		vars.put("domainId", domainId);
-		writePage(response, wts, vars, ServletHelper.getBaseUrl(request));
-		//writePage(response, ServletHelper.getBaseUrl(request), domainId, wts, vars);
+		writePage(response, wts, ServletHelper.getBaseUrl(request), vars);
 	}
 	
 	private void writeErrorPage(HttpServletRequest request, HttpServletResponse response, String domainId, WebTopSession wts, String reskey) throws IOException, TemplateException {
 		JsWTSPublic.Vars vars = new JsWTSPublic.Vars();
 		vars.put("view", "Error");
-		vars.put("reskey", reskey);
 		vars.put("domainId", domainId);
-		writePage(response, wts, vars, ServletHelper.getBaseUrl(request));
-		//writePage(response, ServletHelper.getBaseUrl(request), domainId, wts, vars);
+		vars.put("reskey", reskey);
+		writePage(response, wts, ServletHelper.getBaseUrl(request), vars);
 	}
 	
 	private URI buildPublicLinkFileGetUrl(String publicBaseUrl, SharingLink link, boolean inline) throws URISyntaxException {
