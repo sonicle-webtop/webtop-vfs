@@ -93,6 +93,7 @@ Ext.define('Sonicle.webtop.vfs.view.pub.Authorize', {
 						if(pass.isValid()) {
 							WT.ajaxReq(me.mys.ID, 'AuthorizeLink', {
 								params: {
+									domainId: me.mys.getVar('domainId'),
 									linkId: me.mys.getVar('linkId'),
 									password: pass.getValue()
 								},

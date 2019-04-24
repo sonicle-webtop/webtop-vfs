@@ -63,6 +63,7 @@ Ext.define('Sonicle.webtop.vfs.view.pub.UploadLink', {
 				autoRemoveUploaded: false,
 				fileExtraParams: function() {
 					return {
+						domainId: me.mys.getVar('domainId'),
 						linkId: me.mys.getVar('linkId')
 					};
 				},
