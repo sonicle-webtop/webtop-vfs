@@ -59,7 +59,7 @@ Ext.define('Sonicle.webtop.vfs.view.pub.DownloadLink', {
 			height: '100%',
 			maxHeight: 400,
 			title: me.mys.res('pub.downloadLink.tit', me.mys.getVar('linkName')),
-			iconCls: me.mys.cssIconCls('downloadLink', 'xs'),
+			iconCls: me.mys.cssIconCls('downloadLink'),
 			items: [{
 				region: 'center',
 				xtype: 'grid',
@@ -130,17 +130,17 @@ Ext.define('Sonicle.webtop.vfs.view.pub.DownloadLink', {
 					header: '&nbsp;',
 					flex: 1,
 					items: [{
-						iconCls: me.mys.cssIconCls('downloadFile', 'xs'),
+						iconCls: me.mys.cssIconCls('downloadFile'),
 						tooltip: me.mys.res('act-downloadFile.lbl'),
 						handler: function(s, rIndex) {
-							var rec = s.getStore().getAt(rIndex), qsp;
+							var rec = s.getStore().getAt(rIndex);
 							me.openDlUrl(rec.get('fileId'));
 						}
 					}]
 				}],
 				tbar: [{
 					xtype: 'button',
-					iconCls: me.mys.cssIconCls('goUp', 'xs'),
+					iconCls: me.mys.cssIconCls('goUp'),
 					tooltip: me.mys.res('act-goUp.tip'),
 					handler: function() {
 						var ppath = me.lref('bcpath').getParentPath();
@@ -165,7 +165,7 @@ Ext.define('Sonicle.webtop.vfs.view.pub.DownloadLink', {
 				'->', {
 				xtype: 'button',
 				text: me.mys.res('pub.downloadLink.act-downloadAll.lbl'),
-				iconCls: me.mys.cssIconCls('downloadFile', 'xs'),
+				iconCls: me.mys.cssIconCls('downloadFile'),
 				handler: function() {
 					me.openDlUrl('/');
 				}

@@ -56,7 +56,7 @@ Ext.define('Sonicle.webtop.vfs.view.pub.UploadLink', {
 			xtype: 'souploadbutton',
 			reference: 'btnupl',
 			text: me.mys.res('pub.uploadLink.act-uploadFiles.lbl'),
-			iconCls: me.mys.cssIconCls('uploadFile', 'xs'),
+			iconCls: me.mys.cssIconCls('uploadFile'),
 			uploaderConfig: WTF.uploader(me.mys.ID, 'UploadFile', {
 				dropElement: gpuploadsId,
 				maxFileSize: me.mys.getVar('publicUploadMaxFileSize'),
@@ -94,7 +94,7 @@ Ext.define('Sonicle.webtop.vfs.view.pub.UploadLink', {
 			height: '100%',
 			maxHeight: 400,
 			title: me.mys.res('pub.uploadLink.tit', me.mys.getVar('linkName')),
-			iconCls: me.mys.cssIconCls('uploadLink', 'xs'),
+			iconCls: me.mys.cssIconCls('uploadLink'),
 			items: [{
 				region: 'north',
 				xtype: 'wtfieldspanel',
