@@ -53,8 +53,8 @@ Ext.define('Sonicle.webtop.vfs.view.pub.Authorize', {
 		me.add({
 			region: 'center',
 			xtype: 'wtform',
-			width: 380,
-			height: 150,
+			width: '100%',
+			maxWidth: 380,
 			defaults: {
 				labelWidth: 90
 			},
