@@ -49,6 +49,8 @@ import com.sonicle.webtop.core.CoreServiceSettings;
 import com.sonicle.webtop.core.app.CoreManifest;
 import com.sonicle.webtop.core.app.RunContext;
 import com.sonicle.webtop.core.app.WT;
+import com.sonicle.webtop.core.app.sdk.AuditReferenceDataEntry;
+import com.sonicle.webtop.core.app.sdk.WTNotFoundException;
 import com.sonicle.webtop.core.bol.OShare;
 import com.sonicle.webtop.core.bol.Owner;
 import com.sonicle.webtop.core.model.IncomingShareRoot;
@@ -408,20 +410,24 @@ public class VfsManager extends BaseManager implements IVfsManager {
 	}
 	
 	@Override
-	public Store addStore(Store item) throws WTException {
+	public Store addStore(Store store) throws WTException {
 		Connection con = null;
 		
 		try {
-			checkRightsOnStoreRoot(item.getProfileId(), "MANAGE");
-			checkRightsOnStoreSchema(item.getUri());
+			checkRightsOnStoreRoot(store.getProfileId(), "MANAGE");
+			checkRightsOnStoreSchema(store.getUri());
 			
 			con = WT.getConnection(SERVICE_ID, false);
-			item.setBuiltIn(Store.BUILTIN_NO);
-			item = doStoreUpdate(true, con, item);
+			store.setBuiltIn(Store.BUILTIN_NO);
+			Store ret = doStoreUpdate(true, con, store);
+			
 			DbUtils.commitQuietly(con);
-			writeLog("STORE_INSERT", item.getStoreId().toString());
-			addStoreFileSystemToCache(item);
-			return item;
+			if (isAuditEnabled()) {
+				writeAuditLog(AuditContext.STORE, AuditAction.CREATE, ret.getStoreId(), null);
+			}
+			addStoreFileSystemToCache(ret);
+			
+			return ret;
 			
 		} catch(SQLException | DAOException | WTException ex) {
 			DbUtils.rollbackQuietly(con);
@@ -446,18 +452,21 @@ public class VfsManager extends BaseManager implements IVfsManager {
 				return null;
 			}
 			
-			Store item = new Store();
-			item.setDomainId(getTargetProfileId().getDomainId());
-			item.setUserId(getTargetProfileId().getUserId());
-			item.setBuiltIn(Store.BUILTIN_MYDOCUMENTS);
-			item.setName("");
-			item.setProvider(Store.Provider.MYDOCUMENTS);
-			item.setUri(Store.buildURI(URI_SCHEME_MYDOCUMENTS, getTargetProfileId().getUserId(), null, null, null, null));
-			item = doStoreUpdate(true, con, item);
+			Store store = new Store();
+			store.setDomainId(getTargetProfileId().getDomainId());
+			store.setUserId(getTargetProfileId().getUserId());
+			store.setBuiltIn(Store.BUILTIN_MYDOCUMENTS);
+			store.setName("");
+			store.setProvider(Store.Provider.MYDOCUMENTS);
+			store.setUri(Store.buildURI(URI_SCHEME_MYDOCUMENTS, getTargetProfileId().getUserId(), null, null, null, null));
+			Store ret = doStoreUpdate(true, con, store);
 			
 			DbUtils.commitQuietly(con);
-			writeLog("STORE_INSERT", item.getStoreId().toString());
-			return item;
+			if (isAuditEnabled()) {
+				writeAuditLog(AuditContext.STORE, AuditAction.CREATE, ret.getStoreId(), null);
+			}
+			
+			return ret;
 			
 		} catch(SQLException | DAOException | WTException ex) {
 			DbUtils.rollbackQuietly(con);
@@ -491,17 +500,21 @@ public class VfsManager extends BaseManager implements IVfsManager {
 				return null;
 			}
 			
-			Store item = new Store();
-			item.setDomainId(getTargetProfileId().getDomainId());
-			item.setUserId(getTargetProfileId().getUserId());
-			item.setBuiltIn(Store.BUILTIN_DOMAINIMAGES);
-			item.setName("");
-			item.setProvider(Store.Provider.DOMAINIMAGES);
-			item.setUri(uri);
-			item = doStoreUpdate(true, con, item);
+			Store store = new Store();
+			store.setDomainId(getTargetProfileId().getDomainId());
+			store.setUserId(getTargetProfileId().getUserId());
+			store.setBuiltIn(Store.BUILTIN_DOMAINIMAGES);
+			store.setName("");
+			store.setProvider(Store.Provider.DOMAINIMAGES);
+			store.setUri(uri);
+			Store ret = doStoreUpdate(true, con, store);
+			
 			DbUtils.commitQuietly(con);
-			writeLog("STORE_INSERT", item.getStoreId().toString());
-			return item;
+			if (isAuditEnabled()) {
+				writeAuditLog(AuditContext.STORE, AuditAction.CREATE, ret.getStoreId(), null);
+			}
+			
+			return ret;
 			
 		} catch(SQLException | DAOException | WTException ex) {
 			DbUtils.rollbackQuietly(con);
@@ -515,17 +528,21 @@ public class VfsManager extends BaseManager implements IVfsManager {
 	}
 	
 	@Override
-	public Store updateStore(Store item) throws WTException {
+	public Store updateStore(Store store) throws WTException {
 		Connection con = null;
 		
 		try {
-			checkRightsOnStoreFolder(item.getStoreId(), "UPDATE");
+			checkRightsOnStoreFolder(store.getStoreId(), "UPDATE");
 			con = WT.getConnection(SERVICE_ID, false);
-			doStoreUpdate(false, con, item);
-			DbUtils.commitQuietly(con);
-			writeLog("STORE_UPDATE", String.valueOf(item.getStoreId()));
+			Store ret = doStoreUpdate(false, con, store);
+			if (ret == null) throw new WTNotFoundException("Store not found [{}]", store.getStoreId());
 			
-			return item;
+			DbUtils.commitQuietly(con);
+			if (isAuditEnabled()) {
+				writeAuditLog(AuditContext.STORE, AuditAction.UPDATE, ret.getStoreId(), null);
+			}
+			
+			return ret;
 			
 		} catch(SQLException | DAOException | WTException ex) {
 			DbUtils.rollbackQuietly(con);
@@ -547,7 +564,8 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			Sharing sharing = getSharing(shareId);
 			
 			con = WT.getConnection(SERVICE_ID, false);
-			doStoreDelete(con, storeId);
+			boolean ret = doStoreDelete(con, storeId);
+			if (!ret) throw new WTNotFoundException("Store not found [{}]", storeId);
 			
 			// Cleanup sharing, if necessary
 			if ((sharing != null) && !sharing.getRights().isEmpty()) {
@@ -557,9 +575,9 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			}
 			
 			DbUtils.commitQuietly(con);
-			
-			final String ref = String.valueOf(storeId);
-			writeLog("STORE_DELETE", ref);
+			if (isAuditEnabled()) {
+				writeAuditLog(AuditContext.STORE, AuditAction.DELETE, storeId, null);
+			}
 			removeStoreFileSystemFromCache(storeId);
 			
 		} catch(SQLException | DAOException | WTException ex) {
@@ -865,10 +883,14 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			
 			con = WT.getConnection(SERVICE_ID, false);
 			link.setLinkType(SharingLink.LinkType.DOWNLOAD);
-			link = createSharingLink(doSharingLinkUpdate(true, con, link));
+			SharingLink ret = createSharingLink(doSharingLinkUpdate(true, con, link));
+			
 			DbUtils.commitQuietly(con);
-			writeLog("DOWNLOADLINK_INSERT", link.getLinkId());
-			return link;
+			if (isAuditEnabled()) {
+				writeAuditLog(AuditContext.DOWNLOADLINK, AuditAction.CREATE, ret.getLinkId(), null);
+			}
+			
+			return ret;
 			
 		} catch(SQLException | DAOException | WTException ex) {
 			DbUtils.rollbackQuietly(con);
@@ -887,10 +909,14 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			
 			con = WT.getConnection(SERVICE_ID, false);
 			link.setLinkType(SharingLink.LinkType.UPLOAD);
-			link = createSharingLink(doSharingLinkUpdate(true, con, link));
+			SharingLink ret = createSharingLink(doSharingLinkUpdate(true, con, link));
+			
 			DbUtils.commitQuietly(con);
-			writeLog("UPLOADLINK_INSERT", link.getLinkId());
-			return link;
+			if (isAuditEnabled()) {
+				writeAuditLog(AuditContext.UPLOADLINK, AuditAction.CREATE, ret.getLinkId(), null);
+			}
+			
+			return ret;
 			
 		} catch(SQLException | DAOException | WTException ex) {
 			DbUtils.rollbackQuietly(con);
@@ -908,13 +934,17 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		try {
 			con = WT.getConnection(SERVICE_ID, false);
 			OSharingLink olink = dao.selectById(con, link.getLinkId());
-			if (olink == null) throw new WTException("Unable to retrieve sharing link [{0}]", link.getLinkId());
+			if (olink == null) throw new WTNotFoundException("SharingLink not found [{}]", link.getLinkId());
 			
 			checkRightsOnStoreElements(olink.getStoreId(), "READ");
 			
-			doSharingLinkUpdate(false, con, link);
+			OSharingLink ret = doSharingLinkUpdate(false, con, link);
+			if (ret == null) throw new WTNotFoundException("SharingLink not found [{}]", link.getLinkId());
+			
 			DbUtils.commitQuietly(con);
-			writeLog("SHARINGLINK_UPDATE", link.getLinkId());
+			if (isAuditEnabled()) {
+				writeAuditLog(AuditContext.SHARINGLINK, AuditAction.UPDATE, link.getLinkId(), null);
+			}
 			
 		} catch(SQLException | DAOException | WTException ex) {
 			DbUtils.rollbackQuietly(con);
@@ -932,13 +962,17 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		try {
 			con = WT.getConnection(SERVICE_ID, false);
 			OSharingLink olink = dao.selectById(con, linkId);
-			if(olink == null) throw new WTException("Unable to retrieve sharing link [{0}]", linkId);
+			if(olink == null) throw new WTException("SharingLink not found [{}]", linkId);
 			
 			checkRightsOnStoreElements(olink.getStoreId(), "READ");
 			
-			doSharingLinkDelete(con, linkId);
+			boolean ret = doSharingLinkDelete(con, linkId);
+			if (!ret) throw new WTNotFoundException("SharingLink not found [{}]", linkId);
+			
 			DbUtils.commitQuietly(con);
-			writeLog("SHARINGLINK_DELETE", linkId);
+			if (isAuditEnabled()) {
+				writeAuditLog(AuditContext.SHARINGLINK, AuditAction.DELETE, linkId, null);
+			}
 			
 		} catch(SQLException | DAOException | WTException ex) {
 			DbUtils.rollbackQuietly(con);
@@ -1270,25 +1304,28 @@ public class VfsManager extends BaseManager implements IVfsManager {
 				ostore.setUri(Store.buildURI("file", null, null, null, null, prependFileBasePath(uri)).toString());
 			}
 			
+			int ret = -1;
 			if (insert) {
 				ostore.setStoreId(stoDao.getSequence(con).intValue());
-				stoDao.insert(con, ostore);
+				ret = stoDao.insert(con, ostore);
 			} else {
-				stoDao.update(con, ostore);
+				ret = stoDao.update(con, ostore);
 			}
 			
-			return createStore(ostore, buildStoreName(getLocale(), ostore));
+			return (ret == 1) ? createStore(ostore, buildStoreName(getLocale(), ostore)) : null;
 			
 		} catch(URISyntaxException ex) {
 			throw new WTException("Provided URI is not valid", ex);
 		}
 	}
 	
-	private void doStoreDelete(Connection con, int storeId) throws WTException {
+	private boolean doStoreDelete(Connection con, int storeId) throws WTException {
 		StoreDAO stoDao = StoreDAO.getInstance();
 		SharingLinkDAO shdao = SharingLinkDAO.getInstance();
-		stoDao.deleteById(con, storeId);
+		
+		int ret = stoDao.deleteById(con, storeId);
 		shdao.deleteByStore(con, storeId);
+		return ret == 1;
 	}
 	
 	private FileObject getTargetFileObject(int storeId, String path) throws FileSystemException, WTException {
@@ -1430,15 +1467,16 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		sl.validate(!insert);
 		
 		OSharingLink o = createSharingLink(sl);
+		int ret = -1;
 		if (insert) {
 			o.setSharingLinkId(generateLinkId(pid, EnumUtils.toSerializedName(sl.getLinkType()), o.getStoreId(), o.getFilePath()));
 			o.setFileHash(VfsManagerUtils.generateStoreFileHash(o.getStoreId(), o.getFilePath()));
 			o.setCreatedOn(DateTimeUtils.now());
-			slDao.insert(con, o);
+			ret = slDao.insert(con, o);
 		} else {
-			slDao.update(con, o);
+			ret = slDao.update(con, o);
 		}
-		return o;
+		return (ret == 1) ? o : null;
 	}
 	
 	/*
@@ -1458,10 +1496,12 @@ public class VfsManager extends BaseManager implements IVfsManager {
 	}
 	*/
 	
-	private void doSharingLinkDelete(Connection con, String linkId) throws WTException {
+	private boolean doSharingLinkDelete(Connection con, String linkId) throws WTException {
 		SharingLinkDAO dao = SharingLinkDAO.getInstance();
-		dao.deleteById(con, linkId);
+		
+		int ret = dao.deleteById(con, linkId);
 		//TODO: cancellare collegati
+		return ret == 1;
 	}
 	
 	private void sendLinkUsageEmail(OSharingLink olink, String path, String ipAddress, String userAgent) throws WTException {
@@ -1564,5 +1604,21 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			this.path = path;
 			this.tfo = tfo;
 		}
+	}
+	
+	private enum AuditContext {
+		STORE, DOWNLOADLINK, UPLOADLINK, SHARINGLINK
+	}
+	
+	private enum AuditAction {
+		CREATE, UPDATE, DELETE, MOVE
+	}
+	
+	private void writeAuditLog(AuditContext context, AuditAction action, Object reference, Object data) {
+		writeAuditLog(EnumUtils.getName(context), EnumUtils.getName(action), (reference != null) ? String.valueOf(reference) : null, (data != null) ? String.valueOf(data) : null);
+	}
+	
+	private void writeAuditLog(AuditContext context, AuditAction action, Collection<AuditReferenceDataEntry> entries) {
+		writeAuditLog(EnumUtils.getName(context), EnumUtils.getName(action), entries);
 	}
 }
