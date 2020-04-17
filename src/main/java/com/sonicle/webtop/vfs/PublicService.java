@@ -168,7 +168,7 @@ public class PublicService extends BasePublicService {
 							String p = ServletUtils.getStringParameter(request, "p", true);
 
 							String filePath = PathUtils.concatPaths(link.getFilePath(), p);
-							boolean written = writeStoreFile(response, link, fileUrlPath.getOutFileName(), false);
+							boolean written = writeStoreFile(response, link.getProfileId(), link.getStoreId(), filePath, fileUrlPath.getOutFileName(), false);
 							if (!written) {
 								response.setStatus(HttpServletResponse.SC_NOT_FOUND);
 								writeErrorPage(request, response, domainId, wts, "linknotfound");
@@ -194,7 +194,7 @@ public class PublicService extends BasePublicService {
 						} else if (fileUrlPath.isGet()) { // Real binary stream
 							boolean inline = ServletUtils.getBooleanParameter(request, "inline", false);
 
-							boolean written = writeStoreFile(response, link, fileUrlPath.getOutFileName(), inline);
+							boolean written = writeStoreFile(response, link.getProfileId(), link.getStoreId(), link.getFilePath(), fileUrlPath.getOutFileName(), inline);
 							if (!written) {
 								response.setStatus(HttpServletResponse.SC_NOT_FOUND);
 								writeErrorPage(request, response, domainId, wts, "linknotfound");
@@ -339,13 +339,13 @@ public class PublicService extends BasePublicService {
 		}
 	}
 	
-	private boolean writeStoreFile(HttpServletResponse response, SharingLink link, String outFileName, boolean inline) {
+	private boolean writeStoreFile(HttpServletResponse response, UserProfileId linkProfileId, int linkStoreId, String linkFilePath, String outFileName, boolean inline) {
 		try {
 			FileObject fo = null;
 			try {
-				VfsManager vfsMgr = (VfsManager)WT.getServiceManager(SERVICE_ID, true, link.getProfileId());
-				fo = vfsMgr.getStoreFile(link.getStoreId(), link.getFilePath());
-				if (!fo.exists()) throw new WTException("File does not exist [{0}, {1}]", link.getStoreId(), link.getFilePath());
+				VfsManager vfsMgr = (VfsManager)WT.getServiceManager(SERVICE_ID, true, linkProfileId);
+				fo = vfsMgr.getStoreFile(linkStoreId, linkFilePath);
+				if (!fo.exists()) throw new WTException("File does not exist [{0}, {1}]", linkStoreId, linkFilePath);
 				
 				if (fo.isFile()) {
 					//String mediaType = ServletHelper.guessMediaType(fo.getName().getBaseName(), true);
