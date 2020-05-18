@@ -22,6 +22,7 @@
 .wtvfs-icon-deleteFile { background-image: url('file-delete_16.svg') !important; background-size: contain; }
 .wtvfs-icon-addFileDlLink { background-image: url('linkDownload_16.svg') !important; background-size: contain; }
 .wtvfs-icon-addFileUlLink { background-image: url('linkUpload_16.svg') !important; background-size: contain; }
+.wtvfs-icon-genFileDlQRcode { background-image: url('qrcode_16.svg') !important; background-size: contain; }
 .wtvfs-icon-store { background-image: url('store_16.svg') !important; background-size: contain; }
 .wtvfs-icon-storeMy { background-image: url('store-my_16.svg') !important; background-size: contain; }
 .wtvfs-icon-storeIncoming { background-image: url('store-incoming_16.svg') !important; background-size: contain; }
@@ -41,6 +42,7 @@
 .wtvfs-icon-uploadLinkExp { background-image: url('linkUpload-broken_16.svg') !important; background-size: contain; }
 .wtvfs-icon-sharingLink { background-image: url('sharingLink_16.svg') !important; background-size: contain; }
 .wtvfs-icon-sharingLinks { background-image: url('sharingLinks_16.svg') !important; background-size: contain; }
+.wtvfs-icon-qrCodeGen { background-image: url('qrcode_16.svg') !important; background-size: contain; }
 
 .wtvfs-gpfiles .x-grid-empty { text-align: center; }
 .wtvfs-gpfiles .x-grid-cell-inner a:link { color: #336699; }

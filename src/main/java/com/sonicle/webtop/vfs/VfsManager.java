@@ -81,6 +81,7 @@ import com.sonicle.webtop.vfs.sfs.FtpsSFS;
 import com.sonicle.webtop.vfs.sfs.GoogleDriveSFS;
 import com.sonicle.webtop.vfs.sfs.SftpSFS;
 import freemarker.template.TemplateException;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -100,6 +101,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import javax.mail.internet.InternetAddress;
+import net.glxn.qrgen.javase.QRCode;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -1487,6 +1489,17 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			logger.error("Unable to build email template", ex);
 		} catch(Exception ex) {
 			logger.error("Unable to send email", ex);
+		}
+	}
+	
+	public static byte[] generateLinkQRCode(String publicBaseUrl, SharingLink link, int size, String color) throws WTException {
+		try {
+			URI[] urls = VfsManager.generateLinkPublicURLs(publicBaseUrl, link);
+			return QRCode.from(urls[2].toString()).withSize(size, size).stream().toByteArray();
+			
+		} catch(URISyntaxException ex) {
+			logger.error("Unable to generate QRCode for [{}]", ex, link);
+			throw new WTException(ex);
 		}
 	}
 	
