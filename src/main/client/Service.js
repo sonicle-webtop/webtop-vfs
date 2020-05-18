@@ -52,7 +52,8 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 	uses: [
 		'Sonicle.webtop.vfs.view.FolderChooser',
 		'Sonicle.webtop.vfs.view.Sharing',
-		'Sonicle.webtop.vfs.view.SharingLinks'
+		'Sonicle.webtop.vfs.view.SharingLinks',
+		'Sonicle.webtop.vfs.view.QRCodeGen'
 	],
 	
 	api: null,
@@ -457,6 +458,16 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				if (node) me.sendFileLinkUI('D', node);
 			}
 		});
+		me.addAct('genFileNodeDlQRcode', {
+			ignoreSize: true,
+			text: me.res('act-genFileDlQRcode.lbl'),
+			tooltip: null,
+			iconCls: me.cssIconCls('genFileDlQRcode'),
+			handler: function() {
+				var sel = me.getCurrentFileNode();
+				if (sel) me.genFileQRCodeUI('D', sel);
+			}
+		});
 		me.addAct('addFileNodeUlLink', {
 			ignoreSize: true,
 			text: me.res('act-addFileUlLink.lbl'),
@@ -653,6 +664,14 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				if(sel) me.sendFileLinkUI('D', sel);
 			}
 		});
+		me.addAct('genFileDlQRcode', {
+			ignoreSize: true,
+			tooltip: null,
+			handler: function() {
+				var sel = me.getSelectedFile();
+				if (sel) me.genFileQRCodeUI('D', sel);
+			}
+		});
 		me.addAct('addFileUlLink', {
 			ignoreSize: true,
 			tooltip: null,
@@ -786,6 +805,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				me.getAct('addFileNodeDlLink'),
 				me.getAct('deleteFileNodeDlLink'),
 				me.getAct('sendFileNodeDlLink'),
+				me.getAct('genFileNodeDlQRcode'),
 				'-',
 				me.getAct('addFileNodeUlLink'),
 				me.getAct('deleteFileNodeUlLink'),
@@ -802,6 +822,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 					me.updateDisabled('addFileNodeDlLink');
 					me.updateDisabled('deleteFileNodeDlLink');
 					me.updateDisabled('sendFileNodeDlLink');
+					me.updateDisabled('genFileNodeDlQRcode');
 					me.updateDisabled('addFileNodeUlLink');
 					me.updateDisabled('deleteFileNodeUlLink');
 					me.updateDisabled('sendFileNodeUlLink');
@@ -865,6 +886,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				me.getAct('addFileDlLink'),
 				me.getAct('deleteFileDlLink'),
 				me.getAct('sendFileDlLink'),
+				me.getAct('genFileDlQRcode'),
 				'-',
 				me.getAct('addFileUlLink'),
 				me.getAct('deleteFileUlLink'),
@@ -886,6 +908,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 					me.updateDisabled('addFileDlLink');
 					me.updateDisabled('deleteFileDlLink');
 					me.updateDisabled('sendFileDlLink');
+					me.updateDisabled('genFileDlQRcode');
 					me.updateDisabled('addFileUlLink');
 					me.updateDisabled('deleteFileUlLink');
 					me.updateDisabled('sendFileUlLink');
@@ -1152,6 +1175,34 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		});
 	},
 	
+	genFileQRCodeUI: function(type, sel) {
+		var me = this,
+			linkId = (type === 'D') ? sel.getFDlLink() : sel.getFUlLink();
+		
+		if (Ext.isEmpty(linkId)) {
+			WT.confirm(me.res('sharingLink.confirm.autocreate.'+type), function(bid) {
+				if (bid === 'yes') {
+					me.setupAutoLink(type, sel.getFId(), {
+						callback: function(success, json) {
+							if (success) {
+								if (sel.isNode) {
+									me.loadTreeFileNode(sel.parentNode);
+									me.reloadGridFiles();
+								} else {
+									me.loadTreeFileNode();
+									me.reloadGridFiles();
+								}
+								me.showQRCode(sel.get('name'), json.id);
+							}
+						}
+					});
+				}
+			});
+		} else {
+			me.showQRCode(sel.get('name'), linkId);
+		}	
+	},
+	
 	addFileLinkUI: function(type, sel) {
 		var me = this;
 		me.setupLink(type, sel.getFId(), {
@@ -1332,6 +1383,41 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 			params: {
 				crud: 'delete',
 				fileIds: WTU.arrayAsParam(fileIds)
+			},
+			callback: function(success, json) {
+				Ext.callback(opts.callback, opts.scope || me, [success, json.data, json]);
+			}
+		});
+	},
+	
+	showQRCode: function(fileName, linkId, opts) {
+		opts = opts || {};
+		var me = this,
+				vw = WT.createView(me.ID, 'view.QRCodeGen', {
+					swapReturn: true,
+					viewCfg: {
+						title: fileName,
+						data: {
+							linkId: linkId
+						}
+					}
+				});
+		
+		vw.on('viewok', function(s, data) {
+			Ext.callback(opts.callback, opts.scope || me, [data]);
+		});
+		vw.showView();
+	},
+	
+	setupAutoLink: function(type, fileId, opts) {
+		opts = opts || {};
+		var me = this,
+				action = (type === 'D') ? 'WizardDownloadLink' : 'WizardUploadLink';
+		
+		WT.ajaxReq(me.ID, action, {
+			params: {
+				crud: 'auto',
+				fileId: fileId
 			},
 			callback: function(success, json) {
 				Ext.callback(opts.callback, opts.scope || me, [success, json.data, json]);

@@ -97,6 +97,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import java.util.logging.Level;
@@ -1097,7 +1098,7 @@ public class Service extends BaseService {
 		
 		try {
 			String crud = ServletUtils.getStringParameter(request, "crud", true);
-			if(crud.equals("s2")) {
+			if (crud.equals("s2")) {
 				String fileId = ServletUtils.getStringParameter(request, "fileId", true);
 				String expirationDate = ServletUtils.getStringParameter(request, "expirationDate", null);
 				String authMode = ServletUtils.getStringParameter(request, "authMode", true);
@@ -1128,11 +1129,42 @@ public class Service extends BaseService {
 				data.put("urls", URIUtils.toURIStrings(urls, false));
 				data.put("embed", html);
 				new JsonResult(data).printTo(out);
+				
+			} else if (crud.equals("auto")) {
+				String fileId = ServletUtils.getStringParameter(request, "fileId", true);
+				StoreNodeId nodeId = (StoreNodeId)new StoreNodeId().parse(fileId);
+				int storeId = Integer.valueOf(nodeId.getStoreId());
+				
+				SharingLink link = null;
+				Map<String, SharingLink> links = manager.listDownloadLinks(storeId, nodeId.getPath());
+				if (links.isEmpty()) {
+					SharingLink dl = new SharingLink();
+					dl.setLinkType(SharingLink.LinkType.DOWNLOAD);
+					dl.setStoreId(storeId);
+					dl.setFilePath(nodeId.getPath());
+					dl.setAuthMode(SharingLink.AuthMode.NONE);
+					dl.setNotify(false);
+					link = manager.addDownloadLink(dl);
+					
+				} else {
+					link = links.values().iterator().next();
+				}
+				if (link == null) throw new WTException("bla bla bla");
+				
+				final String servicePublicUrl = WT.getServicePublicUrl(up.getDomainId(), SERVICE_ID);
+				final URI[] urls = VfsManager.generateLinkPublicURLs(servicePublicUrl, link);
+				final String html = VfsManager.generateLinkEmbedCode(up.getLocale(), cus.getShortDateFormat(), servicePublicUrl, link);
+				
+				JsWizardData data = new JsWizardData();
+				data.put("id", link.getLinkId());
+				data.put("urls", URIUtils.toURIStrings(urls, false));
+				data.put("embed", html);
+				new JsonResult(data).printTo(out);
 			}
 			
-		} catch (Exception ex) {
-			logger.error("Error in WizardDownloadLink", ex);
-			new JsonResult(false, ex.getMessage()).printTo(out);
+		} catch (Throwable t) {
+			logger.error("Error in WizardDownloadLink", t);
+			new JsonResult(t).printTo(out);
 		}
 	}
 	
@@ -1178,6 +1210,27 @@ public class Service extends BaseService {
 		} catch (Exception ex) {
 			logger.error("Error in WizardUploadLink", ex);
 			new JsonResult(false, ex.getMessage()).printTo(out);
+		}
+	}
+	
+	public void processGetLinkQRCode(HttpServletRequest request, HttpServletResponse response) {
+		UserProfile up = getEnv().getProfile();
+		
+		try {
+			String linkId = ServletUtils.getStringParameter(request, "id", null);
+			
+			SharingLink link = manager.getSharingLink(linkId);
+			if (linkId == null) throw new WTException("bla bla bla");
+			
+			String color = ServletUtils.getStringParameter(request, "color", "000000");
+			int size = ServletUtils.getIntParameter(request, "size", 200);
+			
+			final String servicePublicUrl = WT.getServicePublicUrl(up.getDomainId(), SERVICE_ID);
+			byte[] qrcode = VfsManager.generateLinkQRCode(servicePublicUrl, link, size, color);
+			ServletUtils.writeContent(response, qrcode, qrcode.length, "image/png");
+			
+		} catch(Throwable t) {
+			logger.error("Error in GetLinkQRCode", t);
 		}
 	}
 	
