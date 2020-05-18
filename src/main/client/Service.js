@@ -153,7 +153,12 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 					},
 					listeners: {
 						load: function(s) {
-							if ((s.loadCount === 1) && me.isActive()) me.setDefaultFile();
+							if ((s.loadCount === 1) && me.isActive()) {
+								//FIXME should autoselect, does not when vfs is first service with low delay
+								Ext.defer(function() {
+									me.setDefaultFile();
+								},2000);
+							}
 						}
 					}
 				},

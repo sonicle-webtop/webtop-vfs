@@ -72,8 +72,10 @@ Ext.define('Sonicle.webtop.vfs.view.QRCodeGen', {
 				{
 					text: WT.res('act-print.lbl'),
 					handler: function() {
-						var el = me.lref('fldqrcode').inputWrap;
-						if (el) Sonicle.PrintMgr.print(el.dom.innerHTML, 'raw', {verticalAlign:'center', horizontalAlign:'center'});
+						var src = me.lref('fldqrcode').buildUrl(me.getVM().get('data.linkId')),
+								html = '<img src="' + src + '" />';
+						Sonicle.PrintMgr.print(html, 'raw', {verticalAlign:'center', horizontalAlign:'center'});						//var el = me.lref('fldqrcode').inputWrap;
+						//if (el) Sonicle.PrintMgr.print(el.dom.innerHTML, 'raw', {verticalAlign:'center', horizontalAlign:'center'});
 					}
 				}, {
 					text: WT.res('act-ok.lbl'),
