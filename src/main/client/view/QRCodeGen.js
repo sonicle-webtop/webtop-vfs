@@ -70,6 +70,13 @@ Ext.define('Sonicle.webtop.vfs.view.QRCodeGen', {
 		Ext.apply(me, {
 			buttons: [
 				{
+					text: WT.res('act-save.lbl'),
+					handler: function() {
+						var src = me.lref('fldqrcode').buildUrl(me.getVM().get('data.linkId'))+"&raw=1";
+						window.open(src);
+					}
+				},
+				{
 					text: WT.res('act-print.lbl'),
 					handler: function() {
 						var src = me.lref('fldqrcode').buildUrl(me.getVM().get('data.linkId')),
