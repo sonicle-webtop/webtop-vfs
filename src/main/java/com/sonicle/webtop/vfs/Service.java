@@ -103,6 +103,7 @@ import java.util.jar.JarOutputStream;
 import java.util.logging.Level;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.vfs2.FileObject;
@@ -1218,6 +1219,7 @@ public class Service extends BaseService {
 		
 		try {
 			String linkId = ServletUtils.getStringParameter(request, "id", null);
+			int raw = Integer.parseInt(ServletUtils.getStringParameter(request, "raw", "0"));
 			
 			SharingLink link = manager.getSharingLink(linkId);
 			if (linkId == null) throw new WTException("bla bla bla");
@@ -1227,7 +1229,13 @@ public class Service extends BaseService {
 			
 			final String servicePublicUrl = WT.getServicePublicUrl(up.getDomainId(), SERVICE_ID);
 			byte[] qrcode = VfsManager.generateLinkQRCode(servicePublicUrl, link, size, color);
-			ServletUtils.writeContent(response, qrcode, qrcode.length, "image/png");
+			String ctype="image/png";
+			if (raw==1) {
+				ctype="binary/octet-stream";
+				String filename="qrcode-"+FilenameUtils.getBaseName(PathUtils.getFileName(link.getFilePath()))+".png";
+				ServletUtils.setFileStreamHeadersForceDownload(response, filename);
+			}
+			ServletUtils.writeContent(response, qrcode, qrcode.length, ctype);
 			
 		} catch(Throwable t) {
 			logger.error("Error in GetLinkQRCode", t);
