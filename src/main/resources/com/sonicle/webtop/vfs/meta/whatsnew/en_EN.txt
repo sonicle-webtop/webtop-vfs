@@ -1,3 +1,11 @@
+$	5.2.12
+	%	Version 5.2.12
+	*	<h1>Share using an auto generated QR Code</h1>
+		<p>A new context menu allows to generate a QR Code to download a file in the cloud resources<b>
+		Once generated, it can be used on brochures, playbills or other forms of public comunication,
+		allowing people to quickly show the original file on any device, simply
+		framing the QR Code using the camera app.</p>
+		<img src="5.2.12_qrcode.png"/>
 $	5.2.2
 	%	Version 5.2.2
 	*	<h1>Download folder</h1>

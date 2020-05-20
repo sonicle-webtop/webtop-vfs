@@ -1,3 +1,11 @@
+$	5.2.12
+	%	Versione 5.2.12
+	*	<h1>Condividi tramite QR Code generato automaticamente</h1>
+		<p>Un nuovo menu consente di generare il QR Code per il download di un file presente nelle risorse cloud.<br>
+		Una volta generato, questo può essere utilizzato in una brochure, una locandina o altro,
+		permettendo ad altri una immediata visualizzazione del file originale da qualunque device, semplicemente
+		inquadrando il QR Code con l'app della fotocamera.</p>
+		<img src="5.2.12_qrcode.png"/>
 $	5.2.2
 	%	Versione 5.2.2
 	*	<h1>Scarica cartella</h1>
