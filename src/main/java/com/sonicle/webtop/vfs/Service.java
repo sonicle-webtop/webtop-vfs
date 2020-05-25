@@ -165,13 +165,15 @@ public class Service extends BaseService {
 			
 			try {
 				String parentFileId = multipartParams.get("fileId");
+				String duplMode = StringUtils.defaultIfBlank(multipartParams.get("dupl"), "rename");
 				if(StringUtils.isBlank(parentFileId)) throw new UploadException("Parameter not specified [fileId]");
 				
 				StoreNodeId parentNodeId = (StoreNodeId)new StoreNodeId().parse(parentFileId);
 				int storeId = Integer.valueOf(parentNodeId.getStoreId());
 				String path = (parentNodeId.getSize() == 2) ? "/" : parentNodeId.getPath();
+				boolean overwrite = "overwrite".equals(duplMode);
 				
-				String newPath = manager.addStoreFileFromStream(storeId, path, file.getFilename(), is);
+				String newPath = manager.addStoreFileFromStream(storeId, path, file.getFilename(), is, overwrite);
 
 			} catch(UploadException ex) {
 				logger.trace("Upload failure", ex);

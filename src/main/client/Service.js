@@ -50,6 +50,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		'Sonicle.webtop.vfs.model.SharingLink'
 	],
 	uses: [
+		'Sonicle.webtop.vfs.ux.DuplicateConfirmBox',
 		'Sonicle.webtop.vfs.view.FolderChooser',
 		'Sonicle.webtop.vfs.view.Sharing',
 		'Sonicle.webtop.vfs.view.SharingLinks',
@@ -2052,6 +2053,33 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		
 		isOpenable: function(rec) {
 			return rec.isFile() && (['pdf'].indexOf(rec.get('ext')) !== -1);
+		},
+		
+		isFilenameDuplicated: function(name) {
+			var me = this, found = false;
+			me.gpFiles().getStore().each(function(rec) {
+				if ('file' === rec.get('type') && name === rec.get('name')) {
+					found = true;
+					return false;
+				}
+			}, me, true);
+			return found;
+		},
+		
+		confirmDuplicateMode: function(cb, scope) {
+			var me = this;
+			WT.confirm(me.res('confirm.duplicate.msg'), cb, scope, {
+				buttons: Ext.Msg.OKCANCEL,
+				instClass: 'Sonicle.webtop.vfs.ux.DuplicateConfirmBox',
+				instConfig: {
+					renameText: me.res('confirm.duplicate.rename'),
+					ignoreText: me.res('confirm.duplicate.ignore'),
+					overwriteText: me.res('confirm.duplicate.overwrite')
+				},
+				config: {
+					value: 'rename'
+				}
+			});
 		}
 	},
 	
@@ -2227,6 +2255,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 					reference: 'tbupload',
 					sid: me.ID,
 					uploadContext: 'UploadStoreFile',
+					autoStart: false,
 					maxFileSize: me.getVar('privateUploadMaxFileSize'),
 					buttonIconCls: me.cssIconCls('uploadFile'),
 					dropElement: gridId,
@@ -2236,6 +2265,34 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 						};
 					},
 					listeners: {
+						filesadded: function(s, files) {
+							var prompt = false,
+									uploader = s.getUploader();
+							
+							Ext.iterate(files, function(file) {
+								if (me.isFilenameDuplicated(file.name)) {
+									prompt = true;
+									return false;
+								}
+							}, me);
+							
+							if (prompt) {
+								me.confirmDuplicateMode(function(bid, value) {
+									if (bid === 'ok') {
+										Ext.iterate(files, function(file) {
+											file._extraParams['dupl'] = value;
+										}, me);
+										uploader.start();
+									} else {
+										Ext.iterate(files, function(file) {
+											uploader.removeFile(file.id);
+										}, me);
+									}
+								});
+							} else {
+								uploader.start();
+							}	
+						},
 						fileuploaded: function(s, file) {
 							if (file._extraParams) {
 								me.reloadGridFilesIf(file._extraParams['fileId']);
