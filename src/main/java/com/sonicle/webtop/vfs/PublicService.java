@@ -388,7 +388,7 @@ public class PublicService extends BasePublicService {
 		vars.put("domainId", domainId);
 		vars.put("linkId", link.getLinkId());
 		vars.put("linkName", PathUtils.getFileName(link.getFilePath()));
-		writePage(response, wts, ServletHelper.getBaseUrl(request), vars);
+		writePage(response, wts, WT.getPublicContextPath(domainId), vars);
 	}
 	
 	private void writeErrorPage(HttpServletRequest request, HttpServletResponse response, String domainId, WebTopSession wts, String reskey) throws IOException, TemplateException {
@@ -396,7 +396,7 @@ public class PublicService extends BasePublicService {
 		vars.put("view", "Error");
 		vars.put("domainId", domainId);
 		vars.put("reskey", reskey);
-		writePage(response, wts, ServletHelper.getBaseUrl(request), vars);
+		writePage(response, wts, WT.getPublicContextPath(domainId), vars);
 	}
 	
 	private URI buildPublicLinkFileGetUrl(String publicBaseUrl, SharingLink link, boolean inline) throws URISyntaxException {
