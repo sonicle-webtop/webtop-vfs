@@ -460,7 +460,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			store.setBuiltIn(Store.BUILTIN_MYDOCUMENTS);
 			store.setName("");
 			store.setProvider(Store.Provider.MYDOCUMENTS);
-			store.setUri(Store.buildURI(URI_SCHEME_MYDOCUMENTS, getTargetProfileId().getUserId(), null, null, null, null));
+			store.setUri(Store.buildURI(URI_SCHEME_MYDOCUMENTS, "localhost", null, getTargetProfileId().toString(), null, null)); // Dummy URI
 			Store ret = doStoreUpdate(true, con, store);
 			
 			DbUtils.commitQuietly(con);
@@ -540,6 +540,8 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			if (ret == null) throw new WTNotFoundException("Store not found [{}]", store.getStoreId());
 			
 			DbUtils.commitQuietly(con);
+			removeStoreFileSystemFromCache(store.getStoreId());
+			
 			if (isAuditEnabled()) {
 				writeAuditLog(AuditContext.STORE, AuditAction.UPDATE, ret.getStoreId(), null);
 			}
@@ -577,10 +579,11 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			}
 			
 			DbUtils.commitQuietly(con);
+			removeStoreFileSystemFromCache(storeId);
+			
 			if (isAuditEnabled()) {
 				writeAuditLog(AuditContext.STORE, AuditAction.DELETE, storeId, null);
 			}
-			removeStoreFileSystemFromCache(storeId);
 			
 		} catch(SQLException | DAOException | WTException ex) {
 			DbUtils.rollbackQuietly(con);

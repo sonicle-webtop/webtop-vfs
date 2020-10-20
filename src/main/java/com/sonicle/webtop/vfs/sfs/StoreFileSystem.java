@@ -98,8 +98,8 @@ public abstract class StoreFileSystem {
 	
 	protected FileObject resolveRoot() throws FileSystemException {
 		FileObject fo = VFS.getManager().resolveFile(uri.toString(), fso);
-		if(autoCreateRoot && !fo.exists()) fo.createFolder();
-		if(!fo.exists()) throw new FileSystemException("Root not exist");
+		if (autoCreateRoot && !fo.exists()) fo.createFolder();
+		if (!fo.exists()) throw new FileSystemException("Root not exist");
 		return fo;
 	}
 	
