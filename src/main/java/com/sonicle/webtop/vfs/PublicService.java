@@ -141,11 +141,11 @@ public class PublicService extends BasePublicService {
 					writeLinkPage(request, response, domainId, wts, "Authorize", link);
 
 				} else if (link.getLinkType().equals(SharingLink.LinkType.DOWNLOAD)) {
-					if (PathUtils.isFolder(link.getFilePath())) {
-						Integer dl = ServletUtils.getIntParameter(request, "dl", 0);
-
-						if (dl == 1) { // Download file request
-							String fileId = ServletUtils.getStringParameter(request, "fileId", true);
+					if (PathUtils.isFolder(link.getFilePath())) { // Link refers to a folder
+						int dl = ServletUtils.getIntParameter(request, "dl", 0);
+						if (dl == 1 || dl == 2) { // Direct download is requested (1 attachment, 2 inline)
+							boolean inline = dl == 2;
+							String fileId = ServletUtils.getStringParameter(request, "fileId", "/");
 
 							String outName;
 							if (PathUtils.isFolder(fileId)) {
@@ -155,20 +155,22 @@ public class PublicService extends BasePublicService {
 									outName = PathUtils.getFileName(fileId);
 								}
 								outName += ".zip";
+								inline = false; // Forcibly disable inline mode for archive files
 							} else {
 								outName = PathUtils.getFileName(fileId);
 							}
 
 							final String servicePublicUrl = WT.getServicePublicUrl(link.getDomainId(), SERVICE_ID);
-							final URI url = buildPublicLinkFolderGetUrl(servicePublicUrl, link, fileId, outName);
+							final URI url = buildPublicLinkFolderGetUrl(servicePublicUrl, link, fileId, outName, inline);
 							ServletUtils.setLocationHeader(response, url.toASCIIString());
 							response.setStatus(HttpServletResponse.SC_FOUND);
 
-						} else if (fileUrlPath.isGet()) { // Real binary stream
+						} else if (fileUrlPath.isGet()) { // Binary file stream
+							boolean inline = ServletUtils.getBooleanParameter(request, "inline", false);
 							String p = ServletUtils.getStringParameter(request, "p", true);
 
 							String filePath = PathUtils.concatPaths(link.getFilePath(), p);
-							boolean written = writeStoreFile(response, link.getProfileId(), link.getStoreId(), filePath, fileUrlPath.getOutFileName(), false);
+							boolean written = writeStoreFile(response, link.getProfileId(), link.getStoreId(), filePath, fileUrlPath.getOutFileName(), inline);
 							if (!written) {
 								response.setStatus(HttpServletResponse.SC_NOT_FOUND);
 								writeErrorPage(request, response, domainId, wts, "linknotfound");
@@ -182,16 +184,18 @@ public class PublicService extends BasePublicService {
 							writeLinkPage(request, response, domainId, wts, "DownloadLink", link);
 						}
 
-					} else {
-						Integer raw = ServletUtils.getIntParameter(request, "raw", 0);
-						if ((raw == 1) || (raw == 2)) { // Link points directly to file raw data (no preview page)
-							boolean inline = (raw == 2); // inline=2 to request an inline content-disposition
+					} else { // Link refers to a file
+						int dl = ServletUtils.getIntParameter(request, "dl", 0);
+						Integer raw = ServletUtils.getIntParameter(request, "raw", null); // Deprecate "raw" param but make it  backward compatible!
+						if (raw != null) dl = raw;
+						if (dl == 1 || dl == 2) { // Direct download is requested (1 attachment, 2 inline)
+							boolean inline = dl == 2;
 							final String servicePublicUrl = WT.getServicePublicUrl(link.getDomainId(), SERVICE_ID);
 							final URI url = buildPublicLinkFileGetUrl(servicePublicUrl, link, inline);
 							ServletUtils.setLocationHeader(response, url.toString());
 							response.setStatus(HttpServletResponse.SC_FOUND);
 
-						} else if (fileUrlPath.isGet()) { // Real binary stream
+						} else if (fileUrlPath.isGet()) { // Binary file stream
 							boolean inline = ServletUtils.getBooleanParameter(request, "inline", false);
 
 							boolean written = writeStoreFile(response, link.getProfileId(), link.getStoreId(), link.getFilePath(), fileUrlPath.getOutFileName(), inline);
@@ -407,11 +411,12 @@ public class PublicService extends BasePublicService {
 		return builder.build();
 	}
 	
-	private URI buildPublicLinkFolderGetUrl(String publicBaseUrl, SharingLink link, String path, String outFileName) throws URISyntaxException {
+	private URI buildPublicLinkFolderGetUrl(String publicBaseUrl, SharingLink link, String path, String outFileName, boolean inline) throws URISyntaxException {
 		URIBuilder builder = new URIBuilder(publicBaseUrl);
 		final String p = FileUrlPath.TOKEN_LINK + "/" + link.getLinkId() + "/" + FileUrlPath.TOKEN_GET + "/" + outFileName;
 		URIUtils.appendPath(builder, p);
 		builder.addParameter("p", path);
+		if (inline) builder.addParameter("inline", "true");
 		return builder.build();
 	}
 	
