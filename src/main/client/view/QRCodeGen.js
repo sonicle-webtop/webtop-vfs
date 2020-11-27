@@ -72,8 +72,7 @@ Ext.define('Sonicle.webtop.vfs.view.QRCodeGen', {
 				{
 					text: WT.res('act-save.lbl'),
 					handler: function() {
-						var src = me.lref('fldqrcode').buildUrl(me.getVM().get('data.linkId'))+"&raw=1";
-						window.open(src);
+						Sonicle.URLMgr.download(me.lref('fldqrcode').buildUrl(me.getVM().get('data.linkId')) + "&download=true");
 					}
 				},
 				{

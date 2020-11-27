@@ -1221,23 +1221,24 @@ public class Service extends BaseService {
 		
 		try {
 			String linkId = ServletUtils.getStringParameter(request, "id", null);
-			int raw = Integer.parseInt(ServletUtils.getStringParameter(request, "raw", "0"));
+			boolean download = ServletUtils.getBooleanParameter(request, "download", false);
 			
 			SharingLink link = manager.getSharingLink(linkId);
-			if (linkId == null) throw new WTException("bla bla bla");
+			if (linkId == null) throw new WTException("Link not found [{}]", linkId);
 			
 			String color = ServletUtils.getStringParameter(request, "color", "000000");
 			int size = ServletUtils.getIntParameter(request, "size", 200);
 			
 			final String servicePublicUrl = WT.getServicePublicUrl(up.getDomainId(), SERVICE_ID);
 			byte[] qrcode = VfsManager.generateLinkQRCode(servicePublicUrl, link, size, color);
-			String ctype="image/png";
-			if (raw==1) {
-				ctype="binary/octet-stream";
-				String filename="qrcode-"+FilenameUtils.getBaseName(PathUtils.getFileName(link.getFilePath()))+".png";
+			
+			if (download) {
+				String filename = "qrcode-" + FilenameUtils.getBaseName(PathUtils.getFileName(link.getFilePath())) + ".png";
 				ServletUtils.setFileStreamHeadersForceDownload(response, filename);
+				ServletUtils.writeContent(response, qrcode, qrcode.length, null); // Do not set contentType!
+			} else {
+				ServletUtils.writeContent(response, qrcode, qrcode.length, "image/png");
 			}
-			ServletUtils.writeContent(response, qrcode, qrcode.length, ctype);
 			
 		} catch(Throwable t) {
 			logger.error("Error in GetLinkQRCode", t);

@@ -1538,8 +1538,12 @@ public class VfsManager extends BaseManager implements IVfsManager {
 	public static byte[] generateLinkQRCode(String publicBaseUrl, SharingLink link, int size, String color) throws WTException {
 		try {
 			URI[] urls = VfsManager.generateLinkPublicURLs(publicBaseUrl, link);
-			return QRCode.from(urls[2].toString()).withSize(size, size).stream().toByteArray();
-			
+			if (PathUtils.isFolder(link.getFilePath())) {
+				return QRCode.from(urls[0].toString()).withSize(size, size).stream().toByteArray();
+			} else {
+				return QRCode.from(urls[2].toString()).withSize(size, size).stream().toByteArray();
+			}
+
 		} catch(URISyntaxException ex) {
 			logger.error("Unable to generate QRCode for [{}]", ex, link);
 			throw new WTException(ex);
@@ -1563,13 +1567,17 @@ public class VfsManager extends BaseManager implements IVfsManager {
 	}
 	
 	public static URI[] generateLinkPublicURLs(String publicBaseUrl, SharingLink link) throws URISyntaxException {
+		// [0] - Preview link
+		// [1] - Direct link to content stream (forced download)
+		// [2] - Direct link to content stream (inline)
+		
 		if (link.getLinkType().equals(SharingLink.LinkType.DOWNLOAD)) {
 			if (PathUtils.isFolder(link.getFilePath())) {
 				//TODO: implementare nel pubblico la gestione link diretti per le cartelle
 				return new URI[]{
 					buildLinkPublicUrl(publicBaseUrl, link, false, false),
-					null,
-					null
+					buildLinkPublicUrl(publicBaseUrl, link, true, true),
+					buildLinkPublicUrl(publicBaseUrl, link, true, true)
 				};
 			} else {
 				//TODO: implementare nel pubblico l'anteprima dei file
@@ -1604,9 +1612,9 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		URIUtils.appendPath(builder, p);
 		if (directToStream) {
 			if (forceDownload) {
-				builder.addParameter("raw", "1");
+				builder.addParameter("dl", "1");
 			} else {
-				builder.addParameter("raw", "2");
+				builder.addParameter("dl", "2");
 			}
 		}
 		return builder.build();
