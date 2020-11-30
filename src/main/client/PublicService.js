@@ -40,5 +40,11 @@ Ext.define('Sonicle.webtop.vfs.PublicService', {
 			region: 'center',
 			mys: me
 		}));
+		Ext.on('resize', me.onResize, me, {buffer: 150});
+	},
+	
+	onResize: function() {
+		var main = this.getMainComponent();
+		if (main) main.updateLayout();
 	}
 });

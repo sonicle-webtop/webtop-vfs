@@ -88,36 +88,46 @@ Ext.define('Sonicle.webtop.vfs.view.pub.UploadLink', {
 		me.add({
 			xtype: 'panel',
 			layout: 'border',
-			border: false,
-			width: '100%',
-			maxWidth: 500,
-			height: '100%',
-			maxHeight: 400,
+			border: true,
 			title: me.mys.res('pub.uploadLink.tit', me.mys.getVar('linkName')),
 			iconCls: me.mys.cssIconCls('uploadLink'),
-			items: [{
-				region: 'north',
-				xtype: 'wtfieldspanel',
-				height: 30,
-				items: [{
-					xtype: 'progressbar',
-					reference: 'pboverall',
-					anchor: '100%',
-					hidden: true
-				}]
-			}, {
-				region: 'center',
-				xtype: 'wtuploadedgrid',
-				id: gpuploadsId,
-				reference: 'gpuploads',
-				border: true,
-				store: btnupl.uploader.getStore(),
-				plugins: [{
-					ptype: 'sofiledrop',
-					text: WT.res('sofiledrop.text')
-				}]
-			}],
-			tbar: [btnupl]
+			items: [
+				{
+					region: 'center',
+					xtype: 'wtuploadedgrid',
+					id: gpuploadsId,
+					reference: 'gpuploads',
+					store: btnupl.uploader.getStore(),
+					plugins: [
+						{
+							ptype: 'sofiledrop',
+							text: WT.res('sofiledrop.text')
+						}
+					],
+					tbar: [
+						btnupl,
+						{
+							xtype: 'progressbar',
+							reference: 'pboverall',
+							hidden: true,
+							flex: 1
+						},
+						' '
+					]
+				}
+			],
+			listeners: {
+				afterlayout: function() {
+					var me = this,
+							height = Ext.getBody().getWidth() > 800 ? 600 : Ext.getBody().getHeight();
+					me.setHeight(height);
+					me.setMaxHeight(height);
+				}
+			},
+			width: '100%',
+			maxWidth: 800,
+			height: '100%',
+			maxHeight: Ext.getBody().getWidth() > 800 ? 600 : Ext.getBody().getHeight()
 		});
 	},
 	

@@ -34,6 +34,7 @@
 Ext.define('Sonicle.webtop.vfs.view.pub.DownloadLink', {
 	extend: 'WTA.ux.panel.Panel',
 	requires: [
+		'Sonicle.grid.column.Action',
 		'Sonicle.grid.column.Bytes',
 		'Sonicle.grid.column.Icon',
 		'Sonicle.grid.column.Link',
@@ -53,123 +54,147 @@ Ext.define('Sonicle.webtop.vfs.view.pub.DownloadLink', {
 		me.add({
 			xtype: 'panel',
 			layout: 'border',
-			border: false,
-			width: '100%',
-			maxWidth: 900,
-			height: '100%',
-			maxHeight: 400,
+			border: true,
 			title: me.mys.res('pub.downloadLink.tit', me.mys.getVar('linkName')),
 			iconCls: me.mys.cssIconCls('downloadLink'),
-			items: [{
-				region: 'center',
-				xtype: 'grid',
-				reference: 'gpfiles',
-				cls: 'wtvfs-gpfiles',
-				border: true,
-				store: {
-					model: 'Sonicle.webtop.vfs.model.pub.GridFile',
-					proxy: WTF.proxy(me.mys.ID, 'PreviewFiles', 'files', {
-						extraParams: {
-							domainId: me.mys.getVar('domainId'),
-							linkId: me.mys.getVar('linkId'),
-							fileId: null
-						}
-					}),
-					listeners: {
-						load: function(s,recs,success) {
-							if(success) {
-								var ep = s.getProxy().getExtraParams();
-								me.lref('bcpath').setPath(ep.fileId);
+			items: [
+				{
+					region: 'center',
+					xtype: 'grid',
+					reference: 'gpfiles',
+					cls: 'wtvfs-gpfiles',
+					store: {
+						model: 'Sonicle.webtop.vfs.model.pub.GridFile',
+						proxy: WTF.proxy(me.mys.ID, 'PreviewFiles', 'files', {
+							extraParams: {
+								domainId: me.mys.getVar('domainId'),
+								linkId: me.mys.getVar('linkId'),
+								fileId: null
 							}
-						}
-					}
-				},
-				viewConfig: {
-					deferEmptyText: false,
-					emptyText: me.mys.res('gpfiles.emp')
-				},
-				selModel: {
-					type: 'rowmodel'
-				},
-				columns: [{
-					xtype: 'soiconcolumn',
-					dataIndex: 'type',
-					header: WTF.headerWithGlyphIcon('fa fa-file-o'),
-					getIconCls: function(v,rec) {
-						return (v === 'folder') ? 'wt-ftype-folder' : WTF.fileTypeCssIconCls(rec.get('ext'));
-					},
-					iconSize: WTU.imgSizeToPx('xs'),
-					width: 40
-				}, {
-					xtype: 'solinkcolumn',
-					dataIndex: 'name',
-					header: me.mys.res('gpfiles.name.lbl'),
-					tdCls: 'wt-theme-text-lnk',
-					flex: 1,
-					listeners: {
-						linkclick: function(s,idx,rec) {
-							if(rec.get('type') === 'folder') {
-								me.reloadFiles(rec.get('fileId'));
+						}),
+						listeners: {
+							load: function(s,recs,success) {
+								if (success) {
+									var ep = s.getProxy().getExtraParams();
+									me.lref('bcpath').setPath(ep.fileId);
+								}
 							}
 						}
 					},
-					maxWidth: 500
-				}, {
-					xtype: 'sobytescolumn',
-					dataIndex: 'size',
-					header: me.mys.res('gpfiles.size.lbl'),
-					width: 110
-				}, {
-					dataIndex: 'lastModified',
-					header: me.mys.res('gpfiles.lastModified.lbl'),
-					xtype: 'datecolumn',
-					format: 'D, d M Y H:i:s',
-					width: 200
-				}, {
-					xtype: 'actioncolumn',
-					header: '&nbsp;',
-					flex: 1,
-					items: [{
-						iconCls: me.mys.cssIconCls('downloadFile'),
-						tooltip: me.mys.res('act-downloadFile.lbl'),
-						handler: function(s, rIndex) {
-							var rec = s.getStore().getAt(rIndex);
-							me.openDlUrl(rec.get('fileId'));
-						}
-					}]
-				}],
-				tbar: [{
-					xtype: 'button',
-					iconCls: me.mys.cssIconCls('goUp'),
-					tooltip: me.mys.res('act-goUp.tip'),
-					handler: function() {
-						var ppath = me.lref('bcpath').getParentPath();
-						if(ppath) me.reloadFiles(ppath);
-					}
-				}, {
-					xtype: 'sopathbreadcrumb',
-					reference: 'bcpath',
-					overflowHandler: 'scroller',
-					rootFolderIconCls: 'wtvfs-icon-rootfolder',
-					folderIconCls: 'wt-ftype-folder',
-					path: '/',
-					listeners: {
-						pathclick: function(s, path) {
-							me.reloadFiles(path);
-						}
+					viewConfig: {
+						deferEmptyText: false,
+						emptyText: me.mys.res('gpfiles.emp')
 					},
-					flex: 1
-				}]
-			}],
-			tbar: [
-				'->', {
-				xtype: 'button',
-				text: me.mys.res('pub.downloadLink.act-downloadAll.lbl'),
-				iconCls: me.mys.cssIconCls('downloadFile'),
-				handler: function() {
-					me.openDlUrl('/');
+					selModel: {
+						type: 'rowmodel'
+					},
+					columns: [
+						{
+							xtype: 'soiconcolumn',
+							dataIndex: 'type',
+							header: WTF.headerWithGlyphIcon('fa fa-file-o'),
+							getIconCls: function(v,rec) {
+								return (v === 'folder') ? 'wt-ftype-folder' : WTF.fileTypeCssIconCls(rec.get('ext'));
+							},
+							iconSize: WTU.imgSizeToPx('xs'),
+							width: 50
+						}, {
+							xtype: 'solinkcolumn',
+							dataIndex: 'name',
+							header: me.mys.res('gpfiles.name.lbl'),
+							tdCls: 'wt-theme-text-lnk',
+							listeners: {
+								linkclick: function(s,idx,rec) {
+									if (rec.get('type') === 'folder') {
+										me.reloadFiles(rec.get('fileId'));
+									}
+								}
+							},
+							flex: 1,
+							maxWidth: 750
+						}, {
+							xtype: 'sobytescolumn',
+							dataIndex: 'size',
+							header: me.mys.res('gpfiles.size.lbl'),
+							width: 110
+						}, {
+							dataIndex: 'lastModified',
+							header: me.mys.res('gpfiles.lastModified.lbl'),
+							xtype: 'datecolumn',
+							format: 'D, d M Y H:i:s',
+							width: 200
+						}, {
+							xtype: 'soactioncolumn',
+							items: [
+								{
+									iconCls: me.mys.cssIconCls('downloadFile'),
+									tooltip: me.mys.res('act-downloadFile.lbl'),
+									handler: function(g, ridx) {
+										var rec = s.getStore().getAt(ridx);
+										me.openDlUrl(rec.get('fileId'));
+									}
+								}
+							]
+						}
+					],
+					tbar: [
+						{
+							xtype: 'button',
+							iconCls: me.mys.cssIconCls('goUp'),
+							tooltip: me.mys.res('act-goUp.tip'),
+							handler: function() {
+								var ppath = me.lref('bcpath').getParentPath();
+								if (ppath) me.reloadFiles(ppath);
+							}
+						}, {
+							xtype: 'sopathbreadcrumb',
+							reference: 'bcpath',
+							overflowHandler: 'scroller',
+							rootFolderIconCls: 'wtvfs-icon-rootfolder',
+							folderIconCls: 'wt-ftype-folder',
+							path: '/',
+							listeners: {
+								pathclick: function(s, path) {
+									me.reloadFiles(path);
+								}
+							},
+							flex: 1
+						},
+						'->', 
+						{
+							xtype: 'button',
+							text: me.mys.res('pub.downloadLink.act-downloadAll.lbl'),
+							iconCls: me.mys.cssIconCls('downloadFile'),
+							handler: function() {
+								me.openDlUrl('/');
+							}
+						}
+					],
+					listeners: {
+						afterlayout: function() {
+							var me = this,
+									panel = me.up('panel'),
+									headerCt = me.getView().getHeaderCt(),
+									curWidth = Ext.getBody().getWidth(),
+									height = curWidth > 1025 ? 600 : Ext.getBody().getHeight();
+
+							if (curWidth <= 768) {
+								headerCt.getHeaderAtIndex(2).hide();
+								headerCt.getHeaderAtIndex(3).hide();
+							} else {
+								headerCt.getHeaderAtIndex(2).show();
+								headerCt.getHeaderAtIndex(3).show();
+							}
+							panel.setHeight(height);
+							panel.setMaxHeight(height);
+						}
+					}
 				}
-			}]
+			],
+			width: '100%',
+			maxWidth: 1025,
+			height: '100%',
+			maxHeight: Ext.getBody().getWidth() > 1025 ? 600 : Ext.getBody().getHeight()
 		});
 		
 		me.on('afterrender', function() {
