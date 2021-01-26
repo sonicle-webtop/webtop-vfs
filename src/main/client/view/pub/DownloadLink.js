@@ -130,7 +130,7 @@ Ext.define('Sonicle.webtop.vfs.view.pub.DownloadLink', {
 									iconCls: me.mys.cssIconCls('downloadFile'),
 									tooltip: me.mys.res('act-downloadFile.lbl'),
 									handler: function(g, ridx) {
-										var rec = s.getStore().getAt(ridx);
+										var rec = g.getStore().getAt(ridx);
 										me.openDlUrl(rec.get('fileId'));
 									}
 								}
