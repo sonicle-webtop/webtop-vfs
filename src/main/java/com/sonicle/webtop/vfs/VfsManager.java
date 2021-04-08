@@ -102,7 +102,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
-import javax.mail.internet.InternetAddress;
+import jakarta.mail.internet.InternetAddress;
 import net.glxn.qrgen.javase.QRCode;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
