@@ -110,6 +110,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.vfs2.FileObject;
 import org.apache.commons.vfs2.FileSystemException;
 import org.apache.commons.vfs2.Selectors;
+import org.apache.commons.vfs2.provider.UriParser;
 import org.apache.http.client.utils.URIBuilder;
 import org.slf4j.Logger;
 
@@ -735,7 +736,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			if (!tfo.isFolder()) throw new IllegalArgumentException("Please provide a valid parentPath");
 			
 			String sntzName = PathUtils.sanitizeFolderName(name);
-			String newPath = FilenameUtils.separatorsToUnix(FilenameUtils.concat(parentPath, sntzName));
+			String newPath = FilenameUtils.separatorsToUnix(FilenameUtils.concat(parentPath, UriParser.encode(sntzName)));
 			ntfo = getTargetFileObject(storeId, newPath);
 			logger.debug("Creating store file [{}, {}]", storeId, newPath);
 			if (fileType.equals(StoreFileType.FOLDER)) {
@@ -1348,7 +1349,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 	}
 	
 	private NewTargetFile getNewTargetFileObject(int storeId, String parentPath, String name, boolean overwrite) throws FileSystemException, WTException {
-		String newPath = FilenameUtils.separatorsToUnix(FilenameUtils.concat(parentPath, name));
+		String newPath = FilenameUtils.separatorsToUnix(FilenameUtils.concat(parentPath, UriParser.encode(name)));
 		
 		if (overwrite) {
 			return new NewTargetFile(newPath, getTargetFileObject(storeId, newPath));
@@ -1381,7 +1382,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		try {
 			tfo = getTargetFileObject(storeId, path);
 			String sntzName = PathUtils.sanitizeFolderName(newName);
-			String newPath = FilenameUtils.separatorsToUnix(FilenameUtils.concat(PathUtils.getFullParentPath(path), sntzName));
+			String newPath = FilenameUtils.separatorsToUnix(FilenameUtils.concat(PathUtils.getFullParentPath(path), UriParser.encode(sntzName)));
 			ntfo = getTargetFileObject(storeId, newPath);
 			if (!overwrite && ntfo.exists()) throw new FileOverwriteException("A file with same name already exists [{}]", newPath);
 			
