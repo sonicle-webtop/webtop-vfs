@@ -108,6 +108,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.vfs2.FileObject;
 import org.apache.commons.vfs2.FileSystemException;
+import org.apache.commons.vfs2.provider.UriParser;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.format.DateTimeFormatter;
@@ -370,13 +371,13 @@ public class Service extends BaseService {
 		return node;
 	}
 	
-	private ExtTreeNode createFileNode(StoreShareFolder folder, String filePath, String dlLink, String ulLink, FileObject fo) {
+	private ExtTreeNode createFileNode(StoreShareFolder folder, String filePath, String dlLink, String ulLink, FileObject fo) throws FileSystemException {
 		StoreNodeId nodeId = new StoreNodeId();
 		nodeId.setShareId(folder.getShareId());
 		nodeId.setStoreId(String.valueOf(folder.getStore().getStoreId()));
 		nodeId.setPath(filePath);
 		
-		ExtTreeNode node = new ExtTreeNode(nodeId.toString(true), fo.getName().getBaseName(), false);
+		ExtTreeNode node = new ExtTreeNode(nodeId.toString(true), UriParser.decode(fo.getName().getBaseName()), false);
 		node.put("_type", "file");//JsFolderNode.TYPE_FOLDER);
 		//node.put("_pid", store.getProfileId().toString());
 		node.put("_storeId", folder.getStore().getStoreId());

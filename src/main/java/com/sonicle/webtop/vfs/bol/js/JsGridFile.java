@@ -39,6 +39,7 @@ import com.sonicle.webtop.vfs.model.StoreShareFolder;
 import org.apache.commons.vfs2.FileObject;
 import org.apache.commons.vfs2.FileSystemException;
 import org.apache.commons.vfs2.FileType;
+import org.apache.commons.vfs2.provider.UriParser;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormatter;
 
@@ -65,11 +66,11 @@ public class JsGridFile {
 	
 	public JsGridFile() {}
 	
-	public JsGridFile(StoreShareFolder folder, FileObject fo, String fileId, boolean canBeOpenedWithDocEditor, SharingLink dlLink, SharingLink ulLink, int storeId, String path) {
+	public JsGridFile(StoreShareFolder folder, FileObject fo, String fileId, boolean canBeOpenedWithDocEditor, SharingLink dlLink, SharingLink ulLink, int storeId, String path) throws FileSystemException {
 		this.fileId = fileId;
 		this.type = getFileType(fo);
 		this.mtype = (type.equals("folder")) ? "" : ServletHelper.guessMediaType(fo.getName().getBaseName(), true);
-		this.name = fo.getName().getBaseName();
+		this.name = UriParser.decode(fo.getName().getBaseName());
 		this.ext = fo.getName().getExtension();
 		this.size = getFileSize(fo);
 		this.lastModified = getFileLastModified(fo);
