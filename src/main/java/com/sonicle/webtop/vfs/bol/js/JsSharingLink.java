@@ -39,6 +39,8 @@ import com.sonicle.commons.time.DateTimeUtils;
 import com.sonicle.webtop.vfs.model.SharingLink;
 import java.net.URI;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.vfs2.FileSystemException;
+import org.apache.commons.vfs2.provider.UriParser;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.format.DateTimeFormatter;
@@ -60,13 +62,13 @@ public class JsSharingLink {
 	
 	public JsSharingLink() {}
 	
-	public JsSharingLink(SharingLink o, URI[] publicLinks, DateTimeZone profileTz) {
+	public JsSharingLink(SharingLink o, URI[] publicLinks, DateTimeZone profileTz) throws FileSystemException {
 		this.linkId = o.getLinkId();
 		this.type = EnumUtils.toSerializedName(o.getLinkType());
 		this.publicUrl = URIUtils.toString(publicLinks[0]);
 		this.rawPublicUrl = URIUtils.toString(publicLinks[1]);
 		this.filePath = o.getFilePath();
-		this.fileName = PathUtils.getFileName(o.getFilePath());
+		this.fileName = UriParser.decode(PathUtils.getFileName(o.getFilePath()));
 		this.expirationDate = DateTimeUtils.printYmdHmsWithZone(o.getExpiresOn(), profileTz);
 		this.authMode = EnumUtils.toSerializedName(o.getAuthMode());
 		this.password = o.getPassword();
