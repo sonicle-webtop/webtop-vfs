@@ -35,6 +35,8 @@ package com.sonicle.webtop.vfs.bol.js;
 import com.sonicle.commons.EnumUtils;
 import com.sonicle.commons.PathUtils;
 import com.sonicle.commons.time.DateTimeUtils;
+import com.sonicle.webtop.core.app.WT;
+import com.sonicle.webtop.core.sdk.UserProfileId;
 import com.sonicle.webtop.vfs.Service.StoreNodeId;
 import com.sonicle.webtop.vfs.model.SharingLink;
 import org.joda.time.DateTimeZone;
@@ -64,10 +66,10 @@ public class JsGridSharingLink {
 	
 	public JsGridSharingLink() {}
 	
-	public JsGridSharingLink(SharingLink sl, String userDescription, String storeName, String storeIcon, StoreNodeId baseFileId, DateTimeZone profileTz) {
+	public JsGridSharingLink(SharingLink sl, String storeName, String storeIcon, StoreNodeId baseFileId, UserProfileId ownerProfileId, DateTimeZone profileTz) {
 		this.linkId = sl.getLinkId();
-		this.userId = sl.getUserId();
-		this.userDescription = userDescription;
+		this.userId = ownerProfileId.getUserId();
+		this.userDescription = WT.getUserData(ownerProfileId).getDisplayName();
 		this.linkType = EnumUtils.toSerializedName(sl.getLinkType());
 		this.storeId = sl.getStoreId();
 		this.storeName = storeName;

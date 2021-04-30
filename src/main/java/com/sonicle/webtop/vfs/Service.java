@@ -1285,7 +1285,7 @@ public class Service extends BaseService {
 							baseNodeId.setStoreId(store.getStoreId().toString());
 							
 							for(SharingLink dl : manager.listDownloadLinks(folder.getStore().getStoreId(), "/").values()) {
-								items.add(new JsGridSharingLink(dl, "", store.getName(), storeIcon(folder.getStore()), baseNodeId, ptz));
+								items.add(new JsGridSharingLink(dl, store.getName(), storeIcon(folder.getStore()), baseNodeId, folder.getOwnerProfileId(), ptz));
 							}
 						}
 					}
@@ -1297,7 +1297,7 @@ public class Service extends BaseService {
 							baseNodeId.setStoreId(store.getStoreId().toString());
 							
 							for(SharingLink ul : manager.listUploadLinks(folder.getStore().getStoreId(), "/").values()) {
-								items.add(new JsGridSharingLink(ul, "", store.getName(), storeIcon(folder.getStore()), baseNodeId, ptz));
+								items.add(new JsGridSharingLink(ul, store.getName(), storeIcon(folder.getStore()), baseNodeId, folder.getOwnerProfileId(), ptz));
 							}
 						}
 					}
