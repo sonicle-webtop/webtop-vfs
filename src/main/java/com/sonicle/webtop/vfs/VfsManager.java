@@ -868,11 +868,9 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			OSharingLink olink = dao.selectById(con, linkId);
 			if(olink == null) return null;
 			
-			checkRightsOnStoreElements(olink.getStoreId(), "READ");
-			
 			return createSharingLink(olink);
 			
-		} catch(SQLException | DAOException | WTException ex) {
+		} catch(SQLException | DAOException ex) {
 			DbUtils.rollbackQuietly(con);
 			throw wrapException(ex);
 		} finally {
@@ -942,8 +940,6 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			OSharingLink olink = dao.selectById(con, link.getLinkId());
 			if (olink == null) throw new WTNotFoundException("SharingLink not found [{}]", link.getLinkId());
 			
-			checkRightsOnStoreElements(olink.getStoreId(), "READ");
-			
 			OSharingLink ret = doSharingLinkUpdate(false, con, link);
 			if (ret == null) throw new WTNotFoundException("SharingLink not found [{}]", link.getLinkId());
 			
@@ -969,8 +965,6 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			con = WT.getConnection(SERVICE_ID, false);
 			OSharingLink olink = dao.selectById(con, linkId);
 			if(olink == null) throw new WTException("SharingLink not found [{}]", linkId);
-			
-			checkRightsOnStoreElements(olink.getStoreId(), "READ");
 			
 			boolean ret = doSharingLinkDelete(con, linkId);
 			if (!ret) throw new WTNotFoundException("SharingLink not found [{}]", linkId);
