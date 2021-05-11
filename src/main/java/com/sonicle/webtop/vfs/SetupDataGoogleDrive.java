@@ -90,11 +90,11 @@ public class SetupDataGoogleDrive extends SetupData {
 	
 	public static SetupDataGoogleDrive fromJson(String value) {
 		if(value == null) return null;
-		return JsonResult.gson.fromJson(value, SetupDataGoogleDrive.class);
+		return JsonResult.gson().fromJson(value, SetupDataGoogleDrive.class);
 	}
 	
 	public static String toJson(SetupDataGoogleDrive value) {
 		if(value == null) return null;
-		return JsonResult.gson.toJson(value, SetupDataGoogleDrive.class);
+		return JsonResult.gson().toJson(value, SetupDataGoogleDrive.class);
 	}
 }

@@ -86,11 +86,11 @@ public class SetupDataDropbox extends SetupData {
 	
 	public static SetupDataDropbox fromJson(String value) {
 		if(value == null) return null;
-		return JsonResult.gson.fromJson(value, SetupDataDropbox.class);
+		return JsonResult.gson().fromJson(value, SetupDataDropbox.class);
 	}
 	
 	public static String toJson(SetupDataDropbox value) {
 		if(value == null) return null;
-		return JsonResult.gson.toJson(value, SetupDataDropbox.class);
+		return JsonResult.gson().toJson(value, SetupDataDropbox.class);
 	}
 }
