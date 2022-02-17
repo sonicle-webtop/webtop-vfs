@@ -2148,7 +2148,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				columns: [{
 					xtype: 'soiconcolumn',
 					dataIndex: 'type',
-					header: WTF.headerWithGlyphIcon('fa fa-file-o'),
+					header: WTF.headerWithGlyphIcon('far fa-file'),
 					getIconCls: function(v,rec) {
 						return rec.isFolder() ? 'wt-ftype-folder' : WTF.fileTypeCssIconCls(rec.get('ext'));
 					},
@@ -2158,7 +2158,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 					xtype: 'solinkcolumn',
 					dataIndex: 'name',
 					header: me.res('gpfiles.name.lbl'),
-					tdCls: 'wt-theme-text-lnk',
+					tdCls: 'wt-theme-text-hyperlink',
 					preserveWhitespaces: true,
 					listeners: {
 						linkclick: function(s,idx,rec) {
@@ -2180,7 +2180,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				}, {
 					xtype: 'soiconcolumn',
 					dataIndex: 'dlLink',
-					header: WTF.headerWithGlyphIcon('fa fa-cloud-download'),
+					header: WTF.headerWithGlyphIcon('fas fa-cloud-download-alt'),
 					getIconCls: function(v,rec) {
 						if (Ext.isEmpty(v)) return '';
 						var exp = rec.get('dlLinkExp') ? 'Exp' : '';
@@ -2196,7 +2196,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				}, {
 					xtype: 'soiconcolumn',
 					dataIndex: 'ulLink',
-					header: WTF.headerWithGlyphIcon('fa fa-cloud-upload'),
+					header: WTF.headerWithGlyphIcon('fas fa-cloud-upload-alt'),
 					getIconCls: function(v,rec) {
 						if (Ext.isEmpty(v)) return '';
 						var exp = rec.get('ulLinkExp') ? 'Exp' : '';

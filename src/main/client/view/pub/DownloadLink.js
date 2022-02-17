@@ -92,7 +92,7 @@ Ext.define('Sonicle.webtop.vfs.view.pub.DownloadLink', {
 						{
 							xtype: 'soiconcolumn',
 							dataIndex: 'type',
-							header: WTF.headerWithGlyphIcon('fa fa-file-o'),
+							header: WTF.headerWithGlyphIcon('far fa-file'),
 							getIconCls: function(v,rec) {
 								return (v === 'folder') ? 'wt-ftype-folder' : WTF.fileTypeCssIconCls(rec.get('ext'));
 							},
@@ -102,7 +102,7 @@ Ext.define('Sonicle.webtop.vfs.view.pub.DownloadLink', {
 							xtype: 'solinkcolumn',
 							dataIndex: 'name',
 							header: me.mys.res('gpfiles.name.lbl'),
-							tdCls: 'wt-theme-text-lnk',
+							tdCls: 'wt-theme-text-hyperlink',
 							listeners: {
 								linkclick: function(s,idx,rec) {
 									if (rec.get('type') === 'folder') {

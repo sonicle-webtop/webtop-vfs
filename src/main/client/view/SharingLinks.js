@@ -79,7 +79,7 @@ Ext.define('Sonicle.webtop.vfs.view.SharingLinks', {
 					return me.mys.res('sharingLinks.gp.linkType.'+v+exp);
 				},
 				iconSize: WTU.imgSizeToPx('xs'),
-				header: WTF.headerWithGlyphIcon('fa fa-link'),
+				header: WTF.headerWithGlyphIcon('fas fa-link'),
 				width: 40
 			}, {
 				xtype: 'soiconcolumn',
