@@ -441,6 +441,35 @@ public class VfsManager extends BaseManager implements IVfsManager {
 	}
 	
 	@Override
+	public Store addBuiltInVolatileStore(Store store) throws WTException {
+		Connection con = null;
+		
+		try {
+			checkRightsOnStoreRoot(store.getProfileId(), "MANAGE");
+			checkRightsOnStoreSchema(store.getUri());
+			
+			con = WT.getConnection(SERVICE_ID, false);
+			store.setBuiltIn(Store.BUILTIN_VOLATILE);
+			store.setStoreId(-(int)(System.currentTimeMillis() % Integer.MAX_VALUE));
+			Store ret = doStoreUpdate(true, con, store);
+			
+			DbUtils.commitQuietly(con);
+			//if (isAuditEnabled()) {
+			//	writeAuditLog(AuditContext.STORE, AuditAction.CREATE, ret.getStoreId(), null);
+			//}
+			addStoreFileSystemToCache(ret);
+			
+			return ret;
+			
+		} catch(SQLException | DAOException | WTException ex) {
+			DbUtils.rollbackQuietly(con);
+			throw wrapException(ex);
+		} finally {
+			DbUtils.closeQuietly(con);
+		}
+	}
+	
+	@Override
 	public Store addBuiltInStoreMyDocuments() throws WTException {
 		StoreDAO dao = StoreDAO.getInstance();
 		Connection con = null;
@@ -1305,11 +1334,15 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			}
 			
 			int ret = -1;
-			if (insert) {
-				ostore.setStoreId(stoDao.getSequence(con).intValue());
-				ret = stoDao.insert(con, ostore);
+			if (store.getBuiltIn()==Store.BUILTIN_VOLATILE) {
+				ret = 1;
 			} else {
-				ret = stoDao.update(con, ostore);
+				if (insert) {
+					ostore.setStoreId(stoDao.getSequence(con).intValue());
+					ret = stoDao.insert(con, ostore);
+				} else {
+					ret = stoDao.update(con, ostore);
+				}
 			}
 			
 			return (ret == 1) ? createStore(ostore, buildStoreName(getLocale(), ostore)) : null;
