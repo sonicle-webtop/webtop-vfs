@@ -132,6 +132,8 @@ public class VfsManager extends BaseManager implements IVfsManager {
 	private final HashMap<Integer, String> cacheShareFolderByStore = new HashMap<>();
 	
 	private final HashMap<String, StoreFileSystem> storeFileSystems = new HashMap<>();
+	private final ArrayList<Store> volatileStores = new ArrayList<>();
+	private int nextVolatileStoreId=-1;
 	
 	public VfsManager(boolean fastInit, UserProfileId targetProfileId) throws WTException {
 		super(fastInit, targetProfileId);
@@ -358,6 +360,9 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			for(OStore store : dao.selectByDomainUser(con, pid.getDomainId(), pid.getUserId())) {
 				items.add(createStore(store, buildStoreName(getLocale(), store)));
 			}
+			for(Store store: volatileStores) {
+				items.add(store);
+			}
 			return items;
 			
 		} catch(SQLException | DAOException ex) {
@@ -450,7 +455,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			
 			con = WT.getConnection(SERVICE_ID, false);
 			store.setBuiltIn(Store.BUILTIN_VOLATILE);
-			store.setStoreId(-(int)(System.currentTimeMillis() % Integer.MAX_VALUE));
+			store.setStoreId(nextVolatileStoreId--);
 			Store ret = doStoreUpdate(true, con, store);
 			
 			DbUtils.commitQuietly(con);
@@ -458,6 +463,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			//	writeAuditLog(AuditContext.STORE, AuditAction.CREATE, ret.getStoreId(), null);
 			//}
 			addStoreFileSystemToCache(ret);
+			volatileStores.add(ret);
 			
 			return ret;
 			
