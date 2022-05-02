@@ -133,6 +133,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 	
 	private final HashMap<String, StoreFileSystem> storeFileSystems = new HashMap<>();
 	private final ArrayList<Store> volatileStores = new ArrayList<>();
+	private final HashMap<Integer, Store> volatileStoresMap=new HashMap<>();
 	private int nextVolatileStoreId=-1;
 	
 	public VfsManager(boolean fastInit, UserProfileId targetProfileId) throws WTException {
@@ -464,6 +465,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			//}
 			addStoreFileSystemToCache(ret);
 			volatileStores.add(ret);
+			volatileStoresMap.put(store.getStoreId(), store);
 			
 			return ret;
 			
@@ -1254,6 +1256,9 @@ public class VfsManager extends BaseManager implements IVfsManager {
 	}
 	
 	private boolean quietlyCheckRightsOnStoreFolder(int storeId, String action) {
+		Store store=volatileStoresMap.get(storeId);
+		if (store.isVolatile()) return true;
+		
 		try {
 			checkRightsOnStoreFolder(storeId, action);
 			return true;
@@ -1267,6 +1272,8 @@ public class VfsManager extends BaseManager implements IVfsManager {
 	
 	private void checkRightsOnStoreFolder(int storeId, String action) throws WTException {
 		if (RunContext.isWebTopAdmin()) return;
+		Store store=volatileStoresMap.get(storeId);
+		if (store.isVolatile()) return;
 		UserProfileId targetPid = getTargetProfileId();
 		
 		// Skip rights check if running user is resource's owner
@@ -1291,6 +1298,8 @@ public class VfsManager extends BaseManager implements IVfsManager {
 	
 	private void checkRightsOnStoreElements(int storeId, String action) throws WTException {
 		if (RunContext.isWebTopAdmin()) return;
+		Store store=volatileStoresMap.get(storeId);
+		if (store.isVolatile()) return;
 		UserProfileId targetPid = getTargetProfileId();
 		
 		// Skip rights check if running user is resource's owner
