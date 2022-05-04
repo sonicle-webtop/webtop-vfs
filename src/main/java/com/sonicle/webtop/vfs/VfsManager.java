@@ -1257,7 +1257,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 	
 	private boolean quietlyCheckRightsOnStoreFolder(int storeId, String action) {
 		Store store=volatileStoresMap.get(storeId);
-		if (store.isVolatile()) return true;
+		if (store!=null && store.isVolatile()) return true;
 		
 		try {
 			checkRightsOnStoreFolder(storeId, action);
@@ -1273,7 +1273,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 	private void checkRightsOnStoreFolder(int storeId, String action) throws WTException {
 		if (RunContext.isWebTopAdmin()) return;
 		Store store=volatileStoresMap.get(storeId);
-		if (store.isVolatile()) return;
+		if (store!=null && store.isVolatile()) return;
 		UserProfileId targetPid = getTargetProfileId();
 		
 		// Skip rights check if running user is resource's owner
@@ -1299,7 +1299,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 	private void checkRightsOnStoreElements(int storeId, String action) throws WTException {
 		if (RunContext.isWebTopAdmin()) return;
 		Store store=volatileStoresMap.get(storeId);
-		if (store.isVolatile()) return;
+		if (store!=null && store.isVolatile()) return;
 		UserProfileId targetPid = getTargetProfileId();
 		
 		// Skip rights check if running user is resource's owner
