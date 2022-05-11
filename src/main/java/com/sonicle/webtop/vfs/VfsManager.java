@@ -432,7 +432,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			
 			DbUtils.commitQuietly(con);
 			if (isAuditEnabled()) {
-				writeAuditLog(AuditContext.STORE, AuditAction.CREATE, ret.getStoreId(), null);
+				auditLogWrite(AuditContext.STORE, AuditAction.CREATE, ret.getStoreId(), null);
 			}
 			addStoreFileSystemToCache(ret);
 			
@@ -461,7 +461,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			
 			DbUtils.commitQuietly(con);
 			//if (isAuditEnabled()) {
-			//	writeAuditLog(AuditContext.STORE, AuditAction.CREATE, ret.getStoreId(), null);
+			//	auditLogWrite(AuditContext.STORE, AuditAction.CREATE, ret.getStoreId(), null);
 			//}
 			addStoreFileSystemToCache(ret);
 			volatileStores.add(ret);
@@ -503,7 +503,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			
 			DbUtils.commitQuietly(con);
 			if (isAuditEnabled()) {
-				writeAuditLog(AuditContext.STORE, AuditAction.CREATE, ret.getStoreId(), null);
+				auditLogWrite(AuditContext.STORE, AuditAction.CREATE, ret.getStoreId(), null);
 			}
 			
 			return ret;
@@ -551,7 +551,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			
 			DbUtils.commitQuietly(con);
 			if (isAuditEnabled()) {
-				writeAuditLog(AuditContext.STORE, AuditAction.CREATE, ret.getStoreId(), null);
+				auditLogWrite(AuditContext.STORE, AuditAction.CREATE, ret.getStoreId(), null);
 			}
 			
 			return ret;
@@ -581,7 +581,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			removeStoreFileSystemFromCache(store.getStoreId());
 			
 			if (isAuditEnabled()) {
-				writeAuditLog(AuditContext.STORE, AuditAction.UPDATE, ret.getStoreId(), null);
+				auditLogWrite(AuditContext.STORE, AuditAction.UPDATE, ret.getStoreId(), null);
 			}
 			
 			return ret;
@@ -620,7 +620,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			removeStoreFileSystemFromCache(storeId);
 			
 			if (isAuditEnabled()) {
-				writeAuditLog(AuditContext.STORE, AuditAction.DELETE, storeId, null);
+				auditLogWrite(AuditContext.STORE, AuditAction.DELETE, storeId, null);
 			}
 			
 		} catch(SQLException | DAOException | WTException ex) {
@@ -928,7 +928,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			
 			DbUtils.commitQuietly(con);
 			if (isAuditEnabled()) {
-				writeAuditLog(AuditContext.DOWNLOADLINK, AuditAction.CREATE, ret.getLinkId(), null);
+				auditLogWrite(AuditContext.DOWNLOADLINK, AuditAction.CREATE, ret.getLinkId(), null);
 			}
 			
 			return ret;
@@ -954,7 +954,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			
 			DbUtils.commitQuietly(con);
 			if (isAuditEnabled()) {
-				writeAuditLog(AuditContext.UPLOADLINK, AuditAction.CREATE, ret.getLinkId(), null);
+				auditLogWrite(AuditContext.UPLOADLINK, AuditAction.CREATE, ret.getLinkId(), null);
 			}
 			
 			return ret;
@@ -982,7 +982,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			
 			DbUtils.commitQuietly(con);
 			if (isAuditEnabled()) {
-				writeAuditLog(AuditContext.SHARINGLINK, AuditAction.UPDATE, link.getLinkId(), null);
+				auditLogWrite(AuditContext.SHARINGLINK, AuditAction.UPDATE, link.getLinkId(), null);
 			}
 			
 		} catch(SQLException | DAOException | WTException ex) {
@@ -1008,7 +1008,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			
 			DbUtils.commitQuietly(con);
 			if (isAuditEnabled()) {
-				writeAuditLog(AuditContext.SHARINGLINK, AuditAction.DELETE, linkId, null);
+				auditLogWrite(AuditContext.SHARINGLINK, AuditAction.DELETE, linkId, null);
 			}
 			
 		} catch(SQLException | DAOException | WTException ex) {
@@ -1679,13 +1679,5 @@ public class VfsManager extends BaseManager implements IVfsManager {
 	
 	private enum AuditAction {
 		CREATE, UPDATE, DELETE, MOVE
-	}
-	
-	private void writeAuditLog(AuditContext context, AuditAction action, Object reference, Object data) {
-		writeAuditLog(EnumUtils.getName(context), EnumUtils.getName(action), (reference != null) ? String.valueOf(reference) : null, (data != null) ? String.valueOf(data) : null);
-	}
-	
-	private void writeAuditLog(AuditContext context, AuditAction action, Collection<AuditReferenceDataEntry> entries) {
-		writeAuditLog(EnumUtils.getName(context), EnumUtils.getName(action), entries);
 	}
 }
