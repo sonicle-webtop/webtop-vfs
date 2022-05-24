@@ -431,9 +431,9 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			Store ret = doStoreUpdate(true, con, store);
 			
 			DbUtils.commitQuietly(con);
-			if (isAuditEnabled()) {
-				auditLogWrite(AuditContext.STORE, AuditAction.CREATE, ret.getStoreId(), null);
-			}
+//			if (isAuditEnabled()) {
+//				auditLogWrite(AuditContext.STORE, AuditAction.CREATE, ret.getStoreId(), null);
+//			}
 			addStoreFileSystemToCache(ret);
 			
 			return ret;
@@ -460,9 +460,9 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			Store ret = doStoreUpdate(true, con, store);
 			
 			DbUtils.commitQuietly(con);
-			//if (isAuditEnabled()) {
-			//	auditLogWrite(AuditContext.STORE, AuditAction.CREATE, ret.getStoreId(), null);
-			//}
+//			if (isAuditEnabled()) {
+//				auditLogWrite(AuditContext.STORE, AuditAction.CREATE, ret.getStoreId(), null);
+//			}
 			addStoreFileSystemToCache(ret);
 			volatileStores.add(ret);
 			volatileStoresMap.put(store.getStoreId(), store);
@@ -502,9 +502,9 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			Store ret = doStoreUpdate(true, con, store);
 			
 			DbUtils.commitQuietly(con);
-			if (isAuditEnabled()) {
-				auditLogWrite(AuditContext.STORE, AuditAction.CREATE, ret.getStoreId(), null);
-			}
+//			if (isAuditEnabled()) {
+//				auditLogWrite(AuditContext.STORE, AuditAction.CREATE, ret.getStoreId(), null);
+//			}
 			
 			return ret;
 			
@@ -550,9 +550,9 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			Store ret = doStoreUpdate(true, con, store);
 			
 			DbUtils.commitQuietly(con);
-			if (isAuditEnabled()) {
-				auditLogWrite(AuditContext.STORE, AuditAction.CREATE, ret.getStoreId(), null);
-			}
+//			if (isAuditEnabled()) {
+//				auditLogWrite(AuditContext.STORE, AuditAction.CREATE, ret.getStoreId(), null);
+//			}
 			
 			return ret;
 			
@@ -580,9 +580,9 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			DbUtils.commitQuietly(con);
 			removeStoreFileSystemFromCache(store.getStoreId());
 			
-			if (isAuditEnabled()) {
-				auditLogWrite(AuditContext.STORE, AuditAction.UPDATE, ret.getStoreId(), null);
-			}
+//			if (isAuditEnabled()) {
+//				auditLogWrite(AuditContext.STORE, AuditAction.UPDATE, ret.getStoreId(), null);
+//			}
 			
 			return ret;
 			
@@ -619,9 +619,9 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			DbUtils.commitQuietly(con);
 			removeStoreFileSystemFromCache(storeId);
 			
-			if (isAuditEnabled()) {
-				auditLogWrite(AuditContext.STORE, AuditAction.DELETE, storeId, null);
-			}
+//			if (isAuditEnabled()) {
+//				auditLogWrite(AuditContext.STORE, AuditAction.DELETE, storeId, null);
+//			}
 			
 		} catch(SQLException | DAOException | WTException ex) {
 			DbUtils.rollbackQuietly(con);
@@ -927,9 +927,9 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			SharingLink ret = createSharingLink(doSharingLinkUpdate(true, con, link));
 			
 			DbUtils.commitQuietly(con);
-			if (isAuditEnabled()) {
-				auditLogWrite(AuditContext.DOWNLOADLINK, AuditAction.CREATE, ret.getLinkId(), null);
-			}
+//			if (isAuditEnabled()) {
+//				auditLogWrite(AuditContext.DOWNLOADLINK, AuditAction.CREATE, ret.getLinkId(), null);
+//			}
 			
 			return ret;
 			
@@ -953,9 +953,9 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			SharingLink ret = createSharingLink(doSharingLinkUpdate(true, con, link));
 			
 			DbUtils.commitQuietly(con);
-			if (isAuditEnabled()) {
-				auditLogWrite(AuditContext.UPLOADLINK, AuditAction.CREATE, ret.getLinkId(), null);
-			}
+//			if (isAuditEnabled()) {
+//				auditLogWrite(AuditContext.UPLOADLINK, AuditAction.CREATE, ret.getLinkId(), null);
+//			}
 			
 			return ret;
 			
@@ -981,9 +981,9 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			if (ret == null) throw new WTNotFoundException("SharingLink not found [{}]", link.getLinkId());
 			
 			DbUtils.commitQuietly(con);
-			if (isAuditEnabled()) {
-				auditLogWrite(AuditContext.SHARINGLINK, AuditAction.UPDATE, link.getLinkId(), null);
-			}
+//			if (isAuditEnabled()) {
+//				auditLogWrite(AuditContext.SHARINGLINK, AuditAction.UPDATE, link.getLinkId(), null);
+//			}
 			
 		} catch(SQLException | DAOException | WTException ex) {
 			DbUtils.rollbackQuietly(con);
@@ -1007,9 +1007,9 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			if (!ret) throw new WTNotFoundException("SharingLink not found [{}]", linkId);
 			
 			DbUtils.commitQuietly(con);
-			if (isAuditEnabled()) {
-				auditLogWrite(AuditContext.SHARINGLINK, AuditAction.DELETE, linkId, null);
-			}
+//			if (isAuditEnabled()) {
+//				auditLogWrite(AuditContext.SHARINGLINK, AuditAction.DELETE, linkId, null);
+//			}
 			
 		} catch(SQLException | DAOException | WTException ex) {
 			DbUtils.rollbackQuietly(con);
