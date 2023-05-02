@@ -38,9 +38,9 @@ import com.sonicle.commons.LangUtils;
 import com.sonicle.commons.PathUtils;
 import com.sonicle.commons.URIUtils;
 import com.sonicle.commons.db.DbUtils;
+import com.sonicle.commons.flags.BitFlagsEnum;
 import com.sonicle.commons.time.DateTimeUtils;
 import com.sonicle.commons.web.json.CompositeId;
-import com.sonicle.security.Principal;
 import com.sonicle.vfs2.FileSelector;
 import com.sonicle.vfs2.TypeNameComparator;
 import com.sonicle.vfs2.VfsURI;
@@ -49,16 +49,16 @@ import com.sonicle.webtop.core.CoreServiceSettings;
 import com.sonicle.webtop.core.app.CoreManifest;
 import com.sonicle.webtop.core.app.RunContext;
 import com.sonicle.webtop.core.app.WT;
-import com.sonicle.webtop.core.app.sdk.AuditReferenceDataEntry;
+import com.sonicle.webtop.core.app.model.FolderShare;
+import com.sonicle.webtop.core.app.model.FolderShareOriginFolders;
+import com.sonicle.webtop.core.app.model.FolderSharing;
+import com.sonicle.webtop.core.app.model.ShareOrigin;
+import com.sonicle.webtop.core.app.sdk.AbstractFolderShareCache;
 import com.sonicle.webtop.core.app.sdk.WTNotFoundException;
-import com.sonicle.webtop.core.bol.OShare;
+import com.sonicle.webtop.core.app.util.ExceptionUtils;
 import com.sonicle.webtop.core.bol.Owner;
-import com.sonicle.webtop.core.model.IncomingShareRoot;
-import com.sonicle.webtop.core.model.SharePermsElements;
-import com.sonicle.webtop.core.model.SharePermsFolder;
-import com.sonicle.webtop.core.model.SharePermsRoot;
-import com.sonicle.webtop.core.bol.model.Sharing;
 import com.sonicle.webtop.core.dal.DAOException;
+import com.sonicle.webtop.core.sdk.AbstractMapCache;
 import com.sonicle.webtop.core.sdk.AuthException;
 import com.sonicle.webtop.core.sdk.BaseManager;
 import com.sonicle.webtop.core.sdk.UserProfile;
@@ -68,13 +68,12 @@ import com.sonicle.webtop.core.sdk.WTRuntimeException;
 import com.sonicle.webtop.core.util.NotificationHelper;
 import com.sonicle.webtop.vfs.bol.OSharingLink;
 import com.sonicle.webtop.vfs.bol.OStore;
-import com.sonicle.webtop.vfs.bol.model.MyStoreRoot;
 import com.sonicle.webtop.vfs.model.SharingLink;
-import com.sonicle.webtop.vfs.model.StoreShareFolder;
-import com.sonicle.webtop.vfs.model.StoreShareRoot;
 import com.sonicle.webtop.vfs.dal.SharingLinkDAO;
 import com.sonicle.webtop.vfs.dal.StoreDAO;
 import com.sonicle.webtop.vfs.model.Store;
+import com.sonicle.webtop.vfs.model.StoreFSFolder;
+import com.sonicle.webtop.vfs.model.StoreFSOrigin;
 import com.sonicle.webtop.vfs.sfs.DefaultSFS;
 import com.sonicle.webtop.vfs.sfs.StoreFileSystem;
 import com.sonicle.webtop.vfs.sfs.DropboxSFS;
@@ -83,7 +82,6 @@ import com.sonicle.webtop.vfs.sfs.FtpsSFS;
 import com.sonicle.webtop.vfs.sfs.GoogleDriveSFS;
 import com.sonicle.webtop.vfs.sfs.SftpSFS;
 import freemarker.template.TemplateException;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -98,12 +96,17 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import jakarta.mail.internet.InternetAddress;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import net.glxn.qrgen.javase.QRCode;
+import net.sf.qualitycheck.Check;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -112,6 +115,7 @@ import org.apache.commons.vfs2.FileSystemException;
 import org.apache.commons.vfs2.Selectors;
 import org.apache.commons.vfs2.provider.UriParser;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.shiro.subject.Subject;
 import org.slf4j.Logger;
 
 /**
@@ -120,17 +124,13 @@ import org.slf4j.Logger;
  */
 public class VfsManager extends BaseManager implements IVfsManager {
 	private static final Logger logger = WT.getLogger(VfsManager.class);
-	private static final String GROUPNAME_STORE = "STORE";
+	private static final String SHARE_CONTEXT_STORE = "STORE";
 	private static final String MYDOCUMENTS_FOLDER = "mydocuments";
 	public static final String URI_SCHEME_MYDOCUMENTS = "mydocs";
 	public static final String URI_SCHEME_DOMAINIMAGES = "images";
 	
-	private final HashMap<Integer, UserProfileId> cacheOwnerByStore = new HashMap<>();
-	private final Object shareCacheLock = new Object();
-	private final HashMap<UserProfileId, String> cacheShareRootByOwner = new HashMap<>();
-	private final HashMap<UserProfileId, String> cacheWildcardShareFolderByOwner = new HashMap<>();
-	private final HashMap<Integer, String> cacheShareFolderByStore = new HashMap<>();
-	
+	private final OwnerCache ownerCache = new OwnerCache();
+	private final ShareCache shareCache = new ShareCache();
 	private final HashMap<String, StoreFileSystem> storeFileSystems = new HashMap<>();
 	private final ArrayList<Store> volatileStores = new ArrayList<>();
 	private final HashMap<Integer, Store> volatileStoresMap=new HashMap<>();
@@ -138,7 +138,8 @@ public class VfsManager extends BaseManager implements IVfsManager {
 	
 	public VfsManager(boolean fastInit, UserProfileId targetProfileId) throws WTException {
 		super(fastInit, targetProfileId);
-		if(!fastInit) {
+		if (!fastInit) {
+			shareCache.init();
 			initMyDocuments();
 			initFileSystems();
 		}
@@ -159,18 +160,11 @@ public class VfsManager extends BaseManager implements IVfsManager {
 	
 	private void initFileSystems() throws WTException {
 		synchronized(storeFileSystems) {
-			
-			List<Store> myStores = listStores();
-			for(Store store : myStores) {
+			for (Store store : listMyStores().values()) {
 				addStoreFileSystemToCache(store);
 			}
-			
-			List<StoreShareRoot> roots = listIncomingStoreRoots();
-			for(StoreShareRoot root : roots) {
-				HashMap<Integer, StoreShareFolder> folders = listIncomingStoreFolders(root.getShareId());
-				for(StoreShareFolder folder : folders.values()) {
-					addStoreFileSystemToCache(folder.getStore());
-				}
+			for (Store store : listIncomingStores().values()) {
+				addStoreFileSystemToCache(store);
 			}
 		}
 	}
@@ -250,90 +244,136 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		}
 	}
 	
-	@Override
-	public List<StoreShareRoot> listIncomingStoreRoots() throws WTException {
-		CoreManager core = WT.getCoreManager(getTargetProfileId());
-		ArrayList<StoreShareRoot> roots = new ArrayList();
-		HashSet<String> hs = new HashSet<>();
-		
-		List<IncomingShareRoot> shares = core.listIncomingShareRoots(SERVICE_ID, GROUPNAME_STORE);
-		for(IncomingShareRoot share : shares) {
-			SharePermsRoot perms = core.getShareRootPermissions(share.getShareId());
-			StoreShareRoot root = new StoreShareRoot(share, perms);
-			if(hs.contains(root.getShareId())) continue; // Avoid duplicates ??????????????????????
-			hs.add(root.getShareId());
-			roots.add(root);
-		}
-		return roots;
+	private CoreManager getCoreManager() {
+		return WT.getCoreManager(getTargetProfileId());
 	}
 	
 	@Override
-	public HashMap<Integer, StoreShareFolder> listIncomingStoreFolders(String rootShareId) throws WTException {
-		CoreManager core = WT.getCoreManager(getTargetProfileId());
-		LinkedHashMap<Integer, StoreShareFolder> folders = new LinkedHashMap<>();
+	public Set<FolderSharing.SubjectConfiguration> getFolderShareConfigurations(final UserProfileId originProfileId, final FolderSharing.Scope scope) throws WTException {
+		CoreManager coreMgr = getCoreManager();
+		return coreMgr.getFolderShareConfigurations(SERVICE_ID, SHARE_CONTEXT_STORE, originProfileId, scope);
+	}
+	
+	@Override
+	public void updateFolderShareConfigurations(final UserProfileId originProfileId, final FolderSharing.Scope scope, final Set<FolderSharing.SubjectConfiguration> configurations) throws WTException {
+		CoreManager coreMgr = getCoreManager();
+		coreMgr.updateFolderShareConfigurations(SERVICE_ID, SHARE_CONTEXT_STORE, originProfileId, scope, configurations);
+	}
+	
+	@Override
+	public Map<UserProfileId, StoreFSOrigin> listIncomingStoreOrigins() throws WTException {
+		return shareCache.getOriginsMap();
+	}
+	
+	@Override
+	public StoreFSOrigin getIncomingStoreOriginByFolderId(final int categoryId) throws WTException {
+		return shareCache.getOriginByFolderId(categoryId);
+	}
+	
+	@Override
+	public Map<Integer, StoreFSFolder> listIncomingStoreFolders(final StoreFSOrigin origin) throws WTException {
+		Check.notNull(origin, "origin");
+		return listIncomingStoreFolders(origin.getProfileId());
+	}
+	
+	@Override
+	public Map<Integer, StoreFSFolder> listIncomingStoreFolders(final UserProfileId originProfileId) throws WTException {
+		Check.notNull(originProfileId, "originProfileId");
+		CoreManager coreMgr = getCoreManager();
+		LinkedHashMap<Integer, StoreFSFolder> folders = new LinkedHashMap<>();
 		
-		// Retrieves incoming folders (from sharing). This lookup already 
-		// returns readable shares (we don't need to test READ permission)
-		List<OShare> shares = core.listIncomingShareFolders(rootShareId, GROUPNAME_STORE);
-		for(OShare share : shares) {
-			UserProfileId ownerId = core.userUidToProfileId(share.getUserUid());
-			List<Store> stores = null;
-			if(share.hasWildcard()) {
-				stores = listStores(ownerId);
-			} else {
-				stores = Arrays.asList(getStore(Integer.valueOf(share.getInstance())));
-			}
-			
-			for(Store store : stores) {
-				SharePermsFolder fperms = core.getShareFolderPermissions(share.getShareId().toString());
-				SharePermsElements eperms = core.getShareElementsPermissions(share.getShareId().toString());
-				
-				if(folders.containsKey(store.getStoreId())) {
-					StoreShareFolder folder = folders.get(store.getStoreId());
-					folder.getPerms().merge(fperms);
-					folder.getElementsPerms().merge(eperms);
-				} else {
-					folders.put(store.getStoreId(), new StoreShareFolder(share.getShareId().toString(), ownerId, fperms, eperms, store));
+		StoreFSOrigin origin = shareCache.getOrigin(originProfileId);
+		if (origin != null) {
+			for (Integer folderId : shareCache.getFolderIdsByOrigin(originProfileId)) {
+				final Store store = getStore(folderId, false);
+				if (store == null) continue;
+
+				FolderShare.Permissions permissions = coreMgr.evaluateFolderSharePermissions(SERVICE_ID, SHARE_CONTEXT_STORE, originProfileId, FolderSharing.Scope.folder(String.valueOf(folderId)), false);
+				if (permissions == null) {
+					// If permissions are not defined at requested folder scope,
+					// generates an empty permission object that will be filled below
+					// with wildcard rights
+					permissions = FolderShare.Permissions.none();
 				}
+				permissions.getFolderPermissions().set(origin.getWildcardPermissions().getFolderPermissions());
+				permissions.getItemsPermissions().set(origin.getWildcardPermissions().getItemsPermissions());
+
+				// Here we can have folders with no READ permission: these folders
+				// will be included in cache for now, Manager's clients may filter
+				// out them in downstream processing.
+				// if (!permissions.getFolderPermissions().has(FolderShare.FolderRight.READ)) continue;
+				folders.put(folderId, new StoreFSFolder(folderId, permissions, store));
 			}
 		}
 		return folders;
 	}
 	
-	public String buildStoreFolderShareId(int storeId) throws WTException {
-		UserProfileId targetPid = getTargetProfileId();
-		
-		UserProfileId ownerPid = storeToOwner(storeId);
-		if (ownerPid == null) throw new WTException("storeToOwner({0}) -> null", storeId);
-		
-		String rootShareId = null;
-		if (ownerPid.equals(targetPid)) {
-			rootShareId = MyStoreRoot.SHARE_ID;
+	@Override
+	public Set<Integer> listMyStoreIds() throws WTException {
+		return listStoreIds(getTargetProfileId());
+	}
+	
+	@Override
+	public Set<Integer> listIncomingStoreIds() throws WTException {
+		return shareCache.getFolderIds();
+	}
+	
+	@Override
+	public Set<Integer> listIncomingStoreIds(final UserProfileId originProfile) throws WTException {
+		if (originProfile == null) {
+			return listIncomingStoreIds();
 		} else {
-			for(StoreShareRoot root : listIncomingStoreRoots()) {
-				HashMap<Integer, StoreShareFolder> folders = listIncomingStoreFolders(root.getShareId());
-				if (folders.containsKey(storeId)) {
-					rootShareId = root.getShareId();
-					break;
-				}
-			}
+			return LangUtils.asSet(shareCache.getFolderIdsByOrigin(originProfile));
 		}
+	}
+
+	@Override
+	public Set<Integer> listAllStoreIds() throws WTException {
+		return Stream.concat(listMyStoreIds().stream(), listIncomingStoreIds().stream())
+			.collect(Collectors.toCollection(LinkedHashSet::new));
+	}
+	
+	private Set<Integer> listStoreIds(UserProfileId pid) throws WTException {
+		return listStoreIdsIn(pid, null);
+	}
+	
+	private Set<Integer> listStoreIdsIn(UserProfileId pid, Collection<Integer> storeIds) throws WTException {
+		Connection con = null;
 		
-		if (rootShareId == null) throw new WTException("Unable to find a root share [{0}]", storeId);
-		return new CompositeId().setTokens(rootShareId, storeId).toString();
+		try {
+			con = WT.getConnection(SERVICE_ID);
+			return doListStoreIdsIn(con, pid, storeIds);
+			
+		} catch (Exception ex) {
+			throw ExceptionUtils.wrapThrowable(ex);
+		} finally {
+			DbUtils.closeQuietly(con);
+		}
 	}
 	
-	public Sharing getSharing(String shareId) throws WTException {
-		CoreManager core = WT.getCoreManager();
-		return core.getSharing(SERVICE_ID, GROUPNAME_STORE, shareId);
+	@Override
+	public Integer getMyDocumentsStoreId() throws WTException {
+		StoreDAO stoDao = StoreDAO.getInstance();
+		Connection con = null;
+		
+		try {
+			con = WT.getConnection(SERVICE_ID);
+			List<Integer> oids = stoDao.selectIdByDomainUserBuiltIn(con, getTargetProfileId().getDomainId(), getTargetProfileId().getUserId(), Store.BUILTIN_MYDOCUMENTS);
+			if (oids.isEmpty()) {
+				logger.debug("MyDocuments built-in store not found");
+				return null;
+			}
+			return oids.get(0);
+			
+		} catch (Exception ex) {
+			throw ExceptionUtils.wrapThrowable(ex);
+		} finally {
+			DbUtils.closeQuietly(con);
+		}
 	}
 	
-	public void updateSharing(Sharing sharing) throws WTException {
-		CoreManager core = WT.getCoreManager();
-		core.updateSharing(SERVICE_ID, GROUPNAME_STORE, sharing);
-	}
-	
-	private String buildStoreName(Locale locale, OStore store) {
+	private String buildStoreName(OStore store, Locale locale) {
+		if (store == null) return null;
 		if (store.getBuiltIn().equals(Store.BUILTIN_MYDOCUMENTS)) {
 			return lookupResource(locale, VfsLocale.STORE_MYDOCUMENTS);
 		} else if (store.getBuiltIn().equals(Store.BUILTIN_DOMAINIMAGES)) {
@@ -346,84 +386,119 @@ public class VfsManager extends BaseManager implements IVfsManager {
 	}
 	
 	@Override
-	public List<Store> listStores() throws WTException {
-		return listStores(getTargetProfileId());
+	public Map<Integer, Store> listMyStores() throws WTException {
+		Map<Integer, Store> items = listStores(getTargetProfileId(), true);
+		for (Store store : volatileStores) {
+			items.put(store.getStoreId(), store);
+		}
+		return items;
 	}
 	
-	private List<Store> listStores(UserProfileId pid) throws WTException {
-		StoreDAO dao = StoreDAO.getInstance();
-		ArrayList<Store> items = new ArrayList<>();
+	private Map<Integer, Store> listStores(final UserProfileId ownerPid, final boolean evalRights) throws WTException {
+		StoreDAO stoDao = StoreDAO.getInstance();
+		LinkedHashMap<Integer, Store> items = new LinkedHashMap<>();
 		Connection con = null;
 		
 		try {
-			
 			con = WT.getConnection(SERVICE_ID);
-			for(OStore store : dao.selectByDomainUser(con, pid.getDomainId(), pid.getUserId())) {
-				items.add(createStore(store, buildStoreName(getLocale(), store)));
-			}
-			for(Store store: volatileStores) {
-				items.add(store);
+			for (OStore osto : stoDao.selectByProfile(con, ownerPid.getDomainId(), ownerPid.getUserId())) {
+				if (evalRights && !quietlyCheckRightsOnStore(osto.getStoreId(), FolderShare.FolderRight.READ)) continue;
+				items.put(osto.getStoreId(), ManagerUtils.createStore(osto, buildStoreName(osto, getLocale())));
 			}
 			return items;
 			
-		} catch(SQLException | DAOException ex) {
-			throw wrapException(ex);
-		} catch(URISyntaxException ex) {
-			throw new WTException(ex, "Bad store URI");
+		} catch (Exception ex) {
+			throw ExceptionUtils.wrapThrowable(ex);
 		} finally {
 			DbUtils.closeQuietly(con);
 		}
 	}
 	
 	@Override
-	public Integer getMyDocumentsStoreId() throws WTException {
-		StoreDAO dao = StoreDAO.getInstance();
+	public Map<Integer, Store> listIncomingStores() throws WTException {
+		return listIncomingStores(null);
+	}
+	
+	@Override
+	public Map<Integer, Store> listIncomingStores(final UserProfileId owner) throws WTException {
+		Set<Integer> ids = listIncomingStoreIds(owner);
+		if (ids == null) return null;
+		
+		StoreDAO stoDao = StoreDAO.getInstance();
+		LinkedHashMap<Integer, Store> items = new LinkedHashMap<>();
 		Connection con = null;
 		
 		try {
 			con = WT.getConnection(SERVICE_ID);
-			
-			List<Integer> oids = dao.selectIdByDomainUserBuiltIn(con, getTargetProfileId().getDomainId(), getTargetProfileId().getUserId(), Store.BUILTIN_MYDOCUMENTS);
-			if (oids.isEmpty()) {
-				logger.debug("MyDocuments built-in store not found");
-				return null;
+			for (OStore osto : stoDao.selectByDomainIn(con, getTargetProfileId().getDomainId(), ids)) {
+				items.put(osto.getStoreId(), ManagerUtils.createStore(osto));
 			}
+			return items;
 			
-			return oids.get(0);
-			
-		} catch(SQLException | DAOException ex) {
-			throw wrapException(ex);
+		} catch (Exception ex) {
+			throw ExceptionUtils.wrapThrowable(ex);
 		} finally {
 			DbUtils.closeQuietly(con);
 		}
 	}
 	
 	@Override
-	public Store getStore(int storeId) throws WTException {
-		StoreDAO dao = StoreDAO.getInstance();
+	public UserProfileId getStoreOwner(final int storeId) throws WTException {
+		return ownerCache.get(storeId);
+	}
+	
+	@Override
+	public boolean existStore(final int storeId) throws WTException {
+		StoreDAO stoDao = StoreDAO.getInstance();
 		Connection con = null;
 		
 		try {
-			checkRightsOnStoreFolder(storeId, "READ"); // Rights check!
+			checkRightsOnStore(storeId, FolderShare.FolderRight.READ);
 			con = WT.getConnection(SERVICE_ID);
-			OStore ostore = dao.selectById(con, storeId);
-			return createStore(ostore, buildStoreName(getLocale(), ostore));
+			return stoDao.existsById(con, storeId);
 			
-		} catch(SQLException | DAOException | WTException ex) {
-			throw wrapException(ex);
+		} catch (Exception ex) {
+			throw ExceptionUtils.wrapThrowable(ex);
+		} finally {
+			DbUtils.closeQuietly(con);
+		}
+	}
+	
+	@Override
+	public Store getStore(final int storeId) throws WTException {
+		return getStore(storeId, true);
+	}
+	
+	private Store getStore(final int storeId, final boolean evalRights) throws WTException {
+		Connection con = null;
+		
+		try {
+			if (evalRights) checkRightsOnStore(storeId, FolderShare.FolderRight.READ);
+			con = WT.getConnection(SERVICE_ID);
+			return doStoreGet(con, storeId);
+			
 		} catch(URISyntaxException ex) {
 			throw new WTException(ex, "Bad store URI");
+		} catch (Exception ex) {
+			throw ExceptionUtils.wrapThrowable(ex);
 		} finally {
 			DbUtils.closeQuietly(con);
 		}
 	}
 	
+	private Store doStoreGet(Connection con, int storeId) throws DAOException, URISyntaxException {
+		StoreDAO stoDao = StoreDAO.getInstance();
+		OStore osto = stoDao.selectById(con, storeId);
+		
+		return ManagerUtils.createStore(osto, buildStoreName(osto, getLocale()));
+	}
+	
 	@Override
-	public Store addStore(Store store) throws WTException {
+	public Store addStore(final Store store) throws WTException {
 		Connection con = null;
 		
 		try {
-			checkRightsOnStoreRoot(store.getProfileId(), "MANAGE");
+			checkRightsOnStoreOrigin(store.getProfileId(), "MANAGE");
 			checkRightsOnStoreSchema(store.getUri());
 			
 			con = WT.getConnection(SERVICE_ID, false);
@@ -451,7 +526,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		Connection con = null;
 		
 		try {
-			checkRightsOnStoreRoot(store.getProfileId(), "MANAGE");
+			checkRightsOnStoreOrigin(store.getProfileId(), "MANAGE");
 			checkRightsOnStoreSchema(store.getUri());
 			
 			con = WT.getConnection(SERVICE_ID, false);
@@ -483,7 +558,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		Connection con = null;
 		
 		try {
-			checkRightsOnStoreRoot(getTargetProfileId(), "MANAGE");
+			checkRightsOnStoreOrigin(getTargetProfileId(), "MANAGE");
 			con = WT.getConnection(SERVICE_ID, false);
 			
 			List<OStore> oitems = dao.selectByDomainUserBuiltIn(con, getTargetProfileId().getDomainId(), getTargetProfileId().getUserId(), Store.BUILTIN_MYDOCUMENTS);
@@ -529,7 +604,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 				ensureUserDomain(domainId);
 			}
 			
-			checkRightsOnStoreRoot(getTargetProfileId(), "MANAGE");
+			checkRightsOnStoreOrigin(getTargetProfileId(), "MANAGE");
 			con = WT.getConnection(SERVICE_ID, false);
 			
 			URI uri = Store.buildURI(URI_SCHEME_DOMAINIMAGES, domainId, null, null, null, null);
@@ -572,7 +647,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		Connection con = null;
 		
 		try {
-			checkRightsOnStoreFolder(store.getStoreId(), "UPDATE");
+			checkRightsOnStore(store.getStoreId(), FolderShare.FolderRight.UPDATE);
 			con = WT.getConnection(SERVICE_ID, false);
 			Store ret = doStoreUpdate(false, con, store);
 			if (ret == null) throw new WTNotFoundException("Store not found [{}]", store.getStoreId());
@@ -599,21 +674,22 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		Connection con = null;
 		
 		try {
-			checkRightsOnStoreFolder(storeId, "DELETE");
+			checkRightsOnStore(storeId, FolderShare.FolderRight.DELETE);
 			
-			// Retrieve sharing status (for later)
-			String shareId = buildStoreFolderShareId(storeId);
-			Sharing sharing = getSharing(shareId);
+			// Retrieve sharing configuration (for later)
+			final UserProfileId sharingOwnerPid = getStoreOwner(storeId);
+			final FolderSharing.Scope sharingScope = FolderSharing.Scope.folder(String.valueOf(storeId));
+			Set<FolderSharing.SubjectConfiguration> configurations = getFolderShareConfigurations(sharingOwnerPid, sharingScope);
 			
 			con = WT.getConnection(SERVICE_ID, false);
 			boolean ret = doStoreDelete(con, storeId);
 			if (!ret) throw new WTNotFoundException("Store not found [{}]", storeId);
 			
 			// Cleanup sharing, if necessary
-			if ((sharing != null) && !sharing.getRights().isEmpty()) {
-				logger.debug("Removing {} active sharing [{}]", sharing.getRights().size(), sharing.getId());
-				sharing.getRights().clear();
-				updateSharing(sharing);
+			if ((configurations != null) && !configurations.isEmpty()) {
+				logger.debug("Removing {} active sharing [{}]", configurations.size(), sharingOwnerPid);
+				configurations.clear();
+				updateFolderShareConfigurations(sharingOwnerPid, sharingScope, configurations);
 			}
 			
 			DbUtils.commitQuietly(con);
@@ -623,9 +699,9 @@ public class VfsManager extends BaseManager implements IVfsManager {
 //				auditLogWrite(AuditContext.STORE, AuditAction.DELETE, storeId, null);
 //			}
 			
-		} catch(SQLException | DAOException | WTException ex) {
+		} catch (Exception ex) {
 			DbUtils.rollbackQuietly(con);
-			throw wrapException(ex);
+			throw ExceptionUtils.wrapThrowable(ex);
 		} finally {
 			DbUtils.closeQuietly(con);
 		}
@@ -642,7 +718,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			String imagesPath = WT.getDomainImagesPath(domainId);
 			
 			Integer storeId = null;
-			for (Store store : listStores()) {
+			for (Store store : listMyStores().values()) {
 				if (store.getBuiltIn().equals(Store.BUILTIN_DOMAINIMAGES) && StringUtils.endsWith(store.getUri().toString(), imagesPath)) {
 					storeId = store.getStoreId();
 					break;
@@ -688,7 +764,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 	@Override
 	public FileObject getStoreFile(int storeId, String path) throws FileSystemException, WTException {
 		try {
-			checkRightsOnStoreFolder(storeId, "READ");
+			checkRightsOnStore(storeId, FolderShare.FolderRight.READ);
 			return getTargetFileObject(storeId, path);
 			
 		} catch(Exception ex) {
@@ -709,7 +785,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		OutputStream os = null;
 		
 		try {
-			checkRightsOnStoreElements(storeId, "UPDATE");
+			checkRightsOnStore(storeId, FolderShare.ItemsRight.UPDATE);
 			
 			tfo = getTargetFileObject(storeId, parentPath);
 			if (!tfo.isFolder()) throw new IllegalArgumentException("Please provide a valid parentPath [" + parentPath + "]");
@@ -767,7 +843,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		FileObject tfo = null, ntfo = null;
 		
 		try {
-			checkRightsOnStoreElements(storeId, "UPDATE"); 
+			checkRightsOnStore(storeId, FolderShare.ItemsRight.UPDATE);
 			
 			tfo = getTargetFileObject(storeId, parentPath);
 			if (!tfo.isFolder()) throw new IllegalArgumentException("Please provide a valid parentPath");
@@ -805,7 +881,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 	@Override
 	public String renameStoreFile(int storeId, String path, String newName, boolean overwrite) throws FileSystemException, FileOverwriteException, WTException {
 		try {
-			checkRightsOnStoreElements(storeId, "UPDATE");
+			checkRightsOnStore(storeId, FolderShare.ItemsRight.UPDATE);
 			return doRenameStoreFile(storeId, path, newName, overwrite);
 			
 		} catch(SQLException | DAOException | WTException ex) {
@@ -920,7 +996,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		Connection con = null;
 		
 		try {
-			checkRightsOnStoreElements(link.getStoreId(), "CREATE");
+			checkRightsOnStore(link.getStoreId(), FolderShare.ItemsRight.CREATE);
 			
 			con = WT.getConnection(SERVICE_ID, false);
 			link.setLinkType(SharingLink.LinkType.DOWNLOAD);
@@ -946,7 +1022,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		Connection con = null;
 		
 		try {
-			checkRightsOnStoreElements(link.getStoreId(), "CREATE");
+			checkRightsOnStore(link.getStoreId(), FolderShare.ItemsRight.CREATE);
 			
 			con = WT.getConnection(SERVICE_ID, false);
 			link.setLinkType(SharingLink.LinkType.UPLOAD);
@@ -1045,11 +1121,11 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			if (olink == null) throw new WTException("Unable to retrieve sharing link [{0}]", linkId);
 			
 			if (olink.getLinkType().equals(EnumUtils.toSerializedName(SharingLink.LinkType.DOWNLOAD))) {
-				checkRightsOnStoreFolder(olink.getStoreId(), "READ");
+				checkRightsOnStore(olink.getStoreId(), FolderShare.FolderRight.READ);
 				sendLinkUsageEmail(olink, path, ipAddress, userAgent);
 				
 			} else if(olink.getLinkType().equals(EnumUtils.toSerializedName(SharingLink.LinkType.UPLOAD))) {
-				checkRightsOnStoreElements(olink.getStoreId(), "UPDATE");
+				checkRightsOnStore(olink.getStoreId(), FolderShare.ItemsRight.UPDATE);
 				sendLinkUsageEmail(olink, path, ipAddress, userAgent);
 			}
 			
@@ -1058,121 +1134,6 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		} finally {
 			DbUtils.closeQuietly(con);
 		}
-	}
-	
-	private void buildShareCache() {
-		CoreManager core = WT.getCoreManager();
-		
-		try {
-			cacheShareRootByOwner.clear();
-			cacheWildcardShareFolderByOwner.clear();
-			cacheShareFolderByStore.clear();
-			for(StoreShareRoot root : listIncomingStoreRoots()) {
-				cacheShareRootByOwner.put(root.getOwnerProfileId(), root.getShareId());
-				for(OShare folder : core.listIncomingShareFolders(root.getShareId(), GROUPNAME_STORE)) {
-					if (folder.hasWildcard()) {
-						UserProfileId ownerId = core.userUidToProfileId(folder.getUserUid());
-						cacheWildcardShareFolderByOwner.put(ownerId, folder.getShareId().toString());
-					} else {
-						cacheShareFolderByStore.put(Integer.valueOf(folder.getInstance()), folder.getShareId().toString());
-					}
-				}
-			}
-		} catch(WTException ex) {
-			throw new WTRuntimeException(ex.getMessage());
-		}
-	}
-	
-	private String ownerToRootShareId(UserProfileId owner) {
-		synchronized(shareCacheLock) {
-			if (!cacheShareRootByOwner.containsKey(owner)) buildShareCache();
-			return cacheShareRootByOwner.get(owner);
-		}
-	}
-	
-	private String ownerToWildcardFolderShareId(UserProfileId ownerPid) {
-		synchronized(shareCacheLock) {
-			if (!cacheWildcardShareFolderByOwner.containsKey(ownerPid) && cacheShareRootByOwner.isEmpty()) buildShareCache();
-			return cacheWildcardShareFolderByOwner.get(ownerPid);
-		}
-	}
-	
-	private String storeToFolderShareId(int storeId) {
-		synchronized(shareCacheLock) {
-			if (!cacheShareFolderByStore.containsKey(storeId)) buildShareCache();
-			return cacheShareFolderByStore.get(storeId);
-		}
-	}
-	
-	private UserProfileId storeToOwner(int storeId) {
-		synchronized(cacheOwnerByStore) {
-			if (cacheOwnerByStore.containsKey(storeId)) {
-				return cacheOwnerByStore.get(storeId);
-			} else {
-				try {
-					UserProfileId owner = findStoreOwner(storeId);
-					if (owner != null) cacheOwnerByStore.put(storeId, owner);
-					return owner;
-				} catch(WTException ex) {
-					throw new WTRuntimeException(ex.getMessage());
-				}
-			}
-		}
-	}
-	
-	private UserProfileId findStoreOwner(int storeId) throws WTException {
-		Connection con = null;
-		
-		try {
-			con = WT.getConnection(SERVICE_ID);
-			StoreDAO dao = StoreDAO.getInstance();
-			Owner owner = dao.selectOwnerById(con, storeId);
-			return (owner == null) ? null : new UserProfileId(owner.getDomainId(), owner.getUserId());
-			
-		} catch(SQLException | DAOException ex) {
-			throw wrapException(ex);
-		} finally {
-			DbUtils.closeQuietly(con);
-		}
-	}
-	
-	private Store createStore(OStore ostore, String newName) throws URISyntaxException {
-		if (ostore == null) return null;
-		Store sto = new Store();
-		sto.setStoreId(ostore.getStoreId());
-		sto.setDomainId(ostore.getDomainId());
-		sto.setUserId(ostore.getUserId());
-		sto.setBuiltIn(ostore.getBuiltIn());
-		sto.setProvider(EnumUtils.forSerializedName(ostore.getProvider(), Store.Provider.class));
-		sto.setName(!StringUtils.isBlank(newName) ? newName : ostore.getName());
-		URI uri = new URI(ostore.getUri());
-		if (ostore.getBuiltIn().equals(Store.BUILTIN_NO) && StringUtils.isBlank(uri.getUserInfo())) {
-			Principal principal = RunContext.getPrincipal();
-			String newUserInfo = principal.getUserId()+":"+new String(principal.getPassword());
-			uri = new URI(uri.getScheme(), newUserInfo, uri.getHost(), uri.getPort(), uri.getPath(), uri.getQuery(), uri.getFragment());
-		}
-		sto.setUri(uri);
-		sto.setParameters(ostore.getParameters());
-		return sto;
-	}
-	
-	private OStore createOStore(Store src) {
-		if (src == null) return null;
-		return fillOStore(new OStore(), src);
-	}
-	
-	private OStore fillOStore(OStore tgt, Store src) {
-		if ((tgt != null) && (src != null)) {
-			tgt.setStoreId(src.getStoreId());
-			tgt.setDomainId(src.getDomainId());
-			tgt.setUserId(src.getUserId());
-			tgt.setBuiltIn(src.getBuiltIn());
-			tgt.setProvider(EnumUtils.toSerializedName(src.getProvider()));
-			tgt.setName(src.getName());
-			tgt.setUri(src.getUri().toString());
-			tgt.setParameters(src.getParameters());
-		}
-		return tgt;
 	}
 	
 	private SharingLink createSharingLink(OSharingLink with) {
@@ -1225,6 +1186,30 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			fill.setNotify(with.getNotify());
 		}
 		return fill;
+	}	
+	
+	private UserProfileId doStoreGetOwner(int storeId) throws WTException {
+		Owner owi = doStoreGetOwnerInfo(storeId);
+		return (owi == null) ? null : new UserProfileId(owi.getDomainId(), owi.getUserId());
+	}
+	
+	private Owner doStoreGetOwnerInfo(int storeId) throws WTException {
+		Connection con = null;
+		
+		try {
+			con = WT.getConnection(SERVICE_ID);
+			return doStoreGetOwnerInfo(con, storeId);
+			
+		} catch (Exception ex) {
+			throw ExceptionUtils.wrapThrowable(ex);
+		} finally {
+			DbUtils.closeQuietly(con);
+		}
+	}
+	
+	private Owner doStoreGetOwnerInfo(Connection con, int storeId) throws DAOException {
+		StoreDAO stoDao = StoreDAO.getInstance();
+		return stoDao.selectOwnerById(con, storeId);
 	}
 	
 	private void checkRightsOnStoreSchema(URI uri) {
@@ -1241,87 +1226,92 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		}
 	}
 	
-	private void checkRightsOnStoreRoot(UserProfileId ownerPid, String action) throws WTException {
+	private void checkRightsOnStoreOrigin(UserProfileId originPid, String action) throws WTException {
 		UserProfileId targetPid = getTargetProfileId();
 		
 		if (RunContext.isWebTopAdmin()) return;
-		if (ownerPid.equals(targetPid)) return;
+		if (originPid.equals(targetPid)) return;
 		
-		String shareId = ownerToRootShareId(ownerPid);
-		if (shareId == null) throw new WTException("ownerToRootShareId({0}) -> null", ownerPid);
-		CoreManager core = WT.getCoreManager(targetPid);
-		if (core.isShareRootPermitted(shareId, action)) return;
+		final StoreFSOrigin origin = shareCache.getOrigin(originPid);
+		if (origin == null) throw new WTException("Origin not found [{}]", originPid);
+		CoreManager coreMgr = WT.getCoreManager(targetPid);
 		
-		throw new AuthException("Action not allowed on root share [{0}, {1}, {2}, {3}]", shareId, action, GROUPNAME_STORE, targetPid.toString());
+		boolean result = coreMgr.evaluateFolderSharePermission(SERVICE_ID, SHARE_CONTEXT_STORE, origin.getProfileId(), FolderSharing.Scope.wildcard(), true, FolderShare.EvalTarget.FOLDER, action);
+		if (result) return;
+		UserProfileId runPid = RunContext.getRunProfileId();
+		throw new AuthException("Action '{}' not allowed for '{}' on origin '{}' [{}, {}]", action, runPid, origin.getProfileId(), SHARE_CONTEXT_STORE, targetPid.toString());
 	}
 	
-	private boolean quietlyCheckRightsOnStoreFolder(int storeId, String action) {
-		Store store=volatileStoresMap.get(storeId);
-		if (store!=null && store.isVolatile()) return true;
-		
+	private boolean quietlyCheckRightsOnStore(int storeId, BitFlagsEnum<? extends Enum> right) {
 		try {
-			checkRightsOnStoreFolder(storeId, action);
+			checkRightsOnStore(storeId, right);
 			return true;
-		} catch(AuthException ex1) {
+		} catch (AuthException ex1) {
 			return false;
-		} catch(WTException ex1) {
+		} catch (WTException ex1) {
 			logger.warn("Unable to check rights [{}]", storeId);
 			return false;
 		}
 	}
 	
-	private void checkRightsOnStoreFolder(int storeId, String action) throws WTException {
-		if (RunContext.isWebTopAdmin()) return;
-		Store store=volatileStoresMap.get(storeId);
-		if (store!=null && store.isVolatile()) return;
+	private void checkRightsOnStore(int storeId, BitFlagsEnum<? extends Enum> right) throws WTException {
 		UserProfileId targetPid = getTargetProfileId();
+		Subject subject = RunContext.getSubject();
+		UserProfileId runPid = RunContext.getRunProfileId(subject);
 		
-		// Skip rights check if running user is resource's owner
-		UserProfileId ownerPid = storeToOwner(storeId);
-		if (ownerPid == null) throw new WTException("storeToOwner({0}) -> null", storeId);
-		if (ownerPid.equals(targetPid)) return;
-		
-		// Checks rights on the wildcard instance (if present)
-		CoreManager core = WT.getCoreManager(targetPid);
-		String wildcardShareId = ownerToWildcardFolderShareId(ownerPid);
-		if (wildcardShareId != null) {
-			if (core.isShareFolderPermitted(wildcardShareId, action)) return;
+		FolderShare.EvalTarget target = null;
+		if (right instanceof FolderShare.FolderRight) {
+			target = FolderShare.EvalTarget.FOLDER;
+		} else if (right instanceof FolderShare.ItemsRight) {
+			target = FolderShare.EvalTarget.FOLDER_ITEMS;
+		} else {
+			throw new WTRuntimeException("Unsupported right");
 		}
 		
-		// Checks rights on store instance
-		String shareId = storeToFolderShareId(storeId);
-		if (shareId == null) throw new WTException("storeToFolderShareId({0}) -> null", storeId);
-		if (core.isShareFolderPermitted(shareId, action)) return;
+		final UserProfileId ownerPid = ownerCache.get(storeId);
+		if (ownerPid == null) throw new WTException("Owner not found [{}]", storeId);
 		
-		throw new AuthException("Action not allowed on folder share [{0}, {1}, {2}, {3}]", shareId, action, GROUPNAME_STORE, targetPid.toString());
-	}
-	
-	private void checkRightsOnStoreElements(int storeId, String action) throws WTException {
-		if (RunContext.isWebTopAdmin()) return;
-		Store store=volatileStoresMap.get(storeId);
-		if (store!=null && store.isVolatile()) return;
-		UserProfileId targetPid = getTargetProfileId();
-		
-		// Skip rights check if running user is resource's owner
-		UserProfileId ownerPid = storeToOwner(storeId);
-		if (ownerPid == null) throw new WTException("storeToOwner({0}) -> null", storeId);
-		if (ownerPid.equals(targetPid)) return;
-		
-		// Checks rights on the wildcard instance (if present)
-		CoreManager core = WT.getCoreManager(targetPid);
-		String wildcardShareId = ownerToWildcardFolderShareId(ownerPid);
-		if (wildcardShareId != null) {
-			if (core.isShareElementsPermitted(wildcardShareId, action)) return;
-			//if (core.isShareElementsPermitted(SERVICE_ID, RESOURCE_CATEGORY, action, wildcardShareId)) return;
+		if (RunContext.isWebTopAdmin(subject)) {
+			// Skip checks for running wtAdmin and sysAdmin target
+			if (targetPid.equals(RunContext.getSysAdminProfileId())) return;
+			// Skip checks if target is the resource owner
+			if (ownerPid.equals(targetPid)) return;
+			// Skip checks if resource is a valid incoming folder
+			if (shareCache.getFolderIds().contains(storeId)) return;
+			
+			String exMsg = null;
+			if (FolderShare.EvalTarget.FOLDER.equals(target)) {
+				exMsg = "Action '{}' not allowed for '{}' on folder '{}' [{}, {}]";
+			} else if (FolderShare.EvalTarget.FOLDER_ITEMS.equals(target)) {
+				exMsg = "Action '{}' not allowed for '{}' on elements of folder '{}' [{}, {}]";
+			}
+			
+			throw new AuthException(exMsg, right.name(), runPid, storeId, SHARE_CONTEXT_STORE, targetPid.toString());
+			
+		} else {
+			// Skip checks if target is the resource owner and it's the running profile
+			if (ownerPid.equals(targetPid) && targetPid.equals(runPid)) return;
+			
+			StoreFSOrigin origin = shareCache.getOriginByFolderId(storeId);
+			if (origin == null) throw new WTException("Origin not found [{}]", storeId);
+			CoreManager coreMgr = WT.getCoreManager(targetPid);
+			
+			Boolean eval = null;
+			// Check right at wildcard scope
+			eval = coreMgr.evaluateFolderSharePermission(SERVICE_ID, SHARE_CONTEXT_STORE, ownerPid, FolderSharing.Scope.wildcard(), false, target, right.name());
+			if (eval != null && eval == true) return;
+			// Check right at folder scope
+			eval = coreMgr.evaluateFolderSharePermission(SERVICE_ID, SHARE_CONTEXT_STORE, ownerPid, FolderSharing.Scope.folder(String.valueOf(storeId)), false, target, right.name());
+			if (eval != null && eval == true) return;
+			
+			String exMsg = null;
+			if (FolderShare.EvalTarget.FOLDER.equals(target)) {
+				exMsg = "Action '{}' not allowed for '{}' on folder '{}' [{}, {}, {}]";
+			} else if (FolderShare.EvalTarget.FOLDER_ITEMS.equals(target)) {
+				exMsg = "Action '{}' not allowed for '{}' on elements of folder '{}' [{}, {}, {}]";
+			}
+			throw new AuthException(exMsg, right.name(), runPid, storeId, ownerPid, SHARE_CONTEXT_STORE, targetPid.toString());
 		}
-		
-		// Checks rights on calendar instance
-		String shareId = storeToFolderShareId(storeId);
-		if (shareId == null) throw new WTException("storeToLeafShareId({0}) -> null", storeId);
-		if (core.isShareElementsPermitted(shareId, action)) return;
-		//if (core.isShareElementsPermitted(SERVICE_ID, RESOURCE_CATEGORY, action, shareId)) return;
-		
-		throw new AuthException("Action not allowed on folderEls share [{0}, {1}, {2}, {3}]", shareId, action, GROUPNAME_STORE, targetPid.toString());
 	}
 	
 	private String prependFileBasePath(URI uri) {
@@ -1335,10 +1325,20 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		return PathUtils.concatPaths(vus.getStoreFileBasepath(tpl), uri.getPath());
 	}
 	
+	private Set<Integer> doListStoreIdsIn(Connection con, UserProfileId profileId, Collection<Integer> storeIds) throws WTException {
+		StoreDAO stoDao = StoreDAO.getInstance();
+		
+		if (storeIds == null) {
+			return stoDao.selectIdsByProfile(con, profileId.getDomainId(), profileId.getUserId());
+		} else {
+			return stoDao.selectIdsByProfileIn(con, profileId.getDomainId(), profileId.getUserId(), storeIds);
+		}
+	}
+	
 	private Store doStoreUpdate(boolean insert, Connection con, Store store) throws WTException {
 		StoreDAO stoDao = StoreDAO.getInstance();
 		
-		OStore ostore = createOStore(store);
+		OStore ostore = ManagerUtils.createOStore(store);
 		if (ostore.getDomainId() == null) ostore.setDomainId(getTargetProfileId().getDomainId());
 		if (ostore.getUserId() == null) ostore.setUserId(getTargetProfileId().getUserId());
 		
@@ -1360,19 +1360,19 @@ public class VfsManager extends BaseManager implements IVfsManager {
 				}
 			}
 			
-			return (ret == 1) ? createStore(ostore, buildStoreName(getLocale(), ostore)) : null;
+			return (ret == 1) ? ManagerUtils.createStore(ostore, buildStoreName(ostore, getLocale())) : null;
 			
-		} catch(URISyntaxException ex) {
+		} catch (URISyntaxException ex) {
 			throw new WTException("Provided URI is not valid", ex);
 		}
 	}
 	
 	private boolean doStoreDelete(Connection con, int storeId) throws WTException {
 		StoreDAO stoDao = StoreDAO.getInstance();
-		SharingLinkDAO shdao = SharingLinkDAO.getInstance();
+		SharingLinkDAO linDao = SharingLinkDAO.getInstance();
 		
 		int ret = stoDao.deleteById(con, storeId);
-		shdao.deleteByStore(con, storeId);
+		linDao.deleteByStore(con, storeId);
 		return ret == 1;
 	}
 	
@@ -1578,6 +1578,88 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		}
 	}
 	
+	private class OwnerCache extends AbstractMapCache<Integer, UserProfileId> {
+
+		@Override
+		protected void internalInitCache(Map<Integer, UserProfileId> mapObject) {}
+
+		@Override
+		protected void internalMissKey(Map<Integer, UserProfileId> mapObject, Integer key) {
+			try {
+				UserProfileId owner = doStoreGetOwner(key);
+				if (owner == null) throw new WTException("Owner not found [{0}]", key);
+				mapObject.put(key, owner);
+			} catch(WTException ex) {
+				logger.trace("OwnerCache miss", ex);
+			}
+		}
+	}
+	
+	private class ShareCache extends AbstractFolderShareCache<Integer, StoreFSOrigin> {
+		
+		@Override
+		protected void internalBuildCache() {
+			final CoreManager coreMgr = WT.getCoreManager(getTargetProfileId());
+			try {
+				for (StoreFSOrigin origin : getOrigins(coreMgr)) {
+					origins.add(origin);
+					originByProfile.put(origin.getProfileId(), origin);
+					
+					FolderShareOriginFolders folders = null;
+					folders = coreMgr.getFolderShareOriginFolders(SERVICE_ID, SHARE_CONTEXT_STORE, origin.getProfileId());
+					foldersByProfile.put(origin.getProfileId(), folders);
+					
+					final Set<Integer> categoryIds;
+					if (folders.wildcard()) {
+						categoryIds = listStoreIds(origin.getProfileId());
+					} else {
+						Set<Integer> ids = folders.getFolderIds().stream()
+							.map(value -> Integer.valueOf(value))
+							.collect(Collectors.toSet());
+						categoryIds = listStoreIdsIn(origin.getProfileId(), ids);
+					}
+					categoryIds.forEach(categoryId -> {originByFolderId.put(categoryId, origin);});
+					folderIdsByProfile.putAll(origin.getProfileId(), categoryIds);
+					folderIds.addAll(categoryIds);
+				}
+			} catch (WTException ex) {
+				throw new WTRuntimeException(ex, "[ShareCache] Unable to build cache for '{}'", getTargetProfileId());
+			}
+		}
+		
+		private List<StoreFSOrigin> getOrigins(final CoreManager coreMgr) throws WTException {
+			List<StoreFSOrigin> items = new ArrayList<>();
+			for (ShareOrigin origin : coreMgr.listFolderShareOrigins(SERVICE_ID, SHARE_CONTEXT_STORE)) {
+				// Do permissions evaluation returning NULL in case of missing share: a root origin may not be shared!
+				FolderShare.Permissions permissions = coreMgr.evaluateFolderSharePermissions(SERVICE_ID, SHARE_CONTEXT_STORE, origin.getProfileId(), FolderSharing.Scope.wildcard(), false);
+				if (permissions == null) {
+					// If missing, simply treat it as NONE permission.
+					permissions = FolderShare.Permissions.none();
+				}
+				items.add(new StoreFSOrigin(origin, permissions));
+			}
+			return items;
+		}
+	}
+	
+	private class NewTargetFile {
+		public String path;
+		public FileObject tfo;
+		
+		public NewTargetFile(String path, FileObject tfo) {
+			this.path = path;
+			this.tfo = tfo;
+		}
+	}
+	
+	private enum AuditContext {
+		STORE, DOWNLOADLINK, UPLOADLINK, SHARINGLINK
+	}
+	
+	private enum AuditAction {
+		CREATE, UPDATE, DELETE, MOVE
+	}
+	
 	public static byte[] generateLinkQRCode(String publicBaseUrl, SharingLink link, int size, String color) throws WTException {
 		try {
 			URI[] urls = VfsManager.generateLinkPublicURLs(publicBaseUrl, link);
@@ -1661,23 +1743,5 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			}
 		}
 		return builder.build();
-	}
-	
-	private class NewTargetFile {
-		public String path;
-		public FileObject tfo;
-		
-		public NewTargetFile(String path, FileObject tfo) {
-			this.path = path;
-			this.tfo = tfo;
-		}
-	}
-	
-	private enum AuditContext {
-		STORE, DOWNLOADLINK, UPLOADLINK, SHARINGLINK
-	}
-	
-	private enum AuditAction {
-		CREATE, UPDATE, DELETE, MOVE
 	}
 }

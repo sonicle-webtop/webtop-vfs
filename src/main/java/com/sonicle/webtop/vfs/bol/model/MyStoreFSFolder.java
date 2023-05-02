@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright (C) 2014 Sonicle S.r.l.
  *
  * This program is free software; you can redistribute it and/or modify it under
@@ -32,20 +32,17 @@
  */
 package com.sonicle.webtop.vfs.bol.model;
 
-import com.sonicle.webtop.vfs.model.StoreShareFolder;
-import com.sonicle.webtop.core.model.SharePermsElements;
-import com.sonicle.webtop.core.model.SharePermsFolder;
-import com.sonicle.webtop.core.sdk.UserProfileId;
+import com.sonicle.webtop.core.app.model.FolderShare;
 import com.sonicle.webtop.vfs.model.Store;
+import com.sonicle.webtop.vfs.model.StoreFSFolder;
 
 /**
  *
  * @author malbinola
  */
-public class MyStoreFolder extends StoreShareFolder  {
-	public static final String RIGHTS = "crud";
-
-	public MyStoreFolder(String shareId, UserProfileId ownerId, Store drive) {
-		super(shareId, ownerId, SharePermsFolder.full(), SharePermsElements.full(), drive);
+public class MyStoreFSFolder extends StoreFSFolder {
+	
+	public MyStoreFSFolder(int storeId, Store store) {
+		super(storeId, FolderShare.Permissions.full(), store);
 	}
 }

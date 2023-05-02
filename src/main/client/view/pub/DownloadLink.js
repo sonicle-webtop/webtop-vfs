@@ -34,6 +34,7 @@
 Ext.define('Sonicle.webtop.vfs.view.pub.DownloadLink', {
 	extend: 'WTA.ux.panel.Panel',
 	requires: [
+		'Sonicle.Data',
 		'Sonicle.grid.column.Action',
 		'Sonicle.grid.column.Bytes',
 		'Sonicle.grid.column.Icon',
@@ -204,12 +205,12 @@ Ext.define('Sonicle.webtop.vfs.view.pub.DownloadLink', {
 	
 	reloadFiles: function(path) {
 		var me = this,
-				gp = me.lref('gpfiles'),
-				sto = gp.getStore(),
-				ep = sto.getProxy().getExtraParams();
+			gp = me.lref('gpfiles'),
+			sto = gp.getStore(),
+			ep = sto.getProxy().getExtraParams();
 		
-		if(ep.fileId !== path) {
-			WTU.loadWithExtraParams(sto, {fileId: path});
+		if (ep.fileId !== path) {
+			Sonicle.Data.loadWithExtraParams(sto, {fileId: path});
 		}
 	},
 	

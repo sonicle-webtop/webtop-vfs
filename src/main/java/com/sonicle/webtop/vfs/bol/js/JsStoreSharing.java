@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright (C) 2014 Sonicle S.r.l.
  *
  * This program is free software; you can redistribute it and/or modify it under
@@ -32,54 +32,34 @@
  */
 package com.sonicle.webtop.vfs.bol.js;
 
-import com.sonicle.webtop.core.bol.model.Sharing;
-import java.util.ArrayList;
+import com.sonicle.commons.EnumUtils;
+import com.sonicle.webtop.core.app.model.FolderSharing;
+import com.sonicle.webtop.core.app.sdk.bol.js.JsFolderSharing;
+import com.sonicle.webtop.core.sdk.WTException;
+import com.sonicle.webtop.vfs.bol.model.StoreNodeId;
+import java.util.Set;
 
 /**
  *
  * @author malbinola
  */
-public class JsSharing {
-	public String id;
-	public int level;
-	public String description;
-	public ArrayList<RoleRights> rights;
+public class JsStoreSharing extends JsFolderSharing {
 	
-	public JsSharing() {}
-	
-	public JsSharing(Sharing sharing, String description) {
-		id = sharing.getId();
-		level = sharing.getLevel();
-		this.description = description;
-		rights = new ArrayList<>();
-		for(Sharing.RoleRights rr : sharing.getRights()) {
-			rights.add(new RoleRights(id, rr));
-		}
+	public JsStoreSharing(StoreNodeId nodeId, String originName, String folderName, Set<FolderSharing.SubjectConfiguration> configurations) {
+		super(nodeId.toString(), toType(nodeId), nodeId.getOrigin(), String.valueOf(nodeId.getFolderId()), originName, folderName, configurations);
 	}
 	
-	public static class RoleRights {
-		public String _fk;
-		public String roleUid;
-		public Boolean rootManage;
-		public Boolean folderRead;
-		public Boolean folderUpdate;
-		public Boolean folderDelete;
-		public Boolean elementsCreate;
-		public Boolean elementsUpdate;
-		public Boolean elementsDelete;
-		
-		public RoleRights() {}
-		
-		public RoleRights(String _fk, Sharing.RoleRights perms) {
-			this._fk = _fk;
-			roleUid = perms.roleUid;
-			rootManage = perms.rootManage;
-			folderRead = perms.folderRead;
-			folderUpdate = perms.folderUpdate;
-			folderDelete = perms.folderDelete;
-			elementsCreate = perms.elementsCreate;
-			elementsUpdate = perms.elementsUpdate;
-			elementsDelete = perms.elementsDelete;
+	public static JsFolderSharing.Type toType(StoreNodeId nodeId) {
+		return EnumUtils.forSerializedName(EnumUtils.toSerializedName(nodeId.getType()), JsFolderSharing.Type.class);
+	}
+	
+	public static FolderSharing.Scope toFolderSharingScope(StoreNodeId nodeId) throws WTException {
+		if (StoreNodeId.Type.ORIGIN.equals(nodeId.getType())) {
+			return FolderSharing.Scope.wildcard();
+		} else if (StoreNodeId.Type.FOLDER.equals(nodeId.getType())) {
+			return FolderSharing.Scope.folder(String.valueOf(nodeId.getFolderId()));
+		} else {
+			throw new WTException("Cannot determine a scope for '{}'", nodeId.toString());
 		}
 	}
 }

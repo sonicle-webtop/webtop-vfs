@@ -34,8 +34,13 @@
 Ext.define('Sonicle.webtop.vfs.model.GridFile', {
 	extend: 'WTA.ux.data.BaseModel',
 	mixins: [
-		'WTA.mixin.SharePerms'
+		'Sonicle.webtop.vfs.mixin.FileObject'
 	],
+	
+	foIdField: 'fileId',
+	foNameField: 'name',
+	foDlLinkField: 'dlLink',
+	foUlLinkField: 'ulLink',
 	
 	idProperty: 'fileId',
 	fields: [
@@ -51,60 +56,30 @@ Ext.define('Sonicle.webtop.vfs.model.GridFile', {
 		WTF.roField('dlLinkExp', 'boolean'),
 		WTF.roField('ulLink', 'string'),
 		WTF.roField('ulLinkExp', 'boolean'),
-		WTF.roField('eperms', 'string'),
+		WTF.roField('itPerms', 'string'),
 		WTF.roField('storeId', 'string'),
 		WTF.roField('path', 'string')
 	],
 	
-	getFId: function() {
-		return this.get('fileId');
+	isFileObject: function() {
+		return true;
 	},
 	
-	getFType: function() {
+	getFOType: function() {
 		return this.get('type');
 	},
 	
-	getFName: function() {
-		return this.get('name');
+	getFOPerms: function() {
+		return this.get('itPerms');
 	},
 	
-	getFDlLink: function() {
-		return this.get('dlLink');
+	isFOEditable: function() {
+		var me = this;
+		return me.mixins.wtvfsfileobject.isFOEditable.call(me) && me.get('editable') > 0;
 	},
 	
-	setFDlLink: function(v) {
-		return this.set('dlLink', v);
-	},
-	
-	getFUlLink: function() {
-		return this.get('ulLink');
-	},
-	
-	setFUlLink: function(v) {
-		return this.set('ulLink', v);
-	},
-	
-	getEPerms: function() {
-		return this.toPermsObj(this.get('eperms'));
-	},
-	
-	isFolder: function() {
-		return this.get('type') === 'folder';
-	},
-	
-	isFile: function() {
-		return this.get('type') === 'file';
-	},
-	
-	isEditable: function() {
-		return this.isFile() && this.get('editable') > 0;
-	},
-	
-	getFStoreId: function() {
-		return this.get('storeId');
-	},
-	
-	getFPath: function() {
-		return this.get('path');
+	isFOOpenable: function() {
+		var me = this;
+		return me.mixins.wtvfsfileobject.isFOOpenable.call(me) && Sonicle.webtop.vfs.mixin.FileObject.isOpenableExt(me.get('ext'));
 	}
 });

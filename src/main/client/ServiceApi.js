@@ -34,8 +34,12 @@
 Ext.define('Sonicle.webtop.vfs.ServiceApi', {
 	extend: 'WTA.sdk.ServiceApi',
 	
-	buildFileId: function(shareId, storeId, path) {
-		return shareId + '|' + storeId + '|' + path;
+	buildFileId: function(originPid, storeId, path) {
+		if (originPid === 0) {
+			originPid = WT.getVar('profileId');
+			Ext.log.warn("[WT.vfs] calling buildFileId with 0 (as shareId) is deprecated, please use WT.getVar('profileId') as first parameter instead");
+		}
+		return Sonicle.String.join('|', 'L', originPid, storeId, path);
 	},
 	
 	/**

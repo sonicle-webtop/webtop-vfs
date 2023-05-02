@@ -35,7 +35,7 @@ package com.sonicle.webtop.vfs.bol.js;
 import com.sonicle.commons.time.DateTimeUtils;
 import com.sonicle.webtop.core.app.servlet.ServletHelper;
 import com.sonicle.webtop.vfs.model.SharingLink;
-import com.sonicle.webtop.vfs.model.StoreShareFolder;
+import com.sonicle.webtop.vfs.model.StoreFSFolder;
 import org.apache.commons.vfs2.FileObject;
 import org.apache.commons.vfs2.FileSystemException;
 import org.apache.commons.vfs2.FileType;
@@ -60,13 +60,13 @@ public class JsGridFile {
 	public Boolean dlLinkExp;
 	public String ulLink;
 	public Boolean ulLinkExp;
-	public String eperms;
+	public String itPerms;
 	public int storeId;
 	public String path;
 	
 	public JsGridFile() {}
 	
-	public JsGridFile(StoreShareFolder folder, FileObject fo, String fileId, boolean canBeOpenedWithDocEditor, SharingLink dlLink, SharingLink ulLink, int storeId, String path) throws FileSystemException {
+	public JsGridFile(StoreFSFolder folder, FileObject fo, String fileId, boolean canBeOpenedWithDocEditor, SharingLink dlLink, SharingLink ulLink, int storeId, String path) throws FileSystemException {
 		this.fileId = fileId;
 		this.type = getFileType(fo);
 		this.mtype = (type.equals("folder")) ? "" : ServletHelper.guessMediaType(fo.getName().getBaseName(), true);
@@ -90,7 +90,7 @@ public class JsGridFile {
 			this.ulLink = null;
 			this.ulLinkExp = false;
 		}
-		this.eperms = folder.getElementsPerms().toString();
+		this.itPerms = folder.getPermissions().getItemsPermissions().toString();
 		this.storeId = storeId;
 		this.path = path;
 	}

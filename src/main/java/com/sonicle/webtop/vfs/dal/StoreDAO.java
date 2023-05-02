@@ -40,8 +40,12 @@ import static com.sonicle.webtop.vfs.jooq.Sequences.SEQ_STORES;
 import static com.sonicle.webtop.vfs.jooq.Tables.STORES;
 import com.sonicle.webtop.vfs.jooq.tables.records.StoresRecord;
 import java.sql.Connection;
+import java.util.Collection;
 import java.util.List;
+import java.util.Set;
+import org.jooq.Condition;
 import org.jooq.DSLContext;
+import org.jooq.impl.DSL;
 
 /**
  *
@@ -59,59 +63,75 @@ public class StoreDAO extends BaseDAO {
 		return nextID;
 	}
 	
+	public boolean existsById(Connection con, int storeId) throws DAOException {
+		DSLContext dsl = getDSL(con);
+		return dsl
+			.selectCount()
+			.from(STORES)
+			.where(
+				STORES.STORE_ID.equal(storeId)
+			)
+			.fetchOne(0, Integer.class) == 1;
+	}
+	
 	public Owner selectOwnerById(Connection con, int storeId) throws DAOException {
 		DSLContext dsl = getDSL(con);
 		return dsl
 			.select()
 			.from(STORES)
 			.where(
-					STORES.STORE_ID.equal(storeId)
+				STORES.STORE_ID.equal(storeId)
 			)
 			.fetchOneInto(Owner.class);
-	}
-	
-	public OStore selectById(Connection con, int storeId) throws DAOException {
-		DSLContext dsl = getDSL(con);
-		return dsl
-			.select()
-			.from(STORES)
-			.where(
-					STORES.STORE_ID.equal(storeId)
-			)
-			.fetchOneInto(OStore.class);
 	}
 	
 	public List<OStore> selectByDomain(Connection con, String domainId) throws DAOException {
 		DSLContext dsl = getDSL(con);
 		return dsl
-				.select()
-				.from(STORES)
-				.where(
-						STORES.DOMAIN_ID.equal(domainId)
-				)
-				.orderBy(
-						STORES.NAME.asc()
-				)
-				.fetchInto(OStore.class);
+			.select()
+			.from(STORES)
+			.where(
+				STORES.DOMAIN_ID.equal(domainId)
+			)
+			.orderBy(
+				STORES.NAME.asc()
+			)
+			.fetchInto(OStore.class);
 	}
 	
-	public List<OStore> selectByDomainUser(Connection con, String domainId, String userId) throws DAOException {
+	public List<OStore> selectByDomainIn(Connection con, String domainId, Collection<Integer> storeIds) throws DAOException {
 		DSLContext dsl = getDSL(con);
 		return dsl
-				.select()
-				.from(STORES)
-				.where(
-						STORES.DOMAIN_ID.equal(domainId)
-						.and(STORES.USER_ID.equal(userId))
-				)
-				.orderBy(
-						STORES.BUILT_IN.desc(),
-						STORES.NAME.asc()
-				)
-				.fetchInto(OStore.class);
+			.select()
+			.from(STORES)
+			.where(
+				STORES.DOMAIN_ID.equal(domainId)
+				.and(STORES.STORE_ID.in(storeIds))
+			)
+			.orderBy(
+				STORES.BUILT_IN.desc(),
+				STORES.NAME.asc()
+			)
+			.fetchInto(OStore.class);
 	}
 	
-	public List<OStore> selectByDomainUserIn(Connection con, String domainId, String userId, Integer[] storeIds) throws DAOException {
+	public List<OStore> selectByProfile(Connection con, String domainId, String userId) throws DAOException {
+		DSLContext dsl = getDSL(con);
+		return dsl
+			.select()
+			.from(STORES)
+			.where(
+				STORES.DOMAIN_ID.equal(domainId)
+				.and(STORES.USER_ID.equal(userId))
+			)
+			.orderBy(
+				STORES.BUILT_IN.desc(),
+				STORES.NAME.asc()
+			)
+			.fetchInto(OStore.class);
+	}
+	
+	public List<OStore> selectByProfileIn(Connection con, String domainId, String userId, Integer[] storeIds) throws DAOException {
 		DSLContext dsl = getDSL(con);
 		return dsl
 				.select()
@@ -127,6 +147,8 @@ public class StoreDAO extends BaseDAO {
 				)
 				.fetchInto(OStore.class);
 	}
+	
+	
 	
 	public List<Integer> selectIdByDomainUserBuiltIn(Connection con, String domainId, String userId, short builtIn) throws DAOException {
 		DSLContext dsl = getDSL(con);
@@ -180,6 +202,42 @@ public class StoreDAO extends BaseDAO {
 						STORES.NAME.asc()
 				)
 				.fetchInto(OStore.class);
+	}
+	
+	public Set<Integer> selectIdsByProfile(Connection con, String domainId, String userId) throws DAOException {
+		return selectIdsByProfileIn(con, domainId, userId, null);
+	}
+	
+	public Set<Integer> selectIdsByProfileIn(Connection con, String domainId, String userId, Collection<Integer> storeIds) throws DAOException {
+		DSLContext dsl = getDSL(con);
+		Condition cndtIn = storeIds != null ? STORES.STORE_ID.in(storeIds) : DSL.trueCondition();
+		return dsl
+			.select(
+				STORES.STORE_ID
+			)
+			.from(STORES)
+			.where(
+				STORES.DOMAIN_ID.equal(domainId)
+				.and(STORES.USER_ID.equal(userId))
+				.and(cndtIn)
+			)
+			.orderBy(
+				STORES.BUILT_IN.desc(),
+				//STORES.PROVIDER.asc(),
+				STORES.NAME.asc()
+			)
+			.fetchSet(STORES.STORE_ID);
+	}
+	
+	public OStore selectById(Connection con, int storeId) throws DAOException {
+		DSLContext dsl = getDSL(con);
+		return dsl
+			.select()
+			.from(STORES)
+			.where(
+				STORES.STORE_ID.equal(storeId)
+			)
+			.fetchOneInto(OStore.class);
 	}
 	
 	/*

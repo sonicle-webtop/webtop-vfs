@@ -37,7 +37,7 @@ import com.sonicle.commons.PathUtils;
 import com.sonicle.commons.time.DateTimeUtils;
 import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.sdk.UserProfileId;
-import com.sonicle.webtop.vfs.Service.StoreNodeId;
+import com.sonicle.webtop.vfs.bol.model.StoreNodeId;
 import com.sonicle.webtop.vfs.model.SharingLink;
 import org.apache.commons.vfs2.FileSystemException;
 import org.apache.commons.vfs2.provider.UriParser;
@@ -68,10 +68,10 @@ public class JsGridSharingLink {
 	
 	public JsGridSharingLink() {}
 	
-	public JsGridSharingLink(SharingLink sl, String storeName, String storeIcon, StoreNodeId baseFileId, UserProfileId ownerProfileId, DateTimeZone profileTz) throws FileSystemException {
+	public JsGridSharingLink(SharingLink sl, String storeName, String storeIcon, StoreNodeId baseFolderId, DateTimeZone profileTz) throws FileSystemException {
 		this.linkId = sl.getLinkId();
-		this.userId = ownerProfileId.getUserId();
-		this.userDescription = WT.getUserData(ownerProfileId).getDisplayName();
+		this.userId = baseFolderId.getOriginAsProfileId().getUserId();
+		this.userDescription = WT.getUserData(baseFolderId.getOriginAsProfileId()).getDisplayName();
 		this.linkType = EnumUtils.toSerializedName(sl.getLinkType());
 		this.storeId = sl.getStoreId();
 		this.storeName = storeName;
@@ -80,11 +80,9 @@ public class JsGridSharingLink {
 		this.fileName = UriParser.decode(PathUtils.getFileName(sl.getFilePath()));
 		this.fileExt = PathUtils.getFileExtension(sl.getFilePath());
 		this.fileHash = sl.getFileHash();
-		baseFileId.setPath(filePath);
-		this.fileId = baseFileId.toString(true);
+		this.fileId = StoreNodeId.build(StoreNodeId.Type.FILEOBJECT, baseFolderId.getOriginAsProfileId(), baseFolderId.getFolderId(), filePath).toString(true);
 		this.parentFilePath = UriParser.decode(PathUtils.getFullParentPath(sl.getFilePath()));
-		baseFileId.setPath(parentFilePath);
-		this.parentFileId = baseFileId.toString(true);
+		this.parentFileId = StoreNodeId.build(StoreNodeId.Type.FILEOBJECT, baseFolderId.getOriginAsProfileId(), baseFolderId.getFolderId(), parentFilePath).toString(true);
 		this.expireOn = DateTimeUtils.printYmdHmsWithZone(sl.getExpiresOn(), profileTz);
 		this.expired = sl.isExpired(DateTimeUtils.now());
 		this.authMode = EnumUtils.toSerializedName(sl.getAuthMode());

@@ -33,7 +33,10 @@
 Ext.define('Sonicle.webtop.vfs.view.FolderChooser', {
 	extend: 'WTA.sdk.UIView',
 	requires: [
-		'Sonicle.String'
+		'Sonicle.String',
+		'Sonicle.VMUtils',
+		'WTA.util.FoldersTree2',
+		'Sonicle.webtop.vfs.model.FolderNode'
 	],
 	
 	dockableConfig: {
@@ -97,7 +100,7 @@ Ext.define('Sonicle.webtop.vfs.view.FolderChooser', {
 			rootVisible: false,
 			store: {
 				autoLoad: true,
-				model: 'Sonicle.webtop.vfs.model.StoreNode',
+				model: 'Sonicle.webtop.vfs.model.FolderNode',
 				proxy: WTF.proxy(me.mys.ID, 'ManageStoresTree', 'children', {
 					extraParams: {
 						crud: 'read',
@@ -111,12 +114,11 @@ Ext.define('Sonicle.webtop.vfs.view.FolderChooser', {
 			listeners: {
 				selectionchange: function(s, sel) {
 					var me = this,
-							rec = sel[0],
-							type = rec.get('_type');
-					if (type === 'folder' || type === 'file') {
-						me.setFileFolder(rec);
+						node = sel[0];
+					if (node.isFolder() || node.isFileObject()) {
+						me.setFileObject(node);
 					} else {
-						me.setFileFolder(null);
+						me.setFileObject(null);
 					}
 				},
 				itemkeydown: function(s, rec, el, idx, e) {
@@ -129,30 +131,30 @@ Ext.define('Sonicle.webtop.vfs.view.FolderChooser', {
 	
 	okView: function() {
 		var me = this,
-				vm = me.getVM();
+			vm = me.getVM();
 		vm.set('result', 'ok');
 		me.fireEvent('viewok', me, vm.get('file'));
 		me.closeView(false);
 	},
 	
-	setFileFolder: function(rec) {
-		var vm = this.getVM(),
-				storeId, path;
-		if (rec) {
-			storeId = rec.get('_storeId');
-			path = rec.get('_type') === 'folder' ? '/' : Sonicle.String.substrAfterLast(rec.getFId(), '|');
-			vm.set('file', {
-				fileId: rec.getFId(),
-				storeId: storeId,
-				path: path,
-				wrl: this.buildWrl(storeId, path)
-			});
-		} else {
-			vm.set('file', null);
-		}
-	},
-	
 	privates: {
+		setFileObject: function(node) {
+			var vm = this.getVM(),
+				storeId, path;
+			if (node) {
+				storeId = node.getFOStoreId();
+				path = node.getFOPath();
+				vm.set('file', {
+					fileId: node.getFOId(),
+					storeId: storeId,
+					path: path,
+					wrl: this.buildWrl(storeId, path)
+				});
+			} else {
+				vm.set('file', null);
+			}
+		},
+		
 		buildWrl: function(storeId, path) {
 			return 'storefile-' + this.mys.ID + ':/' + '/' + storeId + path;
 		}

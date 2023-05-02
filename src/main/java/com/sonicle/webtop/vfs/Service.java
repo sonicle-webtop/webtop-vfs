@@ -63,9 +63,11 @@ import com.sonicle.webtop.core.app.sdk.BaseDocEditorDocumentHandler;
 import com.sonicle.webtop.core.app.DocEditorManager;
 import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.app.WebTopSession;
+import com.sonicle.webtop.core.app.model.FolderShare;
+import com.sonicle.webtop.core.app.model.FolderSharing;
+import com.sonicle.webtop.core.app.sdk.AbstractFolderTreeCache;
+import com.sonicle.webtop.core.app.sdk.WTParseException;
 import com.sonicle.webtop.core.bol.js.JsWizardData;
-import com.sonicle.webtop.core.model.SharePermsRoot;
-import com.sonicle.webtop.core.bol.model.Sharing;
 import com.sonicle.webtop.core.sdk.BaseService;
 import com.sonicle.webtop.core.sdk.UploadException;
 import com.sonicle.webtop.core.sdk.UserProfile;
@@ -77,15 +79,16 @@ import com.sonicle.webtop.vfs.IVfsManager.StoreFileTemplate;
 import com.sonicle.webtop.vfs.IVfsManager.StoreFileType;
 import com.sonicle.webtop.vfs.bol.js.JsGridFile;
 import com.sonicle.webtop.vfs.bol.js.JsGridSharingLink;
-import com.sonicle.webtop.vfs.bol.js.JsSharing;
 import com.sonicle.webtop.vfs.bol.js.JsSharingLink;
 import com.sonicle.webtop.vfs.bol.js.JsStore;
+import com.sonicle.webtop.vfs.bol.js.JsStoreSharing;
+import com.sonicle.webtop.vfs.bol.model.MyStoreFSFolder;
+import com.sonicle.webtop.vfs.bol.model.MyStoreFSOrigin;
+import com.sonicle.webtop.vfs.bol.model.StoreNodeId;
 import com.sonicle.webtop.vfs.model.Store;
-import com.sonicle.webtop.vfs.model.StoreShareFolder;
-import com.sonicle.webtop.vfs.model.StoreShareRoot;
-import com.sonicle.webtop.vfs.bol.model.MyStoreFolder;
-import com.sonicle.webtop.vfs.bol.model.MyStoreRoot;
 import com.sonicle.webtop.vfs.model.SharingLink;
+import com.sonicle.webtop.vfs.model.StoreFSFolder;
+import com.sonicle.webtop.vfs.model.StoreFSOrigin;
 import com.sonicle.webtop.vfs.sfs.StoreFileSystem;
 import java.io.IOException;
 import java.io.InputStream;
@@ -98,6 +101,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import java.util.logging.Level;
@@ -125,23 +129,23 @@ public class Service extends BaseService {
 	private VfsServiceSettings ss = null;
 	private VfsUserSettings us = null;
 	
-	private final LinkedHashMap<String, StoreShareRoot> cacheRootsById = new LinkedHashMap<>();
-	private final HashMap<String, ArrayList<StoreShareFolder>> cacheFoldersByRoot = new HashMap<>();
-	private final LinkedHashMap<Integer, StoreShareFolder> cacheFoldersByStore = new LinkedHashMap<>();
+	private final FoldersTreeCache foldersTreeCache = new FoldersTreeCache();
 
 	@Override
 	public void initialize() throws Exception {
 		manager = (VfsManager)WT.getServiceManager(SERVICE_ID);
 		ss = new VfsServiceSettings(SERVICE_ID, getEnv().getProfileId().getDomainId());
 		us = new VfsUserSettings(SERVICE_ID, getEnv().getProfileId());
-		initShares();
+		initFolders();
 		
 		registerUploadListener("UploadStoreFile", new OnUploadStoreFile());
 	}
 
 	@Override
 	public void cleanup() throws Exception {
-		
+		us = null;
+		ss = null;
+		manager = null;
 	}
 	
 	@Override
@@ -160,6 +164,10 @@ public class Service extends BaseService {
 		return getEnv().getWebTopSession();
 	}
 	
+	private void initFolders() throws WTException {
+		foldersTreeCache.init();
+	}
+	
 	private class OnUploadStoreFile implements IServiceUploadStreamListener {
 		@Override
 		public void onUpload(String context, HttpServletRequest request, HashMap<String, String> multipartParams, WebTopSession.UploadedFile file, InputStream is, MapItem responseData) throws UploadException {
@@ -167,14 +175,13 @@ public class Service extends BaseService {
 			try {
 				String parentFileId = multipartParams.get("fileId");
 				String duplMode = StringUtils.defaultIfBlank(multipartParams.get("dupl"), "rename");
-				if(StringUtils.isBlank(parentFileId)) throw new UploadException("Parameter not specified [fileId]");
+				if (StringUtils.isBlank(parentFileId)) throw new UploadException("Parameter not specified [fileId]");
 				
-				StoreNodeId parentNodeId = (StoreNodeId)new StoreNodeId().parse(parentFileId);
-				int storeId = Integer.valueOf(parentNodeId.getStoreId());
-				String path = (parentNodeId.getSize() == 2) ? "/" : parentNodeId.getPath();
+				final StoreNodeId parentNodeId = new StoreNodeId(parentFileId);
+				final String path = StoreNodeId.Type.FOLDER.equals(parentNodeId.getType()) ? "/" : parentNodeId.getFilePath();
+				
 				boolean overwrite = "overwrite".equals(duplMode);
-				
-				String newPath = manager.addStoreFileFromStream(storeId, path, file.getFilename(), is, overwrite);
+				String newPath = manager.addStoreFileFromStream(parentNodeId.getFolderId(), path, file.getFilename(), is, overwrite);
 
 			} catch(UploadException ex) {
 				logger.trace("Upload failure", ex);
@@ -186,129 +193,21 @@ public class Service extends BaseService {
 		}
 	}
 	
-	private void initShares() throws WTException {
-		synchronized(cacheRootsById) {
-			updateRootsCache();
-			updateFoldersCache();
-		}
-	}
-	
-	private void updateRootsCache() throws WTException {
-		UserProfileId pid = getEnv().getProfile().getId();
-		synchronized(cacheRootsById) {
-			cacheRootsById.clear();
-			cacheRootsById.put(MyStoreRoot.SHARE_ID, new MyStoreRoot(pid));
-			for(StoreShareRoot root : manager.listIncomingStoreRoots()) {
-				cacheRootsById.put(root.getShareId(), root);
-			}
-		}
-	}
-	
-	private void updateFoldersCache() throws WTException {
-		synchronized(cacheRootsById) {
-			cacheFoldersByRoot.clear();
-			cacheFoldersByStore.clear();
-			for(StoreShareRoot root : cacheRootsById.values()) {
-				cacheFoldersByRoot.put(root.getShareId(), new ArrayList<StoreShareFolder>());
-				if(root instanceof MyStoreRoot) {
-					for(Store store : manager.listStores()) {
-						MyStoreFolder fold = new MyStoreFolder(root.getShareId(), root.getOwnerProfileId(), store);
-						cacheFoldersByRoot.get(root.getShareId()).add(fold);
-						cacheFoldersByStore.put(store.getStoreId(), fold);
-					}
-				} else {
-					for(StoreShareFolder fold : manager.listIncomingStoreFolders(root.getShareId()).values()) {
-						cacheFoldersByRoot.get(root.getShareId()).add(fold);
-						cacheFoldersByStore.put(fold.getStore().getStoreId(), fold);
-					}
-				}
-			}
-		}
-	}
-	
-	private Collection<StoreShareRoot> getRootsFromCache() {
-		synchronized(cacheRootsById) {
-			return cacheRootsById.values();
-		}
-	}
-	
-	private StoreShareRoot getRootFromCache(String shareId) {
-		synchronized(cacheRootsById) {
-			return cacheRootsById.get(shareId);
-		}
-	}
-	
-	private List<StoreShareFolder> getFoldersFromCache(String rootShareId) {
-		synchronized(cacheRootsById) {
-			if(cacheFoldersByRoot.containsKey(rootShareId)) {
-				return cacheFoldersByRoot.get(rootShareId);
-			} else {
-				return new ArrayList<>();
-			}
-		}
-	}
-	
-	private StoreShareFolder getFolderFromCache(int storeId) {
-		synchronized(cacheRootsById) {
-			return cacheFoldersByStore.get(storeId);
-		}
-	}
-	
-	public static class StoreNodeId extends CompositeId {
-		
-		public StoreNodeId() {
-			super(3);
-		}
-		
-		public StoreNodeId(String shareId, String storeId, String path) {
-			this();
-			setShareId(shareId);
-			setStoreId(storeId);
-			setPath(path);
-		}
-		
-		public String getShareId() {
-			return getToken(0);
-		}
-		
-		public void setShareId(String shareId) {
-			setToken(0, shareId);
-		}
-		
-		public String getStoreId() {
-			return getToken(1);
-		}
-		
-		public void setStoreId(String storeId) {
-			setToken(1, storeId);
-		}
-		
-		public String getPath() {
-			return getToken(2);
-		}
-		
-		public void setPath(String path) {
-			setToken(2, path);
-		}
-	}
-	
-	private ExtTreeNode createRootNode(StoreShareRoot root) {
-		if(root instanceof MyStoreRoot) {
-			return createRootNode(root.getShareId(), root.getOwnerProfileId().toString(), root.getPerms().toString(), lookupResource(VfsLocale.STORES_MY), false, "wtvfs-icon-storeMy").setExpanded(true);
+	private ExtTreeNode createFolderNodeLevel0(StoreFSOrigin origin) {
+		StoreNodeId nodeId = StoreNodeId.build(StoreNodeId.Type.ORIGIN, origin.getProfileId());
+		if (origin instanceof MyStoreFSOrigin) {
+			return createFolderNodeLevel0(nodeId, lookupResource(VfsLocale.STORES_MY), "wtvfs-icon-storeMy", origin.getWildcardPermissions());
 		} else {
-			return createRootNode(root.getShareId(), root.getOwnerProfileId().toString(), root.getPerms().toString(), root.getDescription(), false, "wtvfs-icon-storeIncoming");
+			return createFolderNodeLevel0(nodeId, origin.getDisplayName(), "wtvfs-icon-storeIncoming", origin.getWildcardPermissions());
 		}
 	}
 	
-	private ExtTreeNode createRootNode(String shareId, String pid, String perms, String text, boolean leaf, String iconClass) {
-		StoreNodeId nodeId = new StoreNodeId();
-		nodeId.setShareId(shareId);
-		
-		ExtTreeNode node = new ExtTreeNode(nodeId.toString(true), text, leaf);
-		node.put("_type", "root");//JsFolderNode.TYPE_ROOT);
-		node.put("_pid", pid);
-		node.put("_rperms", perms);
+	private ExtTreeNode createFolderNodeLevel0(StoreNodeId nodeId, String text, String iconClass, FolderShare.Permissions originPermissions) {
+		ExtTreeNode node = new ExtTreeNode(nodeId.toString(), text, false);
+		node.put("_orPerms", originPermissions.getFolderPermissions().toString(true));
 		node.setIconClass(iconClass);
+		node.put("expandable", false);
+		node.setExpanded(true);
 		return node;
 	}
 	
@@ -344,44 +243,44 @@ public class Service extends BaseService {
 		}
 	}
 	
-	private ExtTreeNode createFolderNode(StoreShareFolder folder, SharePermsRoot rootPerms) {
-		Store store = folder.getStore();
-		StoreNodeId nodeId = new StoreNodeId();
-		nodeId.setShareId(folder.getShareId());
-		nodeId.setStoreId(store.getStoreId().toString());
-		
-		ExtTreeNode node = new ExtTreeNode(nodeId.toString(true), store.getName(), false);
-		node.put("_type", "folder");//JsFolderNode.TYPE_FOLDER);
-		node.put("_pid", store.getProfileId().toString());
-		node.put("_storeId", store.getStoreId());
+	private ExtTreeNode createFolderNodeLevel1(StoreFSOrigin origin, StoreFSFolder folder) {
+		StoreNodeId.Type type = StoreNodeId.Type.FOLDER;
+		final StoreNodeId nodeId = StoreNodeId.build(type, origin.getProfileId(), folder.getFolderId());
+		final String name = folder.getDisplayName();
+		//ExtTreeNode node = createFolderNodeLevel1(nodeId, name, folder.getPermissions(), folder.getStore());
+		//if (origin instanceof MyStoreFSOrigin && folder.getStore().getBuiltIn() == 100) node.setExpanded(true);
+		//return node;
+		return createFolderNodeLevel1(nodeId, name, folder.getPermissions(), folder.getStore());
+	}
+	
+	private ExtTreeNode createFolderNodeLevel1(StoreNodeId nodeId, String name, FolderShare.Permissions folderPermissions, Store store) {
+		ExtTreeNode node = new ExtTreeNode(nodeId.toString(), name, false);
+		node.put("_foPerms", folderPermissions.getFolderPermissions().toString());
+		//node.put("_foPerms", store.getBuiltIn() > 0 ? "r" : folderPermissions.getFolderPermissions().toString());
+		node.put("_itPerms", folderPermissions.getItemsPermissions().toString());
 		node.put("_scheme", store.getUri().getScheme());
 		node.put("_builtIn", store.getBuiltIn());
-		node.put("_rperms", rootPerms.toString());
-		node.put("_fperms", folder.getPerms().toString());
-		node.put("_eperms", folder.getElementsPerms().toString());
 		
 		List<String> classes = new ArrayList<>();
-		if (!folder.getElementsPerms().implies("CREATE") 
-				&& !folder.getElementsPerms().implies("UPDATE")
-				&& !folder.getElementsPerms().implies("DELETE")) classes.add("wttasks-tree-readonly");
+		if (!folderPermissions.getItemsPermissions().has(FolderShare.ItemsRight.CREATE) 
+			&& !folderPermissions.getItemsPermissions().has(FolderShare.ItemsRight.UPDATE)
+			&& !folderPermissions.getItemsPermissions().has(FolderShare.ItemsRight.DELETE)) classes.add("wttasks-tree-readonly");
 		node.setCls(StringUtils.join(classes, " "));
-		
 		node.setIconClass("wtvfs-icon-"+storeIcon(store));
-		
 		return node;
 	}
 	
-	private ExtTreeNode createFileNode(StoreShareFolder folder, String filePath, String dlLink, String ulLink, FileObject fo) throws FileSystemException {
-		StoreNodeId nodeId = new StoreNodeId();
-		nodeId.setShareId(folder.getShareId());
-		nodeId.setStoreId(String.valueOf(folder.getStore().getStoreId()));
-		nodeId.setPath(filePath);
-		
-		ExtTreeNode node = new ExtTreeNode(nodeId.toString(true), UriParser.decode(fo.getName().getBaseName()), false);
-		node.put("_type", "file");//JsFolderNode.TYPE_FOLDER);
-		//node.put("_pid", store.getProfileId().toString());
-		node.put("_storeId", folder.getStore().getStoreId());
-		node.put("_eperms", folder.getElementsPerms().toString());
+	private ExtTreeNode createFolderNodeLevel2(StoreFSOrigin origin, StoreFSFolder folder, FileObject fo, String filePath, String dlLink, String ulLink) throws FileSystemException {
+		StoreNodeId.Type type = StoreNodeId.Type.FILEOBJECT;
+		final StoreNodeId nodeId = StoreNodeId.build(type, origin.getProfileId(), folder.getFolderId(), filePath);
+		final String name = UriParser.decode(fo.getName().getBaseName());
+		return createFolderNodeLevel2(nodeId, name, folder.getPermissions(), dlLink, ulLink);
+	}
+	
+	private ExtTreeNode createFolderNodeLevel2(StoreNodeId nodeId, String name, FolderShare.Permissions folderPermissions, String dlLink, String ulLink) {
+		ExtTreeNode node = new ExtTreeNode(nodeId.toString(), name, false);
+		node.put("_foPerms", folderPermissions.getFolderPermissions().toString());
+		node.put("_itPerms", folderPermissions.getItemsPermissions().toString());
 		node.put("_dlLink", dlLink);
 		node.put("_ulLink", ulLink);
 		
@@ -396,49 +295,59 @@ public class Service extends BaseService {
 		
 		try {
 			String crud = ServletUtils.getStringParameter(request, "crud", true);
-			if (crud.equals(Crud.READ)) {
+			if (Crud.READ.equals(crud)) {
 				String node = ServletUtils.getStringParameter(request, "node", true);
 				boolean chooser = ServletUtils.getBooleanParameter(request, "chooser", false);
+				boolean writableOnly = ServletUtils.getBooleanParameter(request, "writableOnly", false);
 				
-				if (node.equals("root")) { // Share roots...
-					for (StoreShareRoot root : getRootsFromCache()) {
-						children.add(createRootNode(root));
-					}
-				} else {
-					StoreNodeId nodeId = (StoreNodeId)new StoreNodeId().parse(node);
-					if (nodeId.getSize() == 1) { // Root share's folders...
-						StoreShareRoot root = getRootFromCache(nodeId.getShareId());
-						if (root instanceof MyStoreRoot) {
-							for (Store cal : manager.listStores()) {
-								MyStoreFolder folder = new MyStoreFolder(node, root.getOwnerProfileId(), cal);
-								children.add(createFolderNode(folder, root.getPerms()));
-							}
-						} else {
-							for (StoreShareFolder fold : getFoldersFromCache(root.getShareId())) {
-								children.add(createFolderNode(fold, root.getPerms()));
+				if (node.equals("root")) { // Tree ROOT node -> list folder origins
+					for (StoreFSOrigin origin : foldersTreeCache.getOrigins()) {
+						boolean add = true;
+						if (writableOnly && !(origin instanceof MyStoreFSOrigin)) {
+							// Exclude origins whose folders do NOT have writing rights
+							for (StoreFSFolder folder : foldersTreeCache.getFoldersByOrigin(origin)) {
+								if (!folder.getPermissions().getItemsPermissions().has(FolderShare.ItemsRight.CREATE)) {
+									add = false;
+									break;
+								}
 							}
 						}
-
-					} else if (nodeId.getSize() == 2 || nodeId.getSize() == 3) { // Store's folders (2) or folder's folders (3)...
-						int storeId = Integer.valueOf(nodeId.getStoreId());
-						StoreShareFolder folder = getFolderFromCache(storeId);
-						String path = (nodeId.getSize() == 2) ? "/" : nodeId.getPath();
+						if (add) {
+							final ExtTreeNode xnode = createFolderNodeLevel0(origin);
+							if (xnode != null) children.add(xnode);
+						}
+					}
+					
+				} else {
+					StoreNodeId nodeId = new StoreNodeId(node);
+					if (StoreNodeId.Type.ORIGIN.equals(nodeId.getType())) { // Tree node -> list folder of specified origin
+						final StoreFSOrigin origin = foldersTreeCache.getOriginByProfile(nodeId.getOriginAsProfileId());
+						for (StoreFSFolder folder : foldersTreeCache.getFoldersByOrigin(origin)) {
+							if (writableOnly && !folder.getPermissions().getItemsPermissions().has(FolderShare.ItemsRight.CREATE)) continue;
+							
+							final ExtTreeNode xnode = createFolderNodeLevel1(origin, folder);
+							if (xnode != null) children.add(xnode);
+						}
+						
+					} else if (StoreNodeId.Type.FOLDER.equals(nodeId.getType()) || StoreNodeId.Type.FILEOBJECT.equals(nodeId.getType())) {
+						final StoreFSOrigin origin = foldersTreeCache.getOriginByProfile(nodeId.getOriginAsProfileId());
+						final StoreFSFolder folder = foldersTreeCache.getFolder(nodeId.getFolderId());
+						final String path = StoreNodeId.Type.FOLDER.equals(nodeId.getType()) ? "/" : nodeId.getFilePath();
 						
 						boolean showHidden = us.getFileShowHidden();
-						
 						LinkedHashMap<String, SharingLink> dls = null, uls = null;
 						if (!chooser) {
-							dls = manager.listDownloadLinks(storeId, path);
-							uls = manager.listUploadLinks(storeId, path);
+							dls = manager.listDownloadLinks(nodeId.getFolderId(), path);
+							uls = manager.listUploadLinks(nodeId.getFolderId(), path);
 						}
 						
-						StoreFileSystem sfs = manager.getStoreFileSystem(storeId);
-						for (FileObject fo : manager.listStoreFiles(StoreFileType.FOLDER, storeId, path)) {
+						StoreFileSystem sfs = manager.getStoreFileSystem(nodeId.getFolderId());
+						for (FileObject fo : manager.listStoreFiles(StoreFileType.FOLDER, nodeId.getFolderId(), path)) {
 							if (!showHidden && VfsUtils.isFileObjectHidden(fo)) continue;
 							// Relativize path and force trailing separator (it's a folder)
 							final String filePath = PathUtils.ensureTrailingSeparator(sfs.getRelativePath(fo), false);
 							//final String fileId = new StoreNodeId(nodeId.getShareId(), nodeId.getStoreId(), filePath).toString();
-							final String fileHash = VfsManagerUtils.generateStoreFileHash(storeId, filePath);
+							final String fileHash = VfsManagerUtils.generateStoreFileHash(nodeId.getFolderId(), filePath);
 							
 							String dlLink = null, ulLink = null;
 							if ((dls != null) && dls.containsKey(fileHash)) {
@@ -447,15 +356,18 @@ public class Service extends BaseService {
 							if ((uls != null) && uls.containsKey(fileHash)) {
 								ulLink = uls.get(fileHash).getLinkId();
 							}
-							children.add(createFileNode(folder, filePath, dlLink, ulLink, fo));
+							children.add(createFolderNodeLevel2(origin, folder, fo, filePath, dlLink, ulLink));
 						}
+						
+					} else {
+						throw new WTParseException("Unable to parse '{}' as node ID", node);
 					}
 				}
 				
 				new JsonResult("children", children).printTo(out);
 			}
 			
-		} catch(Exception ex) {
+		} catch (Exception ex) {
 			logger.error("Error in ManageStoresTree", ex);
 		}
 	}
@@ -464,23 +376,27 @@ public class Service extends BaseService {
 		
 		try {
 			String crud = ServletUtils.getStringParameter(request, "crud", true);
-			if(crud.equals(Crud.READ)) {
-				String id = ServletUtils.getStringParameter(request, "id", true);
+			if (Crud.READ.equals(crud)) {
+				String node = ServletUtils.getStringParameter(request, "id", true);
 				
-				Sharing sharing = manager.getSharing(id);
-				String description = buildSharingPath(sharing);
-				new JsonResult(new JsSharing(sharing, description)).printTo(out);
+				StoreNodeId nodeId = new StoreNodeId(node);
+				FolderSharing.Scope scope = JsStoreSharing.toFolderSharingScope(nodeId);
+				Set<FolderSharing.SubjectConfiguration> configurations = manager.getFolderShareConfigurations(nodeId.getOriginAsProfileId(), scope);
+				String[] sdn = buildSharingDisplayNames(nodeId);
+				new JsonResult(new JsStoreSharing(nodeId, sdn[0], sdn[1], configurations)).printTo(out);
 				
-			} else if(crud.equals(Crud.UPDATE)) {
-				Payload<MapItem, Sharing> pl = ServletUtils.getPayload(request, Sharing.class);
+			} else if (Crud.UPDATE.equals(crud)) {
+				Payload<MapItem, JsStoreSharing> pl = ServletUtils.getPayload(request, JsStoreSharing.class);
 				
-				manager.updateSharing(pl.data);
+				StoreNodeId nodeId = new StoreNodeId(pl.data.id);
+				FolderSharing.Scope scope = JsStoreSharing.toFolderSharingScope(nodeId);
+				manager.updateFolderShareConfigurations(nodeId.getOriginAsProfileId(), scope, pl.data.toSubjectConfigurations());
 				new JsonResult().printTo(out);
 			}
 			
-		} catch(Exception ex) {
-			logger.error("Error in action ManageSharing", ex);
-			new JsonResult(false, "Error").printTo(out);
+		} catch (Exception ex) {
+			logger.error("Error in ManageSharing", ex);
+			new JsonResult(ex).printTo(out);
 		}
 	}
 	
@@ -503,10 +419,9 @@ public class Service extends BaseService {
 				
 			} else if(crud.equals(Crud.DELETE)) {
 				String storeId = ServletUtils.getStringParameter(request, "storeId", true);
+				
 				manager.deleteStore(Integer.valueOf(storeId));
-				
-				updateFoldersCache();
-				
+				foldersTreeCache.init(AbstractFolderTreeCache.Target.FOLDERS);
 				new JsonResult().printTo(out);
 			}
 		
@@ -558,7 +473,7 @@ public class Service extends BaseService {
 				manager.addStore(store);
 				
 				wts.clearProperty(SERVICE_ID, PROPERTY);
-				updateFoldersCache();
+				foldersTreeCache.init(AbstractFolderTreeCache.Target.FOLDERS);
 				
 				new JsonResult().printTo(out);
 			}
@@ -619,7 +534,7 @@ public class Service extends BaseService {
 				manager.addStore(store);
 				
 				wts.clearProperty(SERVICE_ID, PROPERTY);
-				updateFoldersCache();
+				foldersTreeCache.init(AbstractFolderTreeCache.Target.FOLDERS);
 				
 				new JsonResult().printTo(out);
 			}
@@ -680,7 +595,7 @@ public class Service extends BaseService {
 				manager.addStore(store);
 				
 				wts.clearProperty(SERVICE_ID, PROPERTY);
-				updateFoldersCache();
+				foldersTreeCache.init(AbstractFolderTreeCache.Target.FOLDERS);
 				
 				new JsonResult().printTo(out);
 			}
@@ -734,7 +649,7 @@ public class Service extends BaseService {
 				manager.addStore(store);
 				
 				wts.clearProperty(SERVICE_ID, PROPERTY);
-				updateFoldersCache();
+				foldersTreeCache.init(AbstractFolderTreeCache.Target.FOLDERS);
 				
 				new JsonResult().printTo(out);
 			}
@@ -777,7 +692,7 @@ public class Service extends BaseService {
 				manager.addStore(store);
 				
 				wts.clearProperty(SERVICE_ID, PROPERTY);
-				updateFoldersCache();
+				foldersTreeCache.init(AbstractFolderTreeCache.Target.FOLDERS);
 				
 				new JsonResult().printTo(out);
 			}
@@ -832,7 +747,7 @@ public class Service extends BaseService {
 				manager.addStore(store);
 				
 				wts.clearProperty(SERVICE_ID, PROPERTY);
-				updateFoldersCache();
+				foldersTreeCache.init(AbstractFolderTreeCache.Target.FOLDERS);
 				
 				new JsonResult().printTo(out);
 			}
@@ -851,26 +766,24 @@ public class Service extends BaseService {
 			if (crud.equals(Crud.READ)) {
 				String parentFileId = ServletUtils.getStringParameter(request, "fileId", null);
 				
-				StoreNodeId parentNodeId = (StoreNodeId)new StoreNodeId().parse(parentFileId);
-				int storeId = Integer.valueOf(parentNodeId.getStoreId());
-				StoreShareFolder folder = getFolderFromCache(storeId);
-				String path = (parentNodeId.getSize() == 2) ? "/" : parentNodeId.getPath();
+				final StoreNodeId parentNodeId = new StoreNodeId(parentFileId);
+				final StoreFSFolder folder = foldersTreeCache.getFolder(parentNodeId.getFolderId());
+				final String path = StoreNodeId.Type.FOLDER.equals(parentNodeId.getType()) ? "/" : parentNodeId.getFilePath();
 				
 				boolean showHidden = us.getFileShowHidden();
+				LinkedHashMap<String, SharingLink> dls = manager.listDownloadLinks(parentNodeId.getFolderId(), path);
+				LinkedHashMap<String, SharingLink> uls = manager.listUploadLinks(parentNodeId.getFolderId(), path);
 				
-				LinkedHashMap<String, SharingLink> dls = manager.listDownloadLinks(storeId, path);
-				LinkedHashMap<String, SharingLink> uls = manager.listUploadLinks(storeId, path);
-				
-				StoreFileSystem sfs = manager.getStoreFileSystem(storeId);
-				for (FileObject fo : manager.listStoreFiles(StoreFileType.FILE_OR_FOLDER, storeId, path)) {
+				StoreFileSystem sfs = manager.getStoreFileSystem(parentNodeId.getFolderId());
+				for (FileObject fo : manager.listStoreFiles(StoreFileType.FILE_OR_FOLDER, parentNodeId.getFolderId(), path)) {
 					if (!showHidden && VfsUtils.isFileObjectHidden(fo)) continue;
 					
 					// Relativize path and force trailing separator if file is a folder
 					final String filePath = fo.isFolder() ? PathUtils.ensureTrailingSeparator(sfs.getRelativePath(fo), false) : sfs.getRelativePath(fo);
-					final String fileId = new StoreNodeId(parentNodeId.getShareId(), parentNodeId.getStoreId(), filePath).toString();
-					final String fileHash = VfsManagerUtils.generateStoreFileHash(storeId, filePath);
+					final String fileId = StoreNodeId.build(StoreNodeId.Type.FILEOBJECT, parentNodeId.getOriginAsProfileId(), parentNodeId.getFolderId(), filePath).toString();
+					final String fileHash = VfsManagerUtils.generateStoreFileHash(parentNodeId.getFolderId(), filePath);
 					boolean canBeOpenedWithDocEditor = isFileEditableInDocEditor(fo.getName().getBaseName());
-					items.add(new JsGridFile(folder, fo, fileId, canBeOpenedWithDocEditor, dls.get(fileHash), uls.get(fileHash), storeId, filePath));
+					items.add(new JsGridFile(folder, fo, fileId, canBeOpenedWithDocEditor, dls.get(fileHash), uls.get(fileHash), parentNodeId.getFolderId(), filePath));
 				}
 				new JsonResult("files", items).printTo(out);
 			}
@@ -890,41 +803,38 @@ public class Service extends BaseService {
 				String type = ServletUtils.getStringParameter(request, "type", true);
 				String name = ServletUtils.getStringParameter(request, "name", true);
 				
-				StoreNodeId parentNodeId = (StoreNodeId)new StoreNodeId().parse(parentFileId);
-				int storeId = Integer.valueOf(parentNodeId.getStoreId());
-				String path = (parentNodeId.getSize() == 2) ? "/" : parentNodeId.getPath();
+				final StoreNodeId parentNodeId = new StoreNodeId(parentFileId);
+				final String path = StoreNodeId.Type.FOLDER.equals(parentNodeId.getType()) ? "/" : parentNodeId.getFilePath();
 				
 				String newPath = null;
 				if (type.equals("folder")) { // Create a folder
-					newPath = manager.addStoreFile(StoreFileType.FOLDER, storeId, path, name);
+					newPath = manager.addStoreFile(StoreFileType.FOLDER, parentNodeId.getFolderId(), path, name);
 					
 				} else { // Create a file using template
 					StoreFileTemplate fileTemplate = EnumUtils.forSerializedName(type, null, StoreFileTemplate.class);
 					if (fileTemplate == null) throw new WTException("Type not supported [{}]", type);
 					
-					newPath = manager.addStoreFileFromTemplate(fileTemplate, storeId, path, name, false);
+					newPath = manager.addStoreFileFromTemplate(fileTemplate, parentNodeId.getFolderId(), path, name, false);
 				}
 				
 				new JsonDataResult()
-						.set("fileId", new StoreNodeId(parentNodeId.getShareId(), parentNodeId.getStoreId(), newPath).toString())
-						.set("name", PathUtils.getFileName(newPath))
-						.set("hash", VfsManagerUtils.generateStoreFileHash(storeId, newPath))
-						.printTo(out);
+					.set("fileId", StoreNodeId.build(StoreNodeId.Type.FILEOBJECT, parentNodeId.getOriginAsProfileId(), parentNodeId.getFolderId(), newPath).toString())
+					.set("name", PathUtils.getFileName(newPath))
+					.set("hash", VfsManagerUtils.generateStoreFileHash(parentNodeId.getFolderId(), newPath))
+					.printTo(out);
 				
 			} else if(crud.equals("rename")) {
 				String fileId = ServletUtils.getStringParameter(request, "fileId", true);
 				String name = ServletUtils.getStringParameter(request, "name", true);
 				
-				StoreNodeId nodeId = (StoreNodeId)new StoreNodeId().parse(fileId);
-				int storeId = Integer.valueOf(nodeId.getStoreId());
-				
+				final StoreNodeId nodeId = new StoreNodeId(fileId);
 				try {
-					String newPath = manager.renameStoreFile(storeId, nodeId.getPath(), name);
+					String newPath = manager.renameStoreFile(nodeId.getFolderId(), nodeId.getFilePath(), name);
 					new JsonDataResult()
-							.set("fileId", new StoreNodeId(nodeId.getShareId(), nodeId.getStoreId(), newPath).toString())
-							.set("name", PathUtils.getFileName(newPath))
-							.set("hash", VfsManagerUtils.generateStoreFileHash(storeId, newPath))
-							.printTo(out);
+						.set("fileId", StoreNodeId.build(StoreNodeId.Type.FILEOBJECT, nodeId.getOriginAsProfileId(), nodeId.getFolderId(), newPath).toString())
+						.set("name", PathUtils.getFileName(newPath))
+						.set("hash", VfsManagerUtils.generateStoreFileHash(nodeId.getFolderId(), newPath))
+						.printTo(out);
 					
 				} catch(FileOverwriteException ex) {
 					new JsonResult(false, clientResTplString("gpfiles.error.rename")).printTo(out);
@@ -934,29 +844,27 @@ public class Service extends BaseService {
 				StringArray fileIds = ServletUtils.getObjectParameter(request, "fileIds", StringArray.class, true);
 				
 				for(String fileId : fileIds) {
-					StoreNodeId nodeId = (StoreNodeId)new StoreNodeId().parse(fileId);
-					int storeId = Integer.valueOf(nodeId.getStoreId());
-					manager.deleteStoreFile(storeId, nodeId.getPath());
+					final StoreNodeId nodeId = new StoreNodeId(fileId);
+					manager.deleteStoreFile(nodeId.getFolderId(), nodeId.getFilePath());
 				}
 				new JsonResult().printTo(out);
 				
 			} else if (crud.equals("edit")) {
 				String fileId = ServletUtils.getStringParameter(request, "fileId", true);
 				
-				StoreNodeId nodeId = (StoreNodeId)new StoreNodeId().parse(fileId);
-				int storeId = Integer.valueOf(nodeId.getStoreId());
+				final StoreNodeId nodeId = new StoreNodeId(fileId);
 				
-				FileObject fo = manager.getStoreFile(storeId, nodeId.getPath());
+				FileObject fo = manager.getStoreFile(nodeId.getFolderId(), nodeId.getFilePath());
 				if (!fo.isFile()) throw new WTException("Requested file is not a real file");
 				final String filename = fo.getName().getBaseName();
-				final String fileHash = VfsManagerUtils.generateStoreFileHash(storeId, nodeId.getPath());
+				final String fileHash = VfsManagerUtils.generateStoreFileHash(nodeId.getFolderId(), nodeId.getFilePath());
 				long lastModified = fo.getContent().getLastModifiedTime();
 				
 				boolean writable = false;
-				StoreShareFolder folder = getFolderFromCache(storeId);
-				if ((folder != null) && folder.getElementsPerms().implies("UPDATE")) writable = true;
+				final StoreFSFolder folder = foldersTreeCache.getFolder(nodeId.getFolderId());
+				if ((folder != null) && folder.getPermissions().getItemsPermissions().has(FolderShare.ItemsRight.UPDATE)) writable = true;
 				
-				StoreFileDocEditorDocumentHandler docHandler = new StoreFileDocEditorDocumentHandler(writable, getEnv().getProfileId(), fileHash, storeId, nodeId.getPath());
+				StoreFileDocEditorDocumentHandler docHandler = new StoreFileDocEditorDocumentHandler(writable, getEnv().getProfileId(), fileHash, nodeId.getFolderId(), nodeId.getFilePath());
 				DocEditorManager.DocumentConfig config = getWts().prepareDocumentEditing(docHandler, filename, lastModified);
 				
 				new JsonResult(config).printTo(out);
@@ -1035,12 +943,11 @@ public class Service extends BaseService {
 			String fileId = fileIds.get(0);
 			//TODO: Implementare download file multipli
 			
-			StoreNodeId nodeId = (StoreNodeId)new StoreNodeId().parse(fileId);
-			int storeId = Integer.valueOf(nodeId.getStoreId());
+			final StoreNodeId nodeId = new StoreNodeId(fileId);
 			
 			FileObject fo = null;
 			try {
-				fo = manager.getStoreFile(storeId, nodeId.getPath());
+				fo = manager.getStoreFile(nodeId.getFolderId(), nodeId.getFilePath());
 				if (fo.isFolder()) {
 					String filename = fo.getName().getBaseName() + ".zip";
 					ServletUtils.setFileStreamHeaders(response, "application/x-zip-compressed", DispositionType.ATTACHMENT, filename);
@@ -1066,7 +973,7 @@ public class Service extends BaseService {
 					IOUtils.copy(fo.getContent().getInputStream(), response.getOutputStream());
 					
 				} else {
-					logger.warn("Cannot read a non-file [{}, {}]", storeId, nodeId.getPath());
+					logger.warn("Cannot read a non-file [{}, {}]", nodeId.getFolderId(), nodeId.getFilePath());
 					throw new WTException("Requested file is not a real file");
 				}
 				
@@ -1107,15 +1014,13 @@ public class Service extends BaseService {
 				String expirationDate = ServletUtils.getStringParameter(request, "expirationDate", null);
 				String authMode = ServletUtils.getStringParameter(request, "authMode", true);
 				String password = ServletUtils.getStringParameter(request, "password", null);
-				
-				StoreNodeId nodeId = (StoreNodeId)new StoreNodeId().parse(fileId);
-				int storeId = Integer.valueOf(nodeId.getStoreId());
+				final StoreNodeId nodeId = new StoreNodeId(fileId);
 				
 				DateTimeFormatter ymdHmsFmt = DateTimeUtils.createYmdHmsFormatter(up.getTimeZone());
 				SharingLink dl = new SharingLink();
 				dl.setLinkType(SharingLink.LinkType.DOWNLOAD);
-				dl.setStoreId(storeId);
-				dl.setFilePath(nodeId.getPath());
+				dl.setStoreId(nodeId.getFolderId());
+				dl.setFilePath(nodeId.getFilePath());
 				if(!StringUtils.isBlank(expirationDate)) {
 					DateTime dt = ymdHmsFmt.parseDateTime(expirationDate);
 					dl.setExpiresOn(dt.withTimeAtStartOfDay());
@@ -1136,16 +1041,15 @@ public class Service extends BaseService {
 				
 			} else if (crud.equals("auto")) {
 				String fileId = ServletUtils.getStringParameter(request, "fileId", true);
-				StoreNodeId nodeId = (StoreNodeId)new StoreNodeId().parse(fileId);
-				int storeId = Integer.valueOf(nodeId.getStoreId());
+				final StoreNodeId nodeId = new StoreNodeId(fileId);
 				
 				SharingLink link = null;
-				Map<String, SharingLink> links = manager.listDownloadLinks(storeId, nodeId.getPath());
+				Map<String, SharingLink> links = manager.listDownloadLinks(nodeId.getFolderId(), nodeId.getFilePath());
 				if (links.isEmpty()) {
 					SharingLink dl = new SharingLink();
 					dl.setLinkType(SharingLink.LinkType.DOWNLOAD);
-					dl.setStoreId(storeId);
-					dl.setFilePath(nodeId.getPath());
+					dl.setStoreId(nodeId.getFolderId());
+					dl.setFilePath(nodeId.getFilePath());
 					dl.setAuthMode(SharingLink.AuthMode.NONE);
 					dl.setNotify(false);
 					link = manager.addDownloadLink(dl);
@@ -1183,15 +1087,13 @@ public class Service extends BaseService {
 				String expirationDate = ServletUtils.getStringParameter(request, "expirationDate", null);
 				String authMode = ServletUtils.getStringParameter(request, "authMode", true);
 				String password = ServletUtils.getStringParameter(request, "password", null);
-				
-				StoreNodeId nodeId = (StoreNodeId)new StoreNodeId().parse(fileId);
-				int storeId = Integer.valueOf(nodeId.getStoreId());
+				final StoreNodeId nodeId = new StoreNodeId(fileId);
 				
 				DateTimeFormatter ymdHmsFmt = DateTimeUtils.createYmdHmsFormatter(up.getTimeZone());
 				SharingLink ul = new SharingLink();
 				ul.setLinkType(SharingLink.LinkType.UPLOAD);
-				ul.setStoreId(storeId);
-				ul.setFilePath(nodeId.getPath());
+				ul.setStoreId(nodeId.getFolderId());
+				ul.setFilePath(nodeId.getFilePath());
 				if (!StringUtils.isBlank(expirationDate)) {
 					DateTime dt = ymdHmsFmt.parseDateTime(expirationDate);
 					ul.setExpiresOn(dt.withTimeAtStartOfDay());
@@ -1277,27 +1179,20 @@ public class Service extends BaseService {
 				String linkId = ServletUtils.getStringParameter(request, "id", null);
 				if(linkId == null) {
 					List<JsGridSharingLink> items = new ArrayList<>();
-					for(StoreShareRoot root : getRootsFromCache()) {
-						for(StoreShareFolder folder : getFoldersFromCache(root.getShareId())) {
-							final Store store = folder.getStore();
-							StoreNodeId baseNodeId = new StoreNodeId();
-							baseNodeId.setShareId(folder.getShareId());
-							baseNodeId.setStoreId(store.getStoreId().toString());
-							
+					for (StoreFSOrigin origin : foldersTreeCache.getOrigins()) {
+						for (StoreFSFolder folder : foldersTreeCache.getFoldersByOrigin(origin)) {
+							StoreNodeId folderNodeId = StoreNodeId.build(StoreNodeId.Type.FOLDER, origin.getProfileId(), folder.getFolderId());
 							for(SharingLink dl : manager.listDownloadLinks(folder.getStore().getStoreId(), "/").values()) {
-								items.add(new JsGridSharingLink(dl, store.getName(), storeIcon(folder.getStore()), baseNodeId, folder.getOwnerProfileId(), ptz));
+								items.add(new JsGridSharingLink(dl, folder.getStore().getName(), storeIcon(folder.getStore()), folderNodeId, ptz));
 							}
 						}
 					}
-					for(StoreShareRoot root : getRootsFromCache()) {
-						for(StoreShareFolder folder : getFoldersFromCache(root.getShareId())) {
-							final Store store = folder.getStore();
-							StoreNodeId baseNodeId = new StoreNodeId();
-							baseNodeId.setShareId(folder.getShareId());
-							baseNodeId.setStoreId(store.getStoreId().toString());
-							
+					
+					for (StoreFSOrigin origin : foldersTreeCache.getOrigins()) {
+						for (StoreFSFolder folder : foldersTreeCache.getFoldersByOrigin(origin)) {
+							StoreNodeId folderNodeId = StoreNodeId.build(StoreNodeId.Type.FOLDER, origin.getProfileId(), folder.getFolderId());
 							for(SharingLink ul : manager.listUploadLinks(folder.getStore().getStoreId(), "/").values()) {
-								items.add(new JsGridSharingLink(ul, store.getName(), storeIcon(folder.getStore()), baseNodeId, folder.getOwnerProfileId(), ptz));
+								items.add(new JsGridSharingLink(ul, folder.getStore().getName(), storeIcon(folder.getStore()), folderNodeId, ptz));
 							}
 						}
 					}
@@ -1338,16 +1233,15 @@ public class Service extends BaseService {
 			int mailMsgId = ServletUtils.getIntParameter(request, "mailMsgId", true);
 			int mailAttachId = ServletUtils.getIntParameter(request, "mailAttachId", true);
 			
-			StoreNodeId parentNodeId = (StoreNodeId)new StoreNodeId().parse(parentFileId);
-			int storeId = Integer.valueOf(parentNodeId.getStoreId());
-			String path = (parentNodeId.getSize() == 2) ? "/" : parentNodeId.getPath();
+			final StoreNodeId parentNodeId = new StoreNodeId(parentFileId);
+			final String path = StoreNodeId.Type.FOLDER.equals(parentNodeId.getType()) ? "/" : parentNodeId.getFilePath();
 			
 			IMailManager mailMgr = (IMailManager)WT.getServiceManager("com.sonicle.webtop.mail");
 			InputStream is = null;
 			try {
 				//TODO: improve method signature, are all params truly needed?
 				is = mailMgr.getAttachmentInputStream(mailAccount, mailFolder, mailMsgId, mailAttachId);
-				manager.addStoreFileFromStream(storeId, path, name, is);
+				manager.addStoreFileFromStream(parentNodeId.getFolderId(), path, name, is);
 			} finally {
 				IOUtils.closeQuietly(is);
 			}
@@ -1359,6 +1253,25 @@ public class Service extends BaseService {
 		}
 	}
 	
+	private String[] buildSharingDisplayNames(StoreNodeId nodeId) throws WTException {
+		String originDn = null, folderDn = null;
+	
+		StoreFSOrigin origin = foldersTreeCache.getOrigin(nodeId.getOriginAsProfileId());
+		if (origin instanceof MyStoreFSOrigin) {
+			originDn = lookupResource(VfsLocale.STORES_MY);
+		} else if (origin instanceof StoreFSOrigin) {
+			originDn = origin.getDisplayName();
+		}
+		
+		if (StoreNodeId.Type.FOLDER.equals(nodeId.getType())) {
+			StoreFSFolder folder = foldersTreeCache.getFolder(nodeId.getFolderId());
+			folderDn = (folder != null) ? folder.getStore().getName() : String.valueOf(nodeId.getFolderId());
+		}
+		
+		return new String[]{originDn, folderDn};
+	}
+	
+	/*
 	private String buildSharingPath(Sharing sharing) throws WTException {
 		StringBuilder sb = new StringBuilder();
 		
@@ -1382,5 +1295,55 @@ public class Service extends BaseService {
 		}
 		
 		return sb.toString();
+	}
+	*/
+	
+	private class FoldersTreeCache extends AbstractFolderTreeCache<Integer, StoreFSOrigin, StoreFSFolder, Object> {
+		
+		@Override
+		protected void internalBuildCache(AbstractFolderTreeCache.Target options) {
+			UserProfileId pid = getEnv().getProfile().getId();
+				
+			if (AbstractFolderTreeCache.Target.ALL.equals(options) || AbstractFolderTreeCache.Target.ORIGINS.equals(options)) {
+				try {
+					this.internalClear(AbstractFolderTreeCache.Target.ORIGINS);
+					this.origins.put(pid, new MyStoreFSOrigin(pid));
+					for (StoreFSOrigin origin : manager.listIncomingStoreOrigins().values()) {
+						this.origins.put(origin.getProfileId(), origin);
+					}
+					
+				} catch (WTException ex) {
+					logger.error("[FoldersTreeCache] Error updating Origins", ex);
+				}
+			}	
+			if (AbstractFolderTreeCache.Target.ALL.equals(options) || AbstractFolderTreeCache.Target.FOLDERS.equals(options)) {
+				try {
+					this.internalClear(AbstractFolderTreeCache.Target.FOLDERS);
+					for (StoreFSOrigin origin : this.origins.values()) {
+						if (origin instanceof MyStoreFSOrigin) {
+							for (Store category : manager.listMyStores().values()) {
+								final MyStoreFSFolder folder = new MyStoreFSFolder(category.getStoreId(), category);
+								this.folders.put(folder.getFolderId(), folder);
+								this.foldersByOrigin.put(origin.getProfileId(), folder);
+								this.originsByFolder.put(folder.getFolderId(), origin);
+							}
+						} else if (origin instanceof StoreFSOrigin) {
+							for (StoreFSFolder folder : manager.listIncomingStoreFolders(origin.getProfileId()).values()) {
+								// Make sure to track only folders with at least READ premission: 
+								// it is ugly having in UI empty folder nodes for just manage update/delete/sharing operations.
+								if (!folder.getPermissions().getFolderPermissions().has(FolderShare.FolderRight.READ)) continue;
+								
+								this.folders.put(folder.getFolderId(), folder);
+								this.foldersByOrigin.put(origin.getProfileId(), folder);
+								this.originsByFolder.put(folder.getFolderId(), origin);
+							}
+						}
+					}
+					
+				} catch (WTException ex) {
+					logger.error("[FoldersTreeCache] Error updating Folders", ex);
+				}
+			}
+		}
 	}
 }
