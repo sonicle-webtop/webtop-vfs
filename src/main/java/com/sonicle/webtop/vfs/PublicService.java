@@ -141,6 +141,7 @@ public class PublicService extends BasePublicService {
 					writeLinkPage(request, response, domainId, wts, "Authorize", link);
 
 				} else if (link.getLinkType().equals(SharingLink.LinkType.DOWNLOAD)) {
+					VfsManager vfsMgr = (VfsManager)WT.getServiceManager(SERVICE_ID, true, link.getProfileId());
 					if (PathUtils.isFolder(link.getFilePath())) { // Link refers to a folder
 						int dl = ServletUtils.getIntParameter(request, "dl", 0);
 						if (dl == 1 || dl == 2) { // Direct download is requested (1 attachment, 2 inline)
@@ -176,7 +177,7 @@ public class PublicService extends BasePublicService {
 								writeErrorPage(request, response, domainId, wts, "linknotfound");
 							} else {
 								if (link.getNotify()) {
-									adminVfsMgr.notifySharingLinkUsage(link.getLinkId(), filePath, wts.getRemoteIP(), wts.getPlainUserAgent());
+									vfsMgr.notifySharingLinkUsage(link.getLinkId(), filePath, wts.getRemoteIP(), wts.getPlainUserAgent());
 								}
 							}
 
@@ -204,7 +205,7 @@ public class PublicService extends BasePublicService {
 								writeErrorPage(request, response, domainId, wts, "linknotfound");
 							} else {
 								if (link.getNotify()) {
-									adminVfsMgr.notifySharingLinkUsage(link.getLinkId(), link.getFilePath(), wts.getClientRemoteIP(), wts.getPlainUserAgent());
+									vfsMgr.notifySharingLinkUsage(link.getLinkId(), link.getFilePath(), wts.getClientRemoteIP(), wts.getPlainUserAgent());
 								}
 							}
 
