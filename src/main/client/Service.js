@@ -961,7 +961,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 	
 	editStoreUI: function(node) {
 		var me = this;
-		me.editStore(node.get('_storeId'), {
+		me.editStore(node.getFolderId(), {
 			callback: function(success) {
 				if (success) me.loadOriginNode(node.getOwnerPid());
 			}
@@ -972,7 +972,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		var me = this;
 		WT.confirm(me.res('store.confirm.delete', Ext.String.ellipsis(node.get('text'), 40)), function(bid) {
 			if(bid === 'yes') {
-				me.deleteStore(node.get('_storeId'), {
+				me.deleteStore(node.getFolderId(), {
 					callback: function(success) {
 						if (success) {
 							node.remove();
