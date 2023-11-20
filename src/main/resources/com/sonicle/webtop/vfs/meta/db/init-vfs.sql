@@ -25,10 +25,7 @@ CREATE TABLE "vfs"."sharing_links" (
 "auth_mode" varchar(1) NOT NULL,
 "password" varchar(128),
 "notify" bool DEFAULT true NOT NULL
-)
-WITH (OIDS=FALSE)
-
-;
+);
 
 -- ----------------------------
 -- Table structure for stores
@@ -43,10 +40,7 @@ CREATE TABLE "vfs"."stores" (
 "name" varchar(50) NOT NULL,
 "uri" varchar(512),
 "parameters" text
-)
-WITH (OIDS=FALSE)
-
-;
+);
 
 -- ----------------------------
 -- Alter Sequences Owned By 
