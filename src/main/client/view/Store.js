@@ -35,6 +35,9 @@ Ext.define('Sonicle.webtop.vfs.view.Store', {
 	extend: 'WTA.sdk.ModelView',
 	requires: [
 		'Sonicle.FakeInput',
+		'Sonicle.form.HSpacer',
+		'Sonicle.form.FieldSection',
+		'Sonicle.form.FieldHGroup',
 		'Sonicle.form.field.Password',
 		'Sonicle.webtop.vfs.store.Scheme',
 		'Sonicle.webtop.vfs.model.Store'
@@ -55,73 +58,80 @@ Ext.define('Sonicle.webtop.vfs.view.Store', {
 		
 		me.add({
 			region: 'center',
-			xtype: 'wtform',
+			xtype: 'wtfieldspanel',
+			paddingTop: true,
+			paddingSides: true,
+			scrollable: true,
 			modelValidation: true,
 			defaults: {
 				labelWidth: 100
 			},
-			items: [{
-				xtype: 'textfield',
-				reference: 'fldname',
-				bind: '{record.name}',
-				fieldLabel: me.mys.res('store.fld-name.lbl'),
-				anchor: '100%'
-			},
-			WTF.lookupCombo('id', 'desc', {
-				bind: '{record.scheme}',
-				allowBlank: false,
-				store: Ext.create('Sonicle.webtop.vfs.store.Scheme', {
-					autoLoad: true
-				}),
-				fieldLabel: me.mys.res('store.fld-scheme.lbl'),
-				width: 350,
-				disabled: true
-			}), {
-				xtype: 'fieldcontainer',
-				layout: 'hbox',
-				items: [{
+			items: [
+				{
 					xtype: 'textfield',
-					bind: '{record.host}',
+					reference: 'fldname',
+					bind: '{record.name}',
+					fieldLabel: me.res('store.fld-name.lbl'),
+					anchor: '100%'
+				},
+				WTF.lookupCombo('id', 'desc', {
+					bind: '{record.scheme}',
 					allowBlank: false,
-					inputType: 'url',
-					width: 160
+					store: {
+						xclass: 'Sonicle.webtop.vfs.store.Scheme',
+						autoLoad: true
+					},
+					fieldLabel: me.res('store.fld-scheme.lbl'),
+					width: 350,
+					disabled: true
+				}), {
+					xtype: 'fieldcontainer',
+					layout: 'hbox',
+					items: [
+						{
+							xtype: 'textfield',
+							bind: '{record.host}',
+							allowBlank: false,
+							inputType: 'url',
+							width: 160
+						}, {
+							xtype: 'sohspacer'
+						}, {
+							xtype: 'numberfield',
+							bind: '{record.port}',
+							inputType: 'number',
+							hideTrigger: true,
+							minValue: 1,
+							maxValue: 65000,
+							width: 100,
+							emptyText: me.res('store.fld-port.emp')
+						}
+					],
+					fieldLabel: me.res('store.fld-host.lbl')
 				}, {
-					xtype: 'displayfield',
-					value: '&nbsp;:&nbsp;'
+					xtype: 'sofakeinput' // Disable Chrome autofill
 				}, {
-					xtype: 'numberfield',
-					bind: '{record.port}',
-					inputType: 'number',
-					hideTrigger: true,
-					minValue: 1,
-					maxValue: 65000,
-					width: 60,
-					emptyText: me.mys.res('store.fld-port.lbl')
-				}],
-				fieldLabel: me.mys.res('store.fld-host.lbl')
-			}, {
-				xtype: 'sofakeinput' // Disable Chrome autofill
-			}, {
-				xtype: 'sofakeinput', // Disable Chrome autofill
-				type: 'password'
-			}, {
-				xtype: 'textfield',
-				bind: '{record.username}',
-				anchor: '80%',
-				fieldLabel: me.mys.res('store.fld-username.lbl'),
-				plugins: 'sonoautocomplete'
-			}, {
-				xtype: 'sopasswordfield',
-				bind: '{record.password}',
-				anchor: '80%',
-				fieldLabel: me.mys.res('store.fld-password.lbl'),
-				plugins: 'sonoautocomplete'
-			}, {
-				xtype: 'textfield',
-				bind: '{record.path}',
-				anchor: '100%',
-				fieldLabel: me.mys.res('store.fld-path.lbl')
-			}]
+					xtype: 'sofakeinput', // Disable Chrome autofill
+					type: 'password'
+				}, {
+					xtype: 'textfield',
+					bind: '{record.username}',
+					anchor: '80%',
+					fieldLabel: me.res('store.fld-username.lbl'),
+					plugins: 'sonoautocomplete'
+				}, {
+					xtype: 'sopasswordfield',
+					bind: '{record.password}',
+					anchor: '80%',
+					fieldLabel: me.res('store.fld-password.lbl'),
+					plugins: 'sonoautocomplete'
+				}, {
+					xtype: 'textfield',
+					bind: '{record.path}',
+					anchor: '100%',
+					fieldLabel: me.res('store.fld-path.lbl')
+				}
+			]
 		});
 		me.on('viewload', me.onViewLoad);
 	},

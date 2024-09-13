@@ -42,7 +42,8 @@ Ext.define('Sonicle.webtop.vfs.view.SharingLinks', {
 		title: '{sharingLinks.tit}',
 		iconCls: 'wtvfs-icon-sharingLinks',
 		width: 1000,
-		height: 450
+		height: 450,
+		maximized: true
 	},
 	promptConfirm: false,
 	
@@ -65,70 +66,86 @@ Ext.define('Sonicle.webtop.vfs.view.SharingLinks', {
 					return rec.get('expired') ? 'wtvfs-gplinks-row-expired' : '';
 				}
 			},
-			columns: [{
-				xtype: 'rownumberer'	
-			}, {
-				xtype: 'soiconcolumn',
-				dataIndex: 'linkType',
-				getIconCls: function(v,rec) {
-					var exp = rec.get('expired') ? 'Exp' : '';
-					return me.mys.cssIconCls((v === 'D') ? 'downloadLink'+exp : 'uploadLink'+exp);
-				},
-				getTip: function(v,rec) {
-					var exp = rec.get('expired') ? '.exp' : '';
-					return me.mys.res('sharingLinks.gp.linkType.'+v+exp);
-				},
-				iconSize: WTU.imgSizeToPx('xs'),
-				header: WTF.headerWithGlyphIcon('fas fa-link'),
-				width: 40
-			}, {
-				xtype: 'soiconcolumn',
-				dataIndex: 'storeName',
-				getIconCls: function(v,rec) {
-					return me.mys.cssIconCls(rec.get('storeIcon'));
-				},
-				iconSize: WTU.imgSizeToPx('xs'),
-				hideText: false,
-				header: me.mys.res('sharingLinks.gp.store.lbl'),
-				width: 200
-			}, {
-				xtype: 'soiconcolumn',
-				dataIndex: 'fileName',
-				getIconCls: function(v,rec) {
-					var ext = rec.get('fileExt');
-					return Ext.isEmpty(ext) ? 'wt-ftype-folder' : WTF.fileTypeCssIconCls(ext);
-				},
-				iconSize: WTU.imgSizeToPx('xs'),
-				hideText: false,
-				header: me.mys.res('sharingLinks.gp.fileName.lbl'),
-				flex: 1
-			}, {
-				dataIndex: 'parentFilePath',
-				header: me.mys.res('sharingLinks.gp.parentPath.lbl'),
-				flex: 1
-			}, {
-				xtype: 'datecolumn',
-				dataIndex: 'expireOn',
-				header: me.mys.res('sharingLinks.gp.expireOn.lbl'),
-				format: WT.getShortDateFmt(),
-				width: 100
-			}, {
-				xtype: 'templatecolumn',
-				header: me.mys.res('sharingLinks.gp.user.lbl'),
-				tpl: '{userDescription} ({userId})',
-				flex: 1
-			}],
+			columns: [
+				{
+					xtype: 'rownumberer'	
+				}, {
+					xtype: 'soiconcolumn',
+					dataIndex: 'linkType',
+					getIconCls: function(v,rec) {
+						var exp = rec.get('expired') ? '-expired' : '-active';
+						return me.mys.cssIconCls((v === 'D') ? 'downloadLink'+exp : 'uploadLink'+exp);
+					},
+					getTip: function(v,rec) {
+						var exp = rec.get('expired') ? '.exp' : '';
+						return me.res('sharingLinks.gp.linkType.'+v+exp);
+					},
+					iconSize: WTU.imgSizeToPx('xs'),
+					header: WTF.headerWithGlyphIcon('fas fa-link'),
+					width: 40
+				}, {
+					xtype: 'soiconcolumn',
+					dataIndex: 'storeName',
+					getIconCls: function(v,rec) {
+						return me.mys.cssIconCls(rec.get('storeIcon'));
+					},
+					iconSize: WTU.imgSizeToPx('xs'),
+					hideText: false,
+					text: me.res('sharingLinks.gp.store.lbl'),
+					width: 200
+				}, {
+					xtype: 'soiconcolumn',
+					dataIndex: 'fileName',
+					getIconCls: function(v,rec) {
+						var ext = rec.get('fileExt');
+						return Ext.isEmpty(ext) ? 'wt-ftype-folder' : WTF.fileTypeCssIconCls(ext);
+					},
+					iconSize: WTU.imgSizeToPx('xs'),
+					hideText: false,
+					text: me.res('sharingLinks.gp.fileName.lbl'),
+					flex: 1
+				}, {
+					dataIndex: 'parentFilePath',
+					header: me.res('sharingLinks.gp.parentPath.lbl'),
+					flex: 1
+				}, {
+					xtype: 'datecolumn',
+					dataIndex: 'expireOn',
+					renderer: function(val, meta, rec, rIdx, colIdx, sto) {
+						var s = '';
+						if (Ext.isDate(val)) {
+							s += Ext.Date.format(val, WT.getShortDateFmt());
+						}
+						if (rec.get('expired') === true) {
+							s += '&nbsp;' + me.res('sharingLinks.gp.expireOn.expired');
+						}
+						return s;
+					},
+					text: me.res('sharingLinks.gp.expireOn.lbl'),
+					format: WT.getShortDateFmt(),
+					width: 150
+				}, {
+					xtype: 'templatecolumn',
+					header: me.res('sharingLinks.gp.user.lbl'),
+					tpl: '{userDescription} ({userId})',
+					flex: 1
+				}, {
+					xtype: 'soactioncolumn',
+					menuText: WT.res('grid.actions.lbl'),
+					items: [
+						{
+							iconCls: 'fas fa-ellipsis-vertical',
+							handler: function(view, ridx, cidx, itm, e, rec) {
+								view.setSelection(rec);
+								Sonicle.Utils.showContextMenu(e, me.getRef('cxmGrid'));
+							}
+						}
+					],
+					draggable: true,
+					hideable: true
+				}
+			],
 			tbar: [
-				me.addAct('remove', {
-					text: WT.res('act-remove.lbl'),
-					tooltip: null,
-					iconCls: 'wt-icon-delete',
-					disabled: true,
-					handler: function() {
-						var sm = me.lref('gp').getSelectionModel();
-						me.deleteLinkUI(sm.getSelection()[0]);
-					}
-				}),
 				'->',
 				me.addAct('refresh', {
 					text: '',
@@ -142,20 +159,48 @@ Ext.define('Sonicle.webtop.vfs.view.SharingLinks', {
 			listeners: {
 				rowdblclick: function(s, rec) {
 					me.editLinkUI(rec);
+				},
+				rowcontextmenu: function(s, rec, itm, i, e) {
+					Sonicle.Utils.showContextMenu(e, me.getRef('cxmGrid'));
 				}
 			}
 		});
 		
-		me.getViewModel().bind({
-			bindTo: '{gp.selection}'
-		}, function(sel) {
-			me.getAct('remove').setDisabled((sel) ? false : true);
-		});
+		me.initCxm();
+	},
+	
+	initCxm: function() {
+		var me = this;
+		me.addRef('cxmGrid', Ext.create({
+			xtype: 'menu',
+			items: [
+				me.addAct('adit', {
+					text: WT.res('act-edit.lbl'),
+					tooltip: null,
+					iconCls: 'wt-icon-edit',
+					handler: function() {
+						var sel = me.getSelectedLinks();
+						if (sel.length === 1) me.editLinkUI(sel[0]);
+					}
+				}),
+				'-',
+				me.addAct('remove', {
+					text: WT.res('act-remove.lbl'),
+					tooltip: null,
+					iconCls: 'wt-icon-delete',
+					userCls: 'wt-dangerzone',
+					handler: function() {
+						var sel = me.getSelectedLinks();
+						if (sel.length === 1) me.deleteLinkUI(sel[0]);
+					}
+				})
+			]
+		}));
 	},
 	
 	editLinkUI: function(rec) {
 		var me = this,
-				linkId = rec.get('linkId');
+			linkId = rec.get('linkId');
 		me.mys.editLink(linkId, {
 			callback: function(success) {
 				if(success) {
@@ -168,18 +213,28 @@ Ext.define('Sonicle.webtop.vfs.view.SharingLinks', {
 	
 	deleteLinkUI: function(rec) {
 		var me = this,
-				linkId = rec.get('linkId');
-		WT.confirm(me.mys.res('sharingLink.confirm.delete'), function(bid) {
-			if(bid === 'yes') {
+			linkId = rec.get('linkId'),
+			type = rec.get('linkType');
+		WT.confirmOk(me.res('sharingLink.confirm.delete.'+type), function(bid) {
+			if (bid === 'ok') {
 				me.mys.deleteLink(linkId, {
 					callback: function(success) {
-						if(success) {
+						if (success) {
 							me.lref('gp').getStore().remove(rec);
-							me.fireEvent('linkupdate', me, rec.get('linkType'), linkId, rec.get('parentPath'));
+							me.fireEvent('linkupdate', me, type, linkId, rec.get('parentPath'));
 						}
 					}
 				});
 			}
+		}, me, {
+			title: me.res('sharingLink.confirm.delete.'+type+'.tit'),
+			okText: me.res('sharingLink.confirm.delete.ok')
 		});
+	},
+	
+	privates: {
+		getSelectedLinks: function() {
+			return this.lref('gp').getSelection();
+		}
 	}
 });

@@ -35,6 +35,9 @@ Ext.define('Sonicle.webtop.vfs.view.SharingLink', {
 	extend: 'WTA.sdk.ModelView',
 	requires: [
 		'Sonicle.FakeInput',
+		'Sonicle.form.HSpacer',
+		'Sonicle.form.FieldSection',
+		'Sonicle.form.FieldHGroup',
 		'Sonicle.form.Separator',
 		'Sonicle.form.Spacer',
 		'Sonicle.form.field.Password',
@@ -68,81 +71,93 @@ Ext.define('Sonicle.webtop.vfs.view.SharingLink', {
 		
 		me.add({
 			region: 'center',
-			xtype: 'wtform',
+			xtype: 'wtfieldspanel',
+			paddingTop: true,
+			paddingSides: true,
+			scrollable: true,
 			modelValidation: true,
 			defaults: {
 				labelWidth: 130
 			},
 			items: [
-			WTF.lookupCombo('id', 'desc', {
-				bind: '{record.type}',
-				allowBlank: false,
-				store: Ext.create('Sonicle.webtop.vfs.store.SharingLinkType', {
-					autoLoad: true
-				}),
-				fieldLabel: me.mys.res('sharingLink.fld-type.lbl'),
-				anchor: '100%',
-				disabled: true
-			}), {
-				xtype: 'datefield',
-				bind: '{record.expirationDate}',
-				startDay: WT.getStartDay(),
-				format: WT.getShortDateFmt(),
-				triggers: {
-					clear: WTF.clearTrigger()
-				},
-				fieldLabel: me.mys.res('sharingLink.fld-expirationDate.lbl'),
-				emptyText: WT.res('word.none.female'),
-				width: 280
-			}, 
-			WTF.lookupCombo('id', 'desc', {
-				bind: '{record.authMode}',
-				allowBlank: false,
-				store: Ext.create('Sonicle.webtop.vfs.store.SharingLinkAuthMode', {
-					autoLoad: true
-				}),
-				fieldLabel: me.mys.res('sharingLink.fld-authMode.lbl'),
-				anchor: '100%'
-			}), {
-				xtype: 'sofakeinput', // Disable Chrome autofill
-				type: 'password'
-			}, {
-				xtype: 'sopasswordfield',
-				reference: 'fldpassword',
-				bind: {
-					value: '{record.password}',
-					disabled: '{!foAuthModeIsP}'
-				},
-				fieldLabel: me.mys.res('sharingLink.fld-password.lbl'),
-				anchor: '100%'
-			}, {
-				xtype: 'sospacer',
-				mult: 2
-			}, {
-				xtype: 'soformseparator'
-			}, {
-				xtype: 'textfield',
-				bind: {
-					value: '{record.publicUrl}',
-					hidden: '{foIsUrlEmpty}'
-				},
-				editable: false,
-				selectOnFocus: true,
-				hidden: true,
-				fieldLabel: me.mys.res('sharingLink.fld-publicUrl.lbl'),
-				anchor: '100%'
-			}, {
-				xtype: 'textfield',
-				bind: {
-					value: '{record.rawPublicUrl}',
-					hidden: '{foIsRawUrlEmpty}'
-				},
-				editable: false,
-				selectOnFocus: true,
-				hidden: true,
-				fieldLabel: me.mys.res('sharingLink.fld-rawPublicUrl.lbl'),
-				anchor: '100%'
-			}]
+				WTF.lookupCombo('id', 'desc', {
+					bind: '{record.type}',
+					allowBlank: false,
+					store: {
+						xclass: 'Sonicle.webtop.vfs.store.SharingLinkType',
+						autoLoad: true
+					},
+					fieldLabel: me.res('sharingLink.fld-type.lbl'),
+					anchor: '100%',
+					disabled: true
+				}), {
+					xtype: 'datefield',
+					bind: '{record.expirationDate}',
+					startDay: WT.getStartDay(),
+					format: WT.getShortDateFmt(),
+					triggers: {
+						clear: WTF.clearTrigger()
+					},
+					fieldLabel: me.res('sharingLink.fld-expirationDate.lbl'),
+					emptyText: WT.res('word.none.female'),
+					width: 280
+				}, 
+				WTF.lookupCombo('id', 'desc', {
+					bind: '{record.authMode}',
+					allowBlank: false,
+					store: {
+						xclass: 'Sonicle.webtop.vfs.store.SharingLinkAuthMode',
+						autoLoad: true
+					},
+					fieldLabel: me.res('sharingLink.fld-authMode.lbl'),
+					anchor: '100%'
+				}), {
+					xtype: 'sofakeinput', // Disable Chrome autofill
+					type: 'password'
+				}, {
+					xtype: 'sopasswordfield',
+					reference: 'fldpassword',
+					bind: {
+						value: '{record.password}',
+						disabled: '{!foAuthModeIsP}'
+					},
+					fieldLabel: me.res('sharingLink.fld-password.lbl'),
+					anchor: '100%'
+				}, {
+					xtype: 'sospacer',
+					mult: 2
+				}, {
+					xtype: 'soformseparator'
+				}, {
+					xtype: 'textfield',
+					bind: {
+						value: '{record.publicUrl}',
+						hidden: '{foIsUrlEmpty}'
+					},
+					editable: false,
+					selectOnFocus: true,
+					hidden: true,
+					triggers: {
+						copy: WTF.copyTrigger()
+					},
+					fieldLabel: me.res('sharingLink.fld-publicUrl.lbl'),
+					anchor: '100%'
+				}, {
+					xtype: 'textfield',
+					bind: {
+						value: '{record.rawPublicUrl}',
+						hidden: '{foIsRawUrlEmpty}'
+					},
+					editable: false,
+					selectOnFocus: true,
+					hidden: true,
+					triggers: {
+						copy: WTF.copyTrigger()
+					},
+					fieldLabel: me.res('sharingLink.fld-rawPublicUrl.lbl'),
+					anchor: '100%'
+				}
+			]
 		});
 	}
 });

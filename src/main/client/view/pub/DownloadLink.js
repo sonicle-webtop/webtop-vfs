@@ -63,7 +63,7 @@ Ext.define('Sonicle.webtop.vfs.view.pub.DownloadLink', {
 					region: 'center',
 					xtype: 'grid',
 					reference: 'gpfiles',
-					cls: 'wtvfs-gpfiles',
+					cls: 'wtvfs-main-files-grid',
 					store: {
 						model: 'Sonicle.webtop.vfs.model.pub.GridFile',
 						proxy: WTF.proxy(me.mys.ID, 'PreviewFiles', 'files', {

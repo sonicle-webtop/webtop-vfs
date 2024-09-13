@@ -75,8 +75,8 @@ Ext.define('Sonicle.webtop.vfs.view.DownloadLinkWiz', {
 	
 	initComponent: function() {
 		var me = this,
-				ic = me.getInitialConfig(),
-				vm = me.getVM();
+			ic = me.getInitialConfig(),
+			vm = me.getVM();
 		
 		if(Ext.isEmpty(ic.fileId)) Ext.Error.raise('Provide a value for fileId');
 		vm.set('fileId', ic.fileId);
@@ -102,168 +102,188 @@ Ext.define('Sonicle.webtop.vfs.view.DownloadLinkWiz', {
 	
 	createPages: function(path) {
 		var me = this;
-		return [{
-			itemId: 's1',
-			xtype: 'wtwizardpage',
-			reference: 's1',
-			defaults: {
-				labelWidth: 120
-			},
-			items: [{
-				xtype: 'label',
-				html: me.mys.res('downloadLinkWiz.s1.tit'),
-				cls: 'x-window-header-title-default'
-			}, {
-				xtype: 'sospacer'
-			}, {
-				xtype: 'wtform',
-				items: [{
-					xtype: 'radiogroup',
-					layout: 'vbox',
-					bind: {
-						value: '{foExpire}'
-					},
-					items: [{
-						xtype: 'radio',
-						name: me.sufId('expire'),
-						inputValue: false,
-						boxLabel: me.mys.res('downloadLinkWiz.fld-expire.false')
-					}, {
-						xtype: 'fieldcontainer',
-						layout: 'hbox',
-						items: [{
-							xtype: 'radio',
-							name: me.sufId('expire'),
-							inputValue: true,
-							boxLabel: me.mys.res('downloadLinkWiz.fld-expire.true')
-						}, {
-							xtype: 'sospacer',
-							vertical: false
-						}, {
-							xtype: 'datefield',
-							reference: 'fldexpirationdate',
-							bind: {
-								value: '{expirationDate}',
-								disabled: '{!expire}'
-							},
-							startDay: WT.getStartDay(),
-							format: WT.getShortDateFmt(),
-							width: 120
-						}]
-					}]
-				}]
-			}]
-		}, {
-			itemId: 's2',
-			xtype: 'wtwizardpage',
-			reference: 's2',
-			defaults: {
-				labelWidth: 120
-			},
-			items: [{
-				xtype: 'label',
-				html: me.mys.res('downloadLinkWiz.s2.tit'),
-				cls: 'x-window-header-title-default'
-			}, {
-				xtype: 'sospacer'
-			}, {
-				xtype: 'wtform',
+		return [
+			{
+				itemId: 's1',
+				xtype: 'wtwizardpage',
+				reference: 's1',
 				defaults: {
-					labelWidth: 80
+					labelWidth: 120
 				},
-				items: [{
-					xtype: 'radiogroup',
-					layout: 'vbox',
-					bind: {
-						value: '{foAuthMode}'
-					},
-					items: [{
-						xtype: 'radio',
-						name: me.sufId('authMode'),
-						inputValue: 'N',
-						boxLabel: me.mys.res('store.sharingLinkAuthMode.N')
+				items: [
+					{
+						xtype: 'label',
+						html: me.mys.res('downloadLinkWiz.s1.tit'),
+						cls: 'x-window-header-title-default'
 					}, {
-						xtype: 'fieldcontainer',
-						layout: 'hbox',
-						items: [{
-							xtype: 'radio',
-							name: me.sufId('authMode'),
-							inputValue: 'P',
-							boxLabel: me.mys.res('store.sharingLinkAuthMode.P')
-						}, {
-							xtype: 'sospacer',
-							vertical: false
-						}, {
-							xtype: 'textfield',
-							reference: 'fldpassword',
-							bind: {
-								value: '{password}',
-								disabled: '{!foAuthModeIsP}'
-							},
-							width: 200,
-							emptyText: me.mys.res('downloadLinkWiz.fld-password.lbl')
-						}]
-					}]
-				}]
-			}]
-		}, {
-			itemId: 's3',
-			xtype: 'wtwizardpage',
-			items: [{
-				xtype: 'label',
-				html: me.mys.res('downloadLinkWiz.s3.tit'),
-				cls: 'x-window-header-title-default'
+						xtype: 'sospacer'
+					}, {
+						xtype: 'wtform',
+						items: [
+							{
+								xtype: 'radiogroup',
+								layout: 'vbox',
+								bind: {
+									value: '{foExpire}'
+								},
+								items: [
+									{
+										xtype: 'radio',
+										name: me.sufId('expire'),
+										inputValue: false,
+										boxLabel: me.mys.res('downloadLinkWiz.fld-expire.false')
+									}, {
+										xtype: 'fieldcontainer',
+										layout: 'hbox',
+										items: [{
+											xtype: 'radio',
+											name: me.sufId('expire'),
+											inputValue: true,
+											boxLabel: me.mys.res('downloadLinkWiz.fld-expire.true')
+										}, {
+											xtype: 'sospacer',
+											vertical: false
+										}, {
+											xtype: 'datefield',
+											reference: 'fldexpirationdate',
+											bind: {
+												value: '{expirationDate}',
+												disabled: '{!expire}'
+											},
+											startDay: WT.getStartDay(),
+											format: WT.getShortDateFmt(),
+											width: 120
+										}]
+									}
+								]
+							}
+						]
+					}
+				]
 			}, {
-				xtype: 'sospacer'
-			}, {
-				xtype: 'label',
-				html: me.mys.res('downloadLinkWiz.s3.txt')
-			}, {
-				xtype: 'wtform',
+				itemId: 's2',
+				xtype: 'wtwizardpage',
+				reference: 's2',
 				defaults: {
-					labelWidth: 80
+					labelWidth: 120
 				},
-				items: [{
-					xtype: 'textfield',
-					bind: {
-						value: '{url}',
-						hidden: '{foIsUrlEmpty}'
-					},
-					editable: false,
-					selectOnFocus: true,
-					hidden: true,
-					fieldLabel: me.mys.res('downloadLinkWiz.fld-url.lbl'),
-					anchor: '100%'
-				}, {
-					xtype: 'textfield',
-					bind: {
-						value: '{rawUrl}',
-						hidden: '{foIsRawUrlEmpty}'
-					},
-					editable: false,
-					selectOnFocus: true,
-					hidden: true,
-					fieldLabel: me.mys.res('downloadLinkWiz.fld-rawUrl.lbl'),
-					anchor: '100%'
-				}]
-			}]
-		}];
+				items: [
+					{
+						xtype: 'label',
+						html: me.mys.res('downloadLinkWiz.s2.tit'),
+						cls: 'x-window-header-title-default'
+					}, {
+						xtype: 'sospacer'
+					}, {
+						xtype: 'wtform',
+						defaults: {
+							labelWidth: 80
+						},
+						items: [
+							{
+								xtype: 'radiogroup',
+								layout: 'vbox',
+								bind: {
+									value: '{foAuthMode}'
+								},
+								items: [
+									{
+										xtype: 'radio',
+										name: me.sufId('authMode'),
+										inputValue: 'N',
+										boxLabel: me.mys.res('store.sharingLinkAuthMode.N')
+									}, {
+										xtype: 'fieldcontainer',
+										layout: 'hbox',
+										items: [
+											{
+												xtype: 'radio',
+												name: me.sufId('authMode'),
+												inputValue: 'P',
+												boxLabel: me.mys.res('store.sharingLinkAuthMode.P')
+											}, {
+												xtype: 'sospacer',
+												vertical: false
+											}, {
+												xtype: 'textfield',
+												reference: 'fldpassword',
+												bind: {
+													value: '{password}',
+													disabled: '{!foAuthModeIsP}'
+												},
+												width: 200,
+												emptyText: me.mys.res('downloadLinkWiz.fld-password.lbl')
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}, {
+				itemId: 's3',
+				xtype: 'wtwizardpage',
+				items: [
+					{
+						xtype: 'label',
+						html: me.mys.res('downloadLinkWiz.s3.tit'),
+						cls: 'x-window-header-title-default'
+					}, {
+						xtype: 'sospacer'
+					}, {
+						xtype: 'label',
+						html: me.mys.res('downloadLinkWiz.s3.txt')
+					}, {
+						xtype: 'wtform',
+						defaults: {
+							labelWidth: 80
+						},
+						items: [
+							{
+								xtype: 'textfield',
+								bind: {
+									value: '{url}',
+									hidden: '{foIsUrlEmpty}'
+								},
+								editable: false,
+								selectOnFocus: true,
+								hidden: true,
+								fieldLabel: me.mys.res('downloadLinkWiz.fld-url.lbl'),
+								anchor: '100%'
+							}, {
+								xtype: 'textfield',
+								bind: {
+									value: '{rawUrl}',
+									hidden: '{foIsRawUrlEmpty}'
+								},
+								editable: false,
+								selectOnFocus: true,
+								hidden: true,
+								fieldLabel: me.mys.res('downloadLinkWiz.fld-rawUrl.lbl'),
+								anchor: '100%'
+							}
+						]
+					}
+				]
+			}
+		];
 	},
 	
 	onBeforeNavigate: function(s, dir, np, pp) {
-		if(dir === -1) return;
+		if (dir === -1) return;
 		var me = this,
-				ret = true,
-				ppcmp = me.getPageCmp(pp),
-				vm = me.getVM();
+			ret = true,
+			ppcmp = me.getPageCmp(pp),
+			vm = me.getVM();
 		
-		if(pp === 's1') {
+		if (pp === 's1') {
 			ret = ppcmp.down('wtform').isValid();
-			if(!ret) return false;
+			if (!ret) return false;
 			
 		} else if(pp === 's2') {
 			ret = ppcmp.down('wtform').isValid();
-			if(!ret) return false;
+			if (!ret) return false;
 			
 			WT.ajaxReq(me.mys.ID, 'WizardDownloadLink', {
 				params: {

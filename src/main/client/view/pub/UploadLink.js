@@ -34,7 +34,7 @@
 Ext.define('Sonicle.webtop.vfs.view.pub.UploadLink', {
 	extend: 'WTA.ux.panel.Panel',
 	requires: [
-		'Sonicle.plugin.FileDrop',
+		'Sonicle.plugin.DropMask',
 		'Sonicle.upload.Button',
 		'WTA.ux.UploadBar',
 		'WTA.ux.panel.Panel',
@@ -100,8 +100,12 @@ Ext.define('Sonicle.webtop.vfs.view.pub.UploadLink', {
 					store: btnupl.uploader.getStore(),
 					plugins: [
 						{
-							ptype: 'sofiledrop',
-							text: WT.res('sofiledrop.text')
+							ptype: 'sodropmask',
+							text: WT.res('sofiledrop.text'),
+							monitorExtDrag: false,
+							shouldSkipMasking: function(dragOp) {
+								return !Sonicle.plugin.DropMask.isBrowserFileDrag(dragOp);
+							}
 						}
 					],
 					tbar: [

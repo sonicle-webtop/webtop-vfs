@@ -57,8 +57,8 @@ Ext.define('Sonicle.webtop.vfs.view.QRCodeGen', {
 	
 	initComponent: function() {
 		var me = this,
-				ic = me.getInitialConfig(),
-				vm = me.getVM();
+			ic = me.getInitialConfig(),
+			vm = me.getVM();
 		
 		if (ic.data) {
 			vm.set('data', Ext.apply({}, ic.data, {
@@ -70,12 +70,7 @@ Ext.define('Sonicle.webtop.vfs.view.QRCodeGen', {
 		Ext.apply(me, {
 			buttons: [
 				{
-					text: WT.res('act-save.lbl'),
-					handler: function() {
-						Sonicle.URLMgr.download(me.lref('fldqrcode').buildUrl(me.getVM().get('data.linkId')) + "&download=true");
-					}
-				},
-				{
+					ui: '{tertiary}',
 					text: WT.res('act-print.lbl'),
 					handler: function() {
 						var src = me.lref('fldqrcode').buildUrl(me.getVM().get('data.linkId')),
@@ -83,10 +78,12 @@ Ext.define('Sonicle.webtop.vfs.view.QRCodeGen', {
 						Sonicle.PrintMgr.print(html, 'raw', {verticalAlign:'center', horizontalAlign:'center'});						//var el = me.lref('fldqrcode').inputWrap;
 						//if (el) Sonicle.PrintMgr.print(el.dom.innerHTML, 'raw', {verticalAlign:'center', horizontalAlign:'center'});
 					}
-				}, {
-					text: WT.res('act-ok.lbl'),
+				},
+				{
+					ui: '{primary}',
+					text: WT.res('act-download.lbl'),
 					handler: function() {
-						me.closeView(false);
+						Sonicle.URLMgr.download(me.lref('fldqrcode').buildUrl(me.getVM().get('data.linkId')) + "&download=true");
 					}
 				}
 			],
@@ -124,18 +121,20 @@ Ext.define('Sonicle.webtop.vfs.view.QRCodeGen', {
 			region: 'center',
 			xtype: 'wtpanel',
 			layout: 'center',
-			items: [{
-				xtype: 'sodisplayimagefield',
-				reference: 'fldqrcode',
-				bind: '{data.linkId}',
-				baseImageUrl: WTF.processBinUrl(me.mys.ID, 'GetLinkQRCode'),
-				urlExtraParams: {
-					size: vm.get('data.size'),
-					color: vm.get('data.color')
-				},
-				imageWidth: vm.get('data.size'),
-				imageHeight: vm.get('data.size')
-			}]
+			items: [
+				{
+					xtype: 'sodisplayimagefield',
+					reference: 'fldqrcode',
+					bind: '{data.linkId}',
+					baseImageUrl: WTF.processBinUrl(me.mys.ID, 'GetLinkQRCode'),
+					urlExtraParams: {
+						size: vm.get('data.size'),
+						color: vm.get('data.color')
+					},
+					imageWidth: vm.get('data.size'),
+					imageHeight: vm.get('data.size')
+				}
+			]
 		});
 		vm.bind('{data.size}', me.onSizeChange, me);
 		vm.bind('{data.color}', me.onColorChange, me);
@@ -144,12 +143,12 @@ Ext.define('Sonicle.webtop.vfs.view.QRCodeGen', {
 	onSizeChange: function(nv, ov) {
 		if (ov === undefined) return;
 		var me = this,
-				fldqr = me.lref('fldqrcode'),
-				vm = me.getVM(),
-				color = vm.get('data.color'),
-				delta = nv - ov,
-				osize = fldqr.getSize().width,
-				nsize = osize + delta;
+			fldqr = me.lref('fldqrcode'),
+			vm = me.getVM(),
+			color = vm.get('data.color'),
+			delta = nv - ov,
+			osize = fldqr.getSize().width,
+			nsize = osize + delta;
 				
 		me.updateQRCodeConfigs(nv, color);
 		fldqr.setFieldStyle(fldqr.getFieldStyle());
@@ -159,8 +158,8 @@ Ext.define('Sonicle.webtop.vfs.view.QRCodeGen', {
 	onColorChange: function(nv, ov) {
 		if (ov === undefined) return;
 		var me = this,
-				vm = me.getVM(),
-				size = vm.get('data.size');
+			vm = me.getVM(),
+			size = vm.get('data.size');
 		me.updateQRCodeConfigs(size, nv);
 	},
 	

@@ -1,10 +1,12 @@
-.wtvfs-icon-service { background-image: url('service_16.svg') !important; background-size: contain; }
-.wtvfs-icon-service-xs { background-image: url('service_16.svg') !important; background-size: contain; }
-.wtvfs-icon-service-s { background-image: url('service_16.svg') !important; background-size: contain; }
-.wtvfs-icon-service-m { background-image: url('service_32.svg') !important; background-size: contain; }
-.wtvfs-icon-service-l { background-image: url('service_32.svg') !important; background-size: contain; }
-
-.wtvfs-icon-rootfolder { background-image: url('rootfolder_16.svg') !important; background-size: contain; }
+/* ---------- Icons (service) */
+.wtvfs-icon-service,
+.wtvfs-icon-service-sm { background-image: url('service@sm.svg') !important; background-size: contain; }
+.wtvfs-icon-service-off-sm { background-image: url('service@sm.svg') !important; background-size: contain; }
+.wtvfs-icon-service-md { background-image: url('service@md.svg') !important; background-size: contain; }
+.wtvfs-icon-service-off-md { background-image: url('service@md.svg') !important; background-size: contain; }
+.wtvfs-icon-service-lg { background-image: url('service@lg.svg') !important; background-size: contain; }
+.wtvfs-icon-service-off-lg { background-image: url('service@lg.svg') !important; background-size: contain; }
+/* ---------- Icons (actions) */
 .wtvfs-icon-addStore { background-image: url('store-add_16.svg') !important; background-size: contain; }
 .wtvfs-icon-addStoreFtp { background-image: url('store-ftp_16.svg') !important; background-size: contain; }
 .wtvfs-icon-addStoreDropbox { background-image: url('dropbox_16.svg') !important; background-size: contain; }
@@ -23,6 +25,8 @@
 .wtvfs-icon-addFileDlLink { background-image: url('linkDownload_16.svg') !important; background-size: contain; }
 .wtvfs-icon-addFileUlLink { background-image: url('linkUpload_16.svg') !important; background-size: contain; }
 .wtvfs-icon-genFileDlQRcode { background-image: url('qrcode_16.svg') !important; background-size: contain; }
+/* ---------- Icons (others) */
+.wtvfs-icon-rootfolder { background-image: url('rootfolder_16.svg') !important; background-size: contain; }
 .wtvfs-icon-store { background-image: url('store_16.svg') !important; background-size: contain; }
 .wtvfs-icon-storeMy { background-image: url('store-my_16.svg') !important; background-size: contain; }
 .wtvfs-icon-storeIncoming { background-image: url('store-incoming_16.svg') !important; background-size: contain; }
@@ -37,13 +41,15 @@
 .wtvfs-icon-storeNextcloud { background-image: url('nextcloud_16.svg') !important; background-size: contain; }
 .wtvfs-icon-storeOther { background-image: url('store_16.svg') !important; background-size: contain; }
 .wtvfs-icon-downloadLink { background-image: url('linkDownload_16.svg') !important; background-size: contain; }
-.wtvfs-icon-downloadLinkExp { background-image: url('linkDownload-broken_16.svg') !important; background-size: contain; }
+.wtvfs-icon-downloadLink-active { background-image: url('linkDownload_16.svg') !important; background-size: contain; }
+.wtvfs-icon-downloadLink-expired { background-image: url('linkDownload-broken_16.svg') !important; background-size: contain; }
 .wtvfs-icon-uploadLink { background-image: url('linkUpload_16.svg') !important; background-size: contain; }
-.wtvfs-icon-uploadLinkExp { background-image: url('linkUpload-broken_16.svg') !important; background-size: contain; }
+.wtvfs-icon-uploadLink-active { background-image: url('linkUpload_16.svg') !important; background-size: contain; }
+.wtvfs-icon-uploadLink-expired { background-image: url('linkUpload-broken_16.svg') !important; background-size: contain; }
 .wtvfs-icon-sharingLink { background-image: url('sharingLink_16.svg') !important; background-size: contain; }
 .wtvfs-icon-sharingLinks { background-image: url('sharingLinks_16.svg') !important; background-size: contain; }
 .wtvfs-icon-qrCodeGen { background-image: url('qrcode_16.svg') !important; background-size: contain; }
 
-.wtvfs-gpfiles .x-grid-empty { text-align: center; }
-.wtvfs-gpfiles .x-grid-cell-inner a:link { color: #336699; }
-.wtvfs-gplinks-row-expired { color: #E60D35; }
+/*.wtvfs-gpfiles .x-grid-empty { text-align: center; }*/
+/*.wtvfs-gpfiles .x-grid-cell-inner a:link { color: #336699; }*/
+.wtvfs-gplinks-row-expired { color: var(--wt-theme-color-error); }

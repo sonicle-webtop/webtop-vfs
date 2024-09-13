@@ -43,7 +43,7 @@ Ext.define('Sonicle.webtop.vfs.view.NextcloudWiz', {
 		title: '{nextcloudWiz.tit}',
 		iconCls: 'wtvfs-icon-storeNextcloud',
 		width: 450,
-		height: 320
+		height: 340
 	},
 	useTrail: true,
 	
