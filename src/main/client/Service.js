@@ -273,12 +273,12 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 								//'-',
 								'->',
 								me.getActAs('createFolder', 'button', {
-									ui: '{secondary}',
+									ui: '{secondary|toolbar}',
 									text: me.res('act-createFileFolder.lbl'),
 									tooltip: null
 								}),
 								me.getActAs('createDocument', 'button', {
-									ui: '{secondary}',
+									ui: '{secondary|toolbar}',
 									text: me.res('act-createDocument.lbl'),
 									tooltip: null,
 									hidden: !WT.getVar('docServerEnabled'),
