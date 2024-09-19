@@ -42,8 +42,7 @@ Ext.define('Sonicle.webtop.vfs.view.SharingLinks', {
 		title: '{sharingLinks.tit}',
 		iconCls: 'wtvfs-icon-sharingLinks',
 		width: 1000,
-		height: 450,
-		maximized: true
+		height: 450
 	},
 	promptConfirm: false,
 	
