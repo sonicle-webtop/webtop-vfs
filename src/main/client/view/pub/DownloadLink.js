@@ -103,7 +103,7 @@ Ext.define('Sonicle.webtop.vfs.view.pub.DownloadLink', {
 							xtype: 'solinkcolumn',
 							dataIndex: 'name',
 							header: me.mys.res('gpfiles.name.lbl'),
-							tdCls: 'wt-theme-text-hyperlink',
+							tdCls: 'wt-theme-text-color-hyperlink',
 							listeners: {
 								linkclick: function(s,idx,rec) {
 									if (rec.get('type') === 'folder') {
