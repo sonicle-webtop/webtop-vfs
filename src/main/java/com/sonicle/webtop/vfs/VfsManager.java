@@ -33,6 +33,7 @@
 package com.sonicle.webtop.vfs;
 
 import com.sonicle.commons.AlgoUtils;
+import com.sonicle.commons.ClassUtils;
 import com.sonicle.commons.EnumUtils;
 import com.sonicle.commons.LangUtils;
 import com.sonicle.commons.PathUtils;
@@ -819,10 +820,10 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		// Firstly try to get template file specific for target locale, 
 		// otherwise look for the template in english (en) locale.
 		String fileExt = EnumUtils.toSerializedName(fileTemplate);
-		tplName = MessageFormat.format(RESOURCE_NAME, LangUtils.packageToPath(SERVICE_ID), getLocale().getLanguage(), fileExt);
+		tplName = MessageFormat.format(RESOURCE_NAME, ClassUtils.classPackageAsPath(SERVICE_ID), getLocale().getLanguage(), fileExt);
 		tplUrl = this.getClass().getResource(tplName);
 		if (tplUrl == null) {
-			tplName = MessageFormat.format(RESOURCE_NAME, LangUtils.packageToPath(SERVICE_ID), "en", fileExt);
+			tplName = MessageFormat.format(RESOURCE_NAME, ClassUtils.classPackageAsPath(SERVICE_ID), "en", fileExt);
 			tplUrl = this.getClass().getResource(tplName);
 		}
 		if (tplUrl == null) throw new WTException("Template file not found [{}]", tplName);
