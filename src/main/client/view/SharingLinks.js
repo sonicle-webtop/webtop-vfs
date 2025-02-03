@@ -133,7 +133,7 @@ Ext.define('Sonicle.webtop.vfs.view.SharingLinks', {
 					menuText: WT.res('grid.actions.lbl'),
 					items: [
 						{
-							iconCls: 'fas fa-ellipsis-vertical',
+							iconCls: 'wt-glyph-menu-kebab',
 							handler: function(view, ridx, cidx, itm, e, rec) {
 								view.setSelection(rec);
 								Sonicle.Utils.showContextMenu(e, me.getRef('cxmGrid'));
