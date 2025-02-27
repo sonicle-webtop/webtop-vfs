@@ -865,9 +865,9 @@ public class Service extends BaseService {
 				if ((folder != null) && folder.getPermissions().getItemsPermissions().has(FolderShare.ItemsRight.UPDATE)) writable = true;
 				
 				StoreFileDocEditorDocumentHandler docHandler = new StoreFileDocEditorDocumentHandler(writable, getEnv().getProfileId(), fileHash, nodeId.getFolderId(), nodeId.getFilePath());
-				DocEditorManager.DocumentConfig config = getWts().prepareDocumentEditing(docHandler, filename, lastModified);
+				DocEditorManager.EditingResult result = getWts().docEditorPrepareEditing(docHandler, filename, lastModified);
 				
-				new JsonResult(config).printTo(out);
+				new JsonResult(result).printTo(out);
 			}
 			
 		} catch(Exception ex) {
