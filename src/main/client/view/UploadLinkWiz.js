@@ -148,7 +148,7 @@ Ext.define('Sonicle.webtop.vfs.view.UploadLinkWiz', {
 							},
 							startDay: WT.getStartDay(),
 							format: WT.getShortDateFmt(),
-							width: 120
+							width: 140
 						}]
 					}]
 				}]
