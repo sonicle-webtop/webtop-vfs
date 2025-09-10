@@ -209,7 +209,8 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 		
 		var gpfilesId = Ext.id(null, 'gridpanel');
 		me.setMainComponent(Ext.create({
-			xtype: 'container',
+			xtype: 'wtpanelct',
+			cls: 'wtvfs-main',
 			layout: 'border',
 			referenceHolder: true,
 			/*viewModel: {
@@ -236,10 +237,10 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 			},*/
 			items: [
 				{
-					xtype: 'wtpanel',
+					xtype: 'wtpanelct',
 					region: 'center',
 					itemId: 'files',
-					cls: 'wtvfs-main-files',
+					cls: 'wtvfs-main-list',
 					layout: 'vbox',
 					defaults: {
 						width: '100%'
@@ -247,7 +248,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 					items: [
 						{
 							xtype: 'toolbar',
-							cls: 'wtvfs-main-files-toolbar',
+							cls: 'wtvfs-main-list-toolbar',
 							border: false,
 							overflowHandler: 'scroller',
 							items: [
@@ -300,11 +301,12 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 						me.createFilesGridCfg({
 							id: gpfilesId, // necessary for d&d
 							reference: 'gpfiles',
+							cls: 'wtvfs-main-list-grid',
 							flex: 1
 						}),
 						{
 							xtype: 'toolbar',
-							cls: 'wtvfs-main-files-footer',
+							cls: 'wtvfs-main-list-footer',
 							border: false,
 							items: [
 								me.createUploadBarCfg(gpfilesId, {
