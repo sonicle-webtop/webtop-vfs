@@ -93,7 +93,7 @@ Ext.define('Sonicle.webtop.vfs.view.pub.DownloadLink', {
 						{
 							xtype: 'soiconcolumn',
 							dataIndex: 'type',
-							header: WTF.headerWithGlyphIcon('far fa-file'),
+							header: WTF.headerWithGlyphIcon('wt-glyph-file'),
 							getIconCls: function(v,rec) {
 								return (v === 'folder') ? 'wt-ftype-folder' : WTF.fileTypeCssIconCls(rec.get('ext'));
 							},

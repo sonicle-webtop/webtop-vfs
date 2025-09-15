@@ -2131,7 +2131,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 							var exp = rec.get('dlLinkExp') ? '.exp' : '';
 							return me.res('gpfiles.dlLink'+exp);
 						},
-						text: WTF.headerWithGlyphIcon('fas fa-cloud-download-alt'),
+						text: WTF.headerWithGlyphIcon('wt-glyph-cloud-arrow-down'),
 						iconSize: 16,
 						width: 40
 					}, {
@@ -2147,7 +2147,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 							var exp = rec.get('ulLinkExp') ? '.exp' : '';
 							return me.res('gpfiles.ulLink'+exp);
 						},
-						text: WTF.headerWithGlyphIcon('fas fa-cloud-upload-alt'),
+						text: WTF.headerWithGlyphIcon('wt-glyph-cloud-arrow-up'),
 						iconSize: 16,
 						width: 40
 					}, {
