@@ -36,15 +36,9 @@ Ext.define('Sonicle.webtop.vfs.PublicService', {
 	
 	init: function() {
 		var me = this;
-		me.setMainComponent(Ext.create('Sonicle.webtop.vfs.view.pub.'+me.getVar('view'), {
+		me.setMainComponent(Ext.create('Sonicle.webtop.vfs.view-public.'+me.getVar('view'), {
 			region: 'center',
 			mys: me
 		}));
-		Ext.on('resize', me.onResize, me, {buffer: 150});
-	},
-	
-	onResize: function() {
-		var main = this.getMainComponent();
-		if (main) main.updateLayout();
 	}
 });

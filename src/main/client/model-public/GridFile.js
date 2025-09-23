@@ -1,5 +1,4 @@
-/*
- * webtop-vfs is a WebTop Service developed by Sonicle S.r.l.
+/* 
  * Copyright (C) 2014 Sonicle S.r.l.
  *
  * This program is free software; you can redistribute it and/or modify it under
@@ -11,7 +10,7 @@
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
  * details.
  *
  * You should have received a copy of the GNU Affero General Public License
@@ -19,7 +18,7 @@
  * the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  * MA 02110-1301 USA.
  *
- * You can contact Sonicle S.r.l. at email address sonicle@sonicle.com
+ * You can contact Sonicle S.r.l. at email address sonicle[at]sonicle[dot]com
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
@@ -27,16 +26,22 @@
  *
  * In accordance with Section 7(b) of the GNU Affero General Public License
  * version 3, these Appropriate Legal Notices must retain the display of the
- * "Powered by Sonicle WebTop" logo. If the display of the logo is not reasonably
- * feasible for technical reasons, the Appropriate Legal Notices must display
- * the words "Powered by Sonicle WebTop".
+ * Sonicle logo and Sonicle copyright notice. If the display of the logo is not
+ * reasonably feasible for technical reasons, the Appropriate Legal Notices must
+ * display the words "Copyright (C) 2014 Sonicle S.r.l.".
  */
-Ext.define('Sonicle.webtop.vfs.view.pub.Error', {
-	extend: 'Sonicle.webtop.core.view.pub.Error',
+Ext.define('Sonicle.webtop.vfs.model-public.GridFile', {
+	extend: 'WTA.ux.data.BaseModel',
 	
-	initComponent: function() {
-		var me = this;
-		me.message = me.mys.res('pub.error.' + me.mys.getVar('reskey'));
-		me.callParent(arguments);
-	}
+	idProperty: 'fileId',
+	fields: [
+		WTF.roField('fileId', 'string'),
+		WTF.roField('type', 'string'),
+		//WTF.roField('mtype', 'string'),
+		WTF.roField('name', 'string'),
+		WTF.roField('ext', 'string'),
+		WTF.roField('size', 'int'),
+		WTF.roField('lastModified', 'date', {dateFormat: 'Y-m-d H:i:s'}),
+		WTF.roField('url', 'string')
+	]
 });

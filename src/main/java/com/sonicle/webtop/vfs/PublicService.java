@@ -138,7 +138,7 @@ public class PublicService extends BasePublicService {
 					writeErrorPage(request, response, domainId, wts, "linkexpired");
 
 				} else if (!isLinkAuthorized(link)) { // Link not authorized
-					writeLinkPage(request, response, domainId, wts, "Authorize", link);
+					writeLinkPage(request, response, domainId, wts, "Authenticate", link);
 
 				} else if (link.getLinkType().equals(SharingLink.LinkType.DOWNLOAD)) {
 					VfsManager vfsMgr = (VfsManager)WT.getServiceManager(SERVICE_ID, true, link.getProfileId());
