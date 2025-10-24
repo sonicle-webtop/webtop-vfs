@@ -50,7 +50,7 @@
 /*.wtvfs-icon-sharingLinks { background-image: url('sharingLinks_16.svg') !important; background-size: contain; }*/
 /*.wtvfs-icon-qrCodeGen { background-image: url('qrcode_16.svg') !important; background-size: contain; }*/
 
-/* ---------- Main (center) container */
+/* ---------- Main */
 .wtvfs-main {
 	border-top-left-radius: 10px;
     border-bottom-left-radius: 10px;

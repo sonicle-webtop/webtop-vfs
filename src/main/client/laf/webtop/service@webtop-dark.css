@@ -1,0 +1,5 @@
+/* ---------- Main */
+.wtvfs-main-list .x-panel-body,
+.wtvfs-main-list .x-toolbar {
+    background-color: var(--wt-theme-color-surface-l0);
+}
