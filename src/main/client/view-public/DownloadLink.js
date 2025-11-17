@@ -167,16 +167,17 @@ Ext.define('Sonicle.webtop.vfs.view-public.DownloadLink', {
 					{
 						xtype: 'soiconcolumn',
 						dataIndex: 'type',
-						text: WTF.headerWithGlyphIcon('wt-glyph-file'),
 						getIconCls: function(v,rec) {
 							return (v === 'folder') ? 'wt-ftype-folder' : WTF.fileTypeCssIconCls(rec.get('ext'));
 						},
 						iconSize: WTU.imgSizeToPx('xs'),
+						text: WTF.headerWithGlyphIcon('wt-glyph-file'),
+						sortable: false,
+						hideable: false,
 						width: 35
 					}, {
 						xtype: 'solinkcolumn',
 						dataIndex: 'name',
-						text: me.res('gpfiles.name.lbl'),
 						tdCls: 'wt-color-hyperlink',
 						listeners: {
 							linkclick: function(s,idx,rec) {
@@ -185,6 +186,7 @@ Ext.define('Sonicle.webtop.vfs.view-public.DownloadLink', {
 								}
 							}
 						},
+						text: me.res('gpfiles.name.lbl'),
 						flex: 1
 					}, {
 						xtype: 'sobytescolumn',
@@ -194,9 +196,9 @@ Ext.define('Sonicle.webtop.vfs.view-public.DownloadLink', {
 						maxWidth: 130,
 						flex: 1
 					}, {
+						xtype: 'datecolumn',
 						dataIndex: 'lastModified',
 						text: me.res('gpfiles.lastModified.lbl'),
-						xtype: 'datecolumn',
 						format: 'D, d M Y H:i:s',
 						minWidth: 150,
 						maxWidth: 200,
@@ -212,7 +214,8 @@ Ext.define('Sonicle.webtop.vfs.view-public.DownloadLink', {
 									me.openDlUrl(rec.get('fileId'));
 								}
 							}
-						]
+						],
+						menuText: WT.res('grid.actions.lbl')
 					}
 				],
 				listeners: {
