@@ -137,6 +137,7 @@ Ext.define('Sonicle.webtop.vfs.Service', {
 				{
 					xtype: 'treepanel',
 					reference: 'trstores',
+					scrollable: { trackPosition: 'v' },
 					cls: 'wt-tool-tree wtvfs-tool-tree',
 					bodyCls: 'wt-tool-bg',
 					border: false,
