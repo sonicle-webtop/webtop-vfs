@@ -33,8 +33,12 @@
 package com.sonicle.webtop.vfs;
 
 import com.sonicle.commons.EnumUtils;
-import com.sonicle.security.Principal;
+import com.sonicle.commons.URIUtils;
+import com.sonicle.security.PasswordUtils;
 import com.sonicle.webtop.core.app.RunContext;
+import com.sonicle.webtop.core.app.WT;
+import com.sonicle.webtop.core.app.WebTopManager;
+import com.sonicle.webtop.core.sdk.UserProfileId;
 import com.sonicle.webtop.vfs.bol.OStore;
 import com.sonicle.webtop.vfs.model.Store;
 import java.net.URI;
@@ -71,8 +75,8 @@ public class ManagerUtils {
 			tgt.setName(src.getName());
 			URI uri = new URI(src.getUri());
 			if (Store.BUILTIN_NO.equals(src.getBuiltIn()) && StringUtils.isBlank(uri.getUserInfo())) {
-				Principal principal = RunContext.getPrincipal();
-				String newUserInfo = principal.getUserId()+":"+new String(principal.getPassword());
+				UserProfileId pid = UserProfileId.from(RunContext.getPrincipal());
+				String newUserInfo = URIUtils.asUserInfo(pid.getUserId(), PasswordUtils.asString(WT.lookupSecretStoreValue(pid, WebTopManager.PSVKEY_PPW)));
 				uri = new URI(uri.getScheme(), newUserInfo, uri.getHost(), uri.getPort(), uri.getPath(), uri.getQuery(), uri.getFragment());
 			}
 			tgt.setUri(uri);
