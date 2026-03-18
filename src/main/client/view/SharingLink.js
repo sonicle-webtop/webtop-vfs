@@ -55,13 +55,14 @@ Ext.define('Sonicle.webtop.vfs.view.SharingLink', {
 	modelName: 'Sonicle.webtop.vfs.model.SharingLink',
 	
 	constructor: function(cfg) {
-		var me = this;
+		var me = this,
+			SoVMU = Sonicle.VMUtils;
 		me.callParent([cfg]);
 		
-		WTU.applyFormulas(me.getVM(), {
-			foIsUrlEmpty: WTF.foIsEmpty('record', 'publicUrl'),
-			foIsRawUrlEmpty: WTF.foIsEmpty('record', 'rawPublicUrl'),
-			foAuthModeIsP: WTF.foIsEqual('record', 'authMode', 'P')
+		SoVMU.applyFormulas(me.getVM(), {
+			foIsUrlEmpty: WTF.foFieldIsEmpty('publicUrl'),
+			foIsRawUrlEmpty: WTF.foFieldIsEmpty('rawPublicUrl'),
+			foAuthModeIsP: WTF.foFieldIsEqual('authMode', 'P')
 		});
 	},
 	

@@ -61,15 +61,16 @@ Ext.define('Sonicle.webtop.vfs.view.UploadLinkWiz', {
 	},
 	
 	constructor: function(cfg) {
-		var me = this;
+		var me = this,
+			SoVMU = Sonicle.VMUtils;
 		me.callParent([cfg]);
 		
-		WTU.applyFormulas(me.getVM(), {
+		SoVMU.applyFormulas(me.getVM(), {
 			foExpire: WTF.radioGroupBind('', 'expire', me.sufId('expire')),
 			foAuthMode: WTF.radioGroupBind('', 'authMode', me.sufId('authMode')),
-			foAuthModeIsP: WTF.foIsEqual('', 'authMode', 'P'),
-			foIsUrlEmpty: WTF.foIsEmpty('', 'url'),
-			foIsRawUrlEmpty: WTF.foIsEmpty('', 'rawUrl')
+			foAuthModeIsP: SoVMU.foPropIsEqual('', 'authMode', 'P'),
+			foIsUrlEmpty: SoVMU.foPropIsEmpty('', 'url'),
+			foIsRawUrlEmpty: SoVMU.foPropIsEmpty('', 'rawUrl')
 		});
 	},
 	

@@ -1568,7 +1568,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			
 			InternetAddress from = WT.getNotificationAddress(pid.getDomainId());
 			if (from == null) throw new WTException("Error building sender address");
-			InternetAddress to = ud.getEmail();
+			InternetAddress to = ud.getPersonalEmail();
 			if (to == null) throw new WTException("Error building destination address");
 			WT.sendEmail(getMailSession(), true, from, to, subject, html);
 
