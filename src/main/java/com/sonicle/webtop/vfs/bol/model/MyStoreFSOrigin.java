@@ -45,6 +45,6 @@ import com.sonicle.webtop.vfs.model.StoreFSOrigin;
 public class MyStoreFSOrigin extends StoreFSOrigin {
 	
 	public MyStoreFSOrigin(UserProfileId originProfileId) {
-		super(new ShareOrigin(originProfileId, WT.getUserData(originProfileId).getDisplayName()), FolderShare.Permissions.full());
+		super(new ShareOrigin(originProfileId, WT.getProfileData(originProfileId).getDisplayName()), FolderShare.Permissions.full());
 	}
 }

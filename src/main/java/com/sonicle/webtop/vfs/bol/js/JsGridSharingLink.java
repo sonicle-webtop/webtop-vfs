@@ -71,7 +71,7 @@ public class JsGridSharingLink {
 	public JsGridSharingLink(SharingLink sl, String storeName, String storeIcon, StoreNodeId baseFolderId, DateTimeZone profileTz) throws FileSystemException {
 		this.linkId = sl.getLinkId();
 		this.userId = baseFolderId.getOriginAsProfileId().getUserId();
-		this.userDescription = WT.getUserData(baseFolderId.getOriginAsProfileId()).getDisplayName();
+		this.userDescription = WT.getProfileData(baseFolderId.getOriginAsProfileId()).getDisplayName();
 		this.linkType = EnumUtils.toSerializedName(sl.getLinkType());
 		this.storeId = sl.getStoreId();
 		this.storeName = storeName;

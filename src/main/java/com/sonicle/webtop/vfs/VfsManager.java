@@ -1559,16 +1559,16 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		
 		//TODO: rendere relativa la path del file rispetto allo Store???
 		try {
-			UserProfile.Data ud = WT.getUserData(olink.getProfileId());
-			String bodyHeader = lookupResource(ud.getLocale(), BHD_KEY);
-			String source = NotificationHelper.buildSource(ud.getLocale(), SERVICE_ID);
-			String subject = TplHelper.buildLinkUsageEmailSubject(ud.getLocale(), bodyHeader);
-			String customBody = TplHelper.buildLinkUsageBodyTpl(ud.getLocale(), olink.getSharingLinkId(), PathUtils.getFileName(olink.getFilePath()), path, ipAddress, userAgent);
-			String html = NotificationHelper.buildCustomBodyTplForNoReplay(ud.getLocale(), source, bodyHeader, customBody);
+			UserProfile.Data pdata = WT.getProfileData(olink.getProfileId());
+			String bodyHeader = lookupResource(pdata.getLocale(), BHD_KEY);
+			String source = NotificationHelper.buildSource(pdata.getLocale(), SERVICE_ID);
+			String subject = TplHelper.buildLinkUsageEmailSubject(pdata.getLocale(), bodyHeader);
+			String customBody = TplHelper.buildLinkUsageBodyTpl(pdata.getLocale(), olink.getSharingLinkId(), PathUtils.getFileName(olink.getFilePath()), path, ipAddress, userAgent);
+			String html = NotificationHelper.buildCustomBodyTplForNoReplay(pdata.getLocale(), source, bodyHeader, customBody);
 			
 			InternetAddress from = WT.getNotificationAddress(pid.getDomainId());
 			if (from == null) throw new WTException("Error building sender address");
-			InternetAddress to = ud.getPersonalEmail();
+			InternetAddress to = pdata.getPersonalEmail();
 			if (to == null) throw new WTException("Error building destination address");
 			WT.sendEmail(getMailSession(), true, from, to, subject, html);
 

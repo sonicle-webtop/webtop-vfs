@@ -490,7 +490,7 @@ public class Service extends BaseService {
 		String APP_NAME = WT.getPlatformName();
 		String DROPBOX_APP_KEY = getEnv().getCoreServiceSettings().getDropboxAppKey();
 		String DROPBOX_APP_SECRET = getEnv().getCoreServiceSettings().getDropboxAppSecret();
-		String DROPBOX_USER_LOCALE = WT.getUserData(getEnv().getProfileId()).getLanguageTag();
+		String DROPBOX_USER_LOCALE = WT.getProfileData(getEnv().getProfileId()).getLanguageTag();
 		
 		try {
 			String crud = ServletUtils.getStringParameter(request, "crud", true);
