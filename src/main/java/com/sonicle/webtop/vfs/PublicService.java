@@ -115,7 +115,7 @@ public class PublicService extends BasePublicService {
 		
 		try {
 			PublicPath path = new PublicPath(request.getPathInfo());
-			String domainId = WT.findDomainIdByPublicName(path.getDomainPublicName());
+			String domainId = WT.findDomainIdByDomainPublicId(path.getDomainPublicName());
 			if (domainId == null) throw new WTException("Invalid domain public name [{0}]", path.getDomainPublicName());
 
 			if (path.getContext().equals(PUBPATH_CONTEXT_LINK)) {
