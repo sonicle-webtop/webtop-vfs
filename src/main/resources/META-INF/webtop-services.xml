@@ -24,6 +24,10 @@
 			<modelJsClassName>model.UserOptions</modelJsClassName>
 		</userOptions>
 		
+		<restApis>
+			<restApi oasFile="openapi-v1.json" />
+		</restApis>
+
 		<permissions>
 			<sharePermission group="STORE" />
 			<permission group="STORE_FILE" actions="CREATE" />

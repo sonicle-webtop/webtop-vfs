@@ -1,0 +1,343 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "version": "v1",
+    "title": "WebTop VFS",
+    "description": "https://github.com/OpenAPITools/openapi-generator/issues/10010\nhttps://github.com/stoplightio/prism/discussions/523\nhttps://github.com/OpenAPITools/openapi-generator/issues/3172",
+    "contact": {
+      "email": "dev-team@sonicle.com"
+    }
+  },
+  "tags": [
+    {
+      "name": "me_stores",
+      "description": "Stores operations"
+    }
+  ],
+  "security": [
+    {
+      "basicAuth": []
+    },
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/me/stores": {
+      "get": {
+        "summary": "Lists stores",
+        "operationId": "listStores",
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Store"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "me_stores"
+        ]
+      },
+      "parameters": []
+    },
+    "/me/folders": {
+      "get": {
+        "summary": "Lists folders of store path",
+        "operationId": "listFolders",
+        "description": "List Folders",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Folder"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "me_stores"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Folder"
+              }
+            }
+          },
+          "description": ""
+        }
+      },
+      "parameters": []
+    },
+    "/me/files": {
+      "get": {
+        "summary": "Lists files of store path",
+        "operationId": "listFiles",
+        "description": "List Files",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/File"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "me_stores"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Folder"
+              }
+            }
+          },
+          "description": ""
+        }
+      },
+      "parameters": []
+    },
+    "/me/files/$value": {
+      "get": {
+        "summary": "Get file content of store path",
+        "operationId": "getFileContent",
+        "description": "Get File Content",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "me_stores"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/File"
+              }
+            }
+          },
+          "description": ""
+        }
+      },
+      "parameters": [],
+      "post": {
+        "summary": "Upload file content of store path",
+        "operationId": "uploadFileContent",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FileUpload"
+              }
+            }
+          }
+        },
+        "description": "",
+        "tags": [
+          "me_stores"
+        ]
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "basicAuth": {
+        "type": "http",
+        "scheme": "basic"
+      },
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    },
+    "schemas": {
+      "ApiError": {
+        "type": "object",
+        "description": "This general detailed error structure is used throughout this API.",
+        "required": [
+          "code"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "minimum": 400,
+            "maximum": 599
+          },
+          "description": {
+            "type": "string",
+            "example": "Bad query parameter [$size]: Invalid integer value [abc]"
+          }
+        },
+        "example": {
+          "code": 400,
+          "description": "Bad query parameter [$size]: Invalid integer value [abc]"
+        }
+      },
+      "Store": {
+        "type": "object",
+        "x-stoplight": {
+          "id": "0bafd820dbab2"
+        },
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "provider": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "9r84vgsj5gq0h"
+            }
+          },
+          "incoming": {
+            "type": "boolean",
+            "x-stoplight": {
+              "id": "6r734gbny8rl8"
+            }
+          }
+        }
+      },
+      "Folder": {
+        "title": "Folder",
+        "x-stoplight": {
+          "id": "fklq38xwdxywo"
+        },
+        "type": "object",
+        "properties": {
+          "store_id": {
+            "type": "integer",
+            "x-stoplight": {
+              "id": "3tw161ia6i58p"
+            }
+          },
+          "path": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "m53pm8tiiqc11"
+            }
+          }
+        }
+      },
+      "File": {
+        "title": "File",
+        "x-stoplight": {
+          "id": "41rdk2h9kyaol"
+        },
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "m53pm8tiiqc11"
+            }
+          },
+          "contentType": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "2rlps2sqi6zni"
+            }
+          },
+          "size": {
+            "type": "integer",
+            "x-stoplight": {
+              "id": "s0r73ci2xvylc"
+            },
+            "format": "int64"
+          },
+          "lastModified": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "7dmw7tr2q9set"
+            }
+          },
+          "storeId": {
+            "type": "integer",
+            "x-stoplight": {
+              "id": "5qurda2eae5ci"
+            }
+          },
+          "path": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "hh4cwt49iwqzr"
+            }
+          }
+        }
+      },
+      "FileUpload": {
+        "title": "File",
+        "x-stoplight": {
+          "id": "37y7y1sfhsls2"
+        },
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "m53pm8tiiqc11"
+            }
+          },
+          "storeId": {
+            "type": "integer",
+            "x-stoplight": {
+              "id": "5qurda2eae5ci"
+            }
+          },
+          "path": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "hh4cwt49iwqzr"
+            }
+          },
+          "base64": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "7udwdhuiayzyu"
+            }
+          }
+        }
+      }
+    },
+    "parameters": {}
+  }
+}
