@@ -42,6 +42,7 @@ import com.sonicle.commons.db.DbUtils;
 import com.sonicle.commons.flags.BitFlagsEnum;
 import com.sonicle.commons.time.DateTimeUtils;
 import com.sonicle.commons.web.json.CompositeId;
+import com.sonicle.mail.email.Recipients;
 import com.sonicle.vfs2.FileSelector;
 import com.sonicle.vfs2.TypeNameComparator;
 import com.sonicle.vfs2.VfsURI;
@@ -55,7 +56,9 @@ import com.sonicle.webtop.core.app.model.FolderShareOriginFolders;
 import com.sonicle.webtop.core.app.model.FolderSharing;
 import com.sonicle.webtop.core.app.model.ShareOrigin;
 import com.sonicle.webtop.core.app.sdk.AbstractFolderShareCache;
+import com.sonicle.webtop.core.app.sdk.WTEmailSendException;
 import com.sonicle.webtop.core.app.sdk.WTNotFoundException;
+import com.sonicle.webtop.core.app.util.EmailNotification;
 import com.sonicle.webtop.core.app.util.ExceptionUtils;
 import com.sonicle.webtop.core.bol.Owner;
 import com.sonicle.webtop.core.dal.DAOException;
@@ -1561,7 +1564,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		try {
 			UserProfile.Data pdata = WT.getProfileData(olink.getProfileId());
 			String bodyHeader = lookupResource(pdata.getLocale(), BHD_KEY);
-			String source = NotificationHelper.buildSource(pdata.getLocale(), SERVICE_ID);
+			String source = EmailNotification.buildSource(pdata.getLocale(), SERVICE_ID);
 			String subject = TplHelper.buildLinkUsageEmailSubject(pdata.getLocale(), bodyHeader);
 			String customBody = TplHelper.buildLinkUsageBodyTpl(pdata.getLocale(), olink.getSharingLinkId(), PathUtils.getFileName(olink.getFilePath()), path, ipAddress, userAgent);
 			String html = NotificationHelper.buildCustomBodyTplForNoReplay(pdata.getLocale(), source, bodyHeader, customBody);
@@ -1570,11 +1573,12 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			if (from == null) throw new WTException("Error building sender address");
 			InternetAddress to = pdata.getPersonalEmail();
 			if (to == null) throw new WTException("Error building destination address");
-			WT.sendEmail(getMailSession(), true, from, to, subject, html);
+			
+			WT.sendEmailMessage(getTargetProfileId(), from, Recipients.to(to).asList(), subject, html);
 
 		} catch(IOException | TemplateException ex) {
 			logger.error("Unable to build email template", ex);
-		} catch(Exception ex) {
+		} catch(WTEmailSendException ex) {
 			logger.error("Unable to send email", ex);
 		}
 	}
