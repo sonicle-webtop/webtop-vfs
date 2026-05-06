@@ -33,6 +33,7 @@
 package com.sonicle.webtop.vfs;
 
 import com.sonicle.commons.AlgoUtils;
+import com.sonicle.commons.Check;
 import com.sonicle.commons.ClassUtils;
 import com.sonicle.commons.EnumUtils;
 import com.sonicle.commons.LangUtils;
@@ -110,7 +111,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import net.glxn.qrgen.javase.QRCode;
-import net.sf.qualitycheck.Check;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;

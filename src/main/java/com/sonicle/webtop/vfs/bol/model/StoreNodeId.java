@@ -33,10 +33,10 @@
 package com.sonicle.webtop.vfs.bol.model;
 
 import com.google.gson.annotations.SerializedName;
+import com.sonicle.commons.Check;
 import com.sonicle.commons.EnumUtils;
 import com.sonicle.commons.web.json.CId;
 import com.sonicle.webtop.core.sdk.UserProfileId;
-import net.sf.qualitycheck.Check;
 import org.apache.commons.lang3.StringUtils;
 
 /**
