@@ -84,7 +84,26 @@ public abstract class StoreFileSystem {
 			return rootFo;
 		}
 	}
-	
+
+	/**
+	 * Releases the resolved root FileObject (and the underlying provider
+	 * connection), leaving this instance reusable: the next getRootFileObject()
+	 * re-resolves lazily. Never throws.
+	 */
+	public void close() {
+		synchronized(lock) {
+			if (rootFo != null) {
+				try {
+					rootFo.close();
+				} catch(Throwable t) {
+					// quiet close by contract
+				}
+				rootFo = null;
+			}
+		}
+	}
+
+
 	public FileObject getDescendantFileObject(String relativePath) throws FileSystemException {
 		FileObject rfo = getRootFileObject();
 		String path = PathUtils.concatPaths(rfo.getName().getPath(), relativePath);

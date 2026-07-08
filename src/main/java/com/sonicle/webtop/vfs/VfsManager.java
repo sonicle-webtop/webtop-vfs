@@ -66,6 +66,7 @@ import com.sonicle.webtop.core.dal.DAOException;
 import com.sonicle.webtop.core.sdk.AbstractMapCache;
 import com.sonicle.webtop.core.sdk.AuthException;
 import com.sonicle.webtop.core.sdk.BaseManager;
+import com.sonicle.webtop.core.sdk.SharedManager;
 import com.sonicle.webtop.core.sdk.UserProfile;
 import com.sonicle.webtop.core.sdk.UserProfileId;
 import com.sonicle.webtop.core.sdk.WTException;
@@ -108,6 +109,9 @@ import jakarta.mail.internet.InternetAddress;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import net.glxn.qrgen.javase.QRCode;
@@ -126,20 +130,21 @@ import org.slf4j.Logger;
  *
  * @author malbinola
  */
-public class VfsManager extends BaseManager implements IVfsManager {
+public class VfsManager extends BaseManager implements SharedManager, IVfsManager {
 	private static final Logger logger = WT.getLogger(VfsManager.class);
 	private static final String SHARE_CONTEXT_STORE = "STORE";
 	private static final String MYDOCUMENTS_FOLDER = "mydocuments";
 	public static final String URI_SCHEME_MYDOCUMENTS = "mydocs";
 	public static final String URI_SCHEME_DOMAINIMAGES = "images";
-	
+
 	private final OwnerCache ownerCache = new OwnerCache();
 	private final ShareCache shareCache = new ShareCache();
 	private final HashMap<String, StoreFileSystem> storeFileSystems = new HashMap<>();
-	private final ArrayList<Store> volatileStores = new ArrayList<>();
-	private final HashMap<Integer, Store> volatileStoresMap=new HashMap<>();
-	private int nextVolatileStoreId=-1;
-	
+	//shared instance: read (iterated) and written from concurrent threads
+	private final CopyOnWriteArrayList<Store> volatileStores = new CopyOnWriteArrayList<>();
+	private final ConcurrentHashMap<Integer, Store> volatileStoresMap = new ConcurrentHashMap<>();
+	private final AtomicInteger nextVolatileStoreId = new AtomicInteger(-1);
+
 	public VfsManager(boolean fastInit, UserProfileId targetProfileId) throws WTException {
 		super(fastInit, targetProfileId);
 		if (!fastInit) {
@@ -148,7 +153,39 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			initFileSystems();
 		}
 	}
-	
+
+	/**
+	 * SharedManager lifecycle: one instance per (service, target user), serving
+	 * every web session, REST call and public sharing-link access of that user.
+	 * Nothing extra to start: the eager ctor path (!fastInit) already built the
+	 * share cache and the store filesystem cache; connections themselves are
+	 * resolved lazily on first use.
+	 */
+	@Override
+	public void onSharedStartup() {
+		logger.info("[{}] shared VfsManager created", getTargetProfileId());
+	}
+
+	/**
+	 * SharedManager lifecycle: runs at registry eviction (no more session refs +
+	 * idle grace elapsed) or application shutdown. Closes every cached store
+	 * filesystem root (releasing sftp/ftp/cloud connections) and drops caches.
+	 */
+	@Override
+	public void onSharedShutdown() {
+		logger.info("[{}] shared VfsManager shutting down", getTargetProfileId());
+		synchronized(storeFileSystems) {
+			for (StoreFileSystem sfs : storeFileSystems.values()) {
+				sfs.close();
+			}
+			storeFileSystems.clear();
+		}
+		volatileStores.clear();
+		volatileStoresMap.clear();
+		shareCache.clear();
+		ownerCache.clear();
+	}
+
 	private synchronized void initMyDocuments() throws WTException {
 		File myDocsDir = new File(WT.getServiceHomePath(SERVICE_ID,getTargetProfileId()) + MYDOCUMENTS_FOLDER);
 		try {
@@ -232,7 +269,10 @@ public class VfsManager extends BaseManager implements IVfsManager {
 	
 	private void removeStoreFileSystemFromCache(int storeId) throws WTException {
 		synchronized(storeFileSystems) {
-			storeFileSystems.remove(String.valueOf(storeId));
+			StoreFileSystem sfs = storeFileSystems.remove(String.valueOf(storeId));
+			//long-lived shared instance: release the underlying connection too,
+			//dropping only the map entry would leak it until manager eviction
+			if (sfs != null) sfs.close();
 		}
 	}
 	
@@ -407,7 +447,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			con = WT.getConnection(SERVICE_ID);
 			for (OStore osto : stoDao.selectByProfile(con, ownerPid.getDomainId(), ownerPid.getUserId())) {
 				if (evalRights && !quietlyCheckRightsOnStore(osto.getStoreId(), FolderShare.FolderRight.READ)) continue;
-				items.put(osto.getStoreId(), ManagerUtils.createStore(osto, buildStoreName(osto, getLocale())));
+				items.put(osto.getStoreId(), ManagerUtils.createStore(osto, buildStoreName(osto, getLocale()), getTargetProfileId()));
 			}
 			return items;
 			
@@ -435,7 +475,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		try {
 			con = WT.getConnection(SERVICE_ID);
 			for (OStore osto : stoDao.selectByDomainIn(con, getTargetProfileId().getDomainId(), ids)) {
-				items.put(osto.getStoreId(), ManagerUtils.createStore(osto));
+				items.put(osto.getStoreId(), ManagerUtils.createStore(osto, getTargetProfileId()));
 			}
 			return items;
 			
@@ -494,7 +534,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 		StoreDAO stoDao = StoreDAO.getInstance();
 		OStore osto = stoDao.selectById(con, storeId);
 		
-		return ManagerUtils.createStore(osto, buildStoreName(osto, getLocale()));
+		return ManagerUtils.createStore(osto, buildStoreName(osto, getLocale()), getTargetProfileId());
 	}
 	
 	@Override
@@ -535,7 +575,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 			
 			con = WT.getConnection(SERVICE_ID, false);
 			store.setBuiltIn(Store.BUILTIN_VOLATILE);
-			store.setStoreId(nextVolatileStoreId--);
+			store.setStoreId(nextVolatileStoreId.getAndDecrement());
 			Store ret = doStoreUpdate(true, con, store);
 			
 			DbUtils.commitQuietly(con);
@@ -1364,7 +1404,7 @@ public class VfsManager extends BaseManager implements IVfsManager {
 				}
 			}
 			
-			return (ret == 1) ? ManagerUtils.createStore(ostore, buildStoreName(ostore, getLocale())) : null;
+			return (ret == 1) ? ManagerUtils.createStore(ostore, buildStoreName(ostore, getLocale()), getTargetProfileId()) : null;
 			
 		} catch (URISyntaxException ex) {
 			throw new WTException("Provided URI is not valid", ex);

@@ -35,7 +35,6 @@ package com.sonicle.webtop.vfs;
 import com.sonicle.commons.EnumUtils;
 import com.sonicle.commons.URIUtils;
 import com.sonicle.security.PasswordUtils;
-import com.sonicle.webtop.core.app.RunContext;
 import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.app.WebTopManager;
 import com.sonicle.webtop.core.sdk.UserProfileId;
@@ -51,21 +50,30 @@ import org.apache.commons.lang3.StringUtils;
  */
 public class ManagerUtils {
 	
-	static Store createStore(OStore src) throws URISyntaxException {
+	static Store createStore(OStore src, UserProfileId credentialsProfileId) throws URISyntaxException {
 		if (src == null) return null;
-		return fillStore(new Store(), src);
+		return fillStore(new Store(), src, credentialsProfileId);
 	}
-	
-	static Store createStore(OStore src, String newName) throws URISyntaxException {
+
+	static Store createStore(OStore src, String newName, UserProfileId credentialsProfileId) throws URISyntaxException {
 		if (src == null) return null;
-		Store tgt = fillStore(new Store(), src);
+		Store tgt = fillStore(new Store(), src, credentialsProfileId);
 		if ((tgt != null)) {
 			tgt.setName(newName);
 		}
 		return tgt;
 	}
-	
-	static Store fillStore(Store tgt, OStore src) throws URISyntaxException {
+
+	/**
+	 * Fills a Store model from its record. For non-builtin stores whose URI has
+	 * no userinfo, WebTop credentials are injected: those of the passed profile
+	 * — the MANAGER'S TARGET user, never the running caller. The resulting URI
+	 * ends up cached in the manager's StoreFileSystem map, so on a shared
+	 * per-user instance a caller-derived value would bake the first toucher's
+	 * password (possibly an admin's or a public-context null) into every other
+	 * caller's filesystem access.
+	 */
+	static Store fillStore(Store tgt, OStore src, UserProfileId credentialsProfileId) throws URISyntaxException {
 		if ((tgt != null) && (src != null)) {
 			tgt.setStoreId(src.getStoreId());
 			tgt.setDomainId(src.getDomainId());
@@ -74,9 +82,8 @@ public class ManagerUtils {
 			tgt.setProvider(EnumUtils.forSerializedName(src.getProvider(), Store.Provider.class));
 			tgt.setName(src.getName());
 			URI uri = new URI(src.getUri());
-			if (Store.BUILTIN_NO.equals(src.getBuiltIn()) && StringUtils.isBlank(uri.getUserInfo())) {
-				UserProfileId pid = UserProfileId.from(RunContext.getPrincipal());
-				String newUserInfo = URIUtils.asUserInfo(pid.getUserId(), PasswordUtils.asString(WT.lookupSecretStoreValue(pid, WebTopManager.PSVKEY_PPW)));
+			if (Store.BUILTIN_NO.equals(src.getBuiltIn()) && StringUtils.isBlank(uri.getUserInfo()) && credentialsProfileId != null) {
+				String newUserInfo = URIUtils.asUserInfo(credentialsProfileId.getUserId(), PasswordUtils.asString(WT.lookupSecretStoreValue(credentialsProfileId, WebTopManager.PSVKEY_PPW)));
 				uri = new URI(uri.getScheme(), newUserInfo, uri.getHost(), uri.getPort(), uri.getPath(), uri.getQuery(), uri.getFragment());
 			}
 			tgt.setUri(uri);

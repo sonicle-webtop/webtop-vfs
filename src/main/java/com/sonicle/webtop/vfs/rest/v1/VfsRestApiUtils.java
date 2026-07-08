@@ -33,8 +33,10 @@
  */
 package com.sonicle.webtop.vfs.rest.v1;
 
+import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.sdk.UserProfileId;
 import com.sonicle.webtop.core.sdk.WTException;
+import com.sonicle.webtop.vfs.Service;
 import com.sonicle.webtop.vfs.VfsManager;
 
 /**
@@ -42,9 +44,11 @@ import com.sonicle.webtop.vfs.VfsManager;
  * @author gabriele.bulfon
  */
 public class VfsRestApiUtils {
-	
+
 	public static VfsManager getVfsManager(UserProfileId targetPid) throws WTException {
-		//Fast init?
-		return new VfsManager(false, targetPid);
+		//Shared per-user instance via the registry: no more per-call manager
+		//construction (the old `new VfsManager(false, pid)` paid an eager
+		//share-cache build + filesystem scan on EVERY request)
+		return (VfsManager)WT.getServiceManager(WT.findServiceId(Service.class), true, targetPid);
 	}
 }

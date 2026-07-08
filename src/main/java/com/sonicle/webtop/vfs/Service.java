@@ -133,9 +133,10 @@ public class Service extends BaseService {
 
 	@Override
 	public void initialize() throws Exception {
-		manager = (VfsManager)WT.getServiceManager(SERVICE_ID);
-		ss = new VfsServiceSettings(SERVICE_ID, getEnv().getProfileId().getDomainId());
-		us = new VfsUserSettings(SERVICE_ID, getEnv().getProfileId());
+		UserProfileId targetProfile = getEnv().getProfileId();
+		manager = (VfsManager)WT.getServiceManager(SERVICE_ID, targetProfile);
+		ss = new VfsServiceSettings(SERVICE_ID, targetProfile.getDomainId());
+		us = new VfsUserSettings(SERVICE_ID, targetProfile);
 		initFolders();
 		
 		registerUploadListener("UploadStoreFile", new OnUploadStoreFile());
@@ -1236,7 +1237,8 @@ public class Service extends BaseService {
 			final StoreNodeId parentNodeId = new StoreNodeId(parentFileId);
 			final String path = StoreNodeId.Type.FOLDER.equals(parentNodeId.getType()) ? "/" : parentNodeId.getFilePath();
 			
-			IMailManager mailMgr = (IMailManager)WT.getServiceManager("com.sonicle.webtop.mail");
+			UserProfileId targetProfile = getEnv().getProfileId();
+			IMailManager mailMgr = (IMailManager)WT.getServiceManager("com.sonicle.webtop.mail", targetProfile);
 			InputStream is = null;
 			try {
 				//TODO: improve method signature, are all params truly needed?
